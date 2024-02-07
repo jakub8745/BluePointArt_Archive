@@ -355,6 +355,11 @@ const joyIntervalCheck = () => {
 };
 joyIntervalCheck();
 
+
+const waitForMe = async (millisec) => {
+  await new Promise(resolve => setTimeout(resolve, millisec, ''));
+};
+
 init();
 animate();
 
@@ -465,7 +470,7 @@ function init() {
   lightOn(ambientLight, 0.2);
 
   // load ENVIRONMENT (scene contains only pure geometries with userData.paths to load TEXTURES later)
-  loadColliderEnvironment("../models/galeriaGLTF/bg_changesX.glb"); //, gtaoPass);
+  loadColliderEnvironment("../models/galeriaGLTF/archive_vincenz.glb"); //, gtaoPass);
 
   // visitor
   visitor = new THREE.Mesh(
@@ -478,7 +483,7 @@ function init() {
     radius: 0.45,
     segment: new THREE.Line3(
       new THREE.Vector3(),
-      new THREE.Vector3(0, 100.0, 0.0)
+      new THREE.Vector3(0, 0.1, 0.0)
     ),
   };
   visitor.castShadow = false;
@@ -660,7 +665,7 @@ function init() {
 
   // sidebar buttons events
   function handleSBbuttonsClick(divID) {
-    isItMap = false;
+    //const isItMap = false;
     document.querySelectorAll(".info_sidebar").forEach((div) => {
       if (div.id === divID) {
         // Adds 'open' class if it doesn't have it, removes if it does
@@ -959,7 +964,7 @@ function reset() {
   const circleMap = sceneMap.getObjectByName("circleMap");
   if (circleMap) {
     circleMap.position.copy(target);
-    circleMap.position.y = 0;
+    circleMap.position.y = 10;
   }
 }
 
@@ -1072,7 +1077,7 @@ async function updateVisitor(delta) {
   camera.position.add(visitor.position);
 
   sceneMap.getObjectByName("circleMap").position.copy(visitor.position);
-  sceneMap.getObjectByName("circleMap").position.y = 0;
+  //sceneMap.getObjectByName("circleMap").position.y = - 2;
   // animateMap();
 
   // if the visitor has fallen too far below the level reset their position to the start
@@ -1161,9 +1166,6 @@ async function updateVisitor(delta) {
 
 // turning chosen light on slowly
 
-const waitForMe = async (millisec) => {
-  await new Promise(resolve => setTimeout(resolve, millisec, ''));
-};
 //
 async function lightOn(el, intensityTo) {
   for (let i = 0; i < intensityTo + 0.07; i = i + 0.07) {
