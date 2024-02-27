@@ -52,6 +52,16 @@ a {
   }
 }
 
+@keyframes fadeInViewer {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+  
+}
+
 #image-view {
   max-width: 95vw;
   max-height: 85vh;

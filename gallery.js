@@ -46,15 +46,17 @@ const params = {
   gizmoVisible: false,
   canSeeGizmo: false,
   transControlsMode: "rotate",
+  archiveModelPath: "../models/galeriaGLTF/archive_vincenz.glb",
 };
 
 //
 const fadeOutEl = (el) => {
-  el.style.opacity = 0;
-  el.style.transition = "opacity 0.5s";
+  //el.style.opacity = 0;
+  // el.style.transition = "opacity 1.5s";
+  el.style.animation = "fadeOut 2s forwards";
   setTimeout(() => {
     el.remove();
-  }, 500);
+  }, 2000);
 };
 let ileE = 1,
   ileMesh = 0,
@@ -254,6 +256,23 @@ const modifyObjects = {
   },
   Audio: (mesh) => {
     //
+    if (mesh.userData.name === "trembita") {
+      //
+      const sound = new THREE.PositionalAudio(listener);
+      const audioLoader = new THREE.AudioLoader();
+      audioLoader.load("audio/trembita.mp3", (buffer) => {
+        sound.name = "trembitaSound";
+        sound.setBuffer(buffer);
+        sound.setLoop(true);
+        sound.setRefDistance(0.04);
+        sound.setRolloffFactor(4);
+        //sound.setMaxDistance(5);
+        sound.setVolume(15);
+
+        mesh.add(sound);
+      });
+
+    }
   },
 };
 
@@ -470,7 +489,7 @@ function init() {
   lightOn(ambientLight, 0.2);
 
   // load ENVIRONMENT (scene contains only pure geometries with userData.paths to load TEXTURES later)
-  loadColliderEnvironment("../models/galeriaGLTF/archive_vincenz.glb"); //, gtaoPass);
+  loadColliderEnvironment(params.archiveModelPath); //, gtaoPass);
 
   // visitor
   visitor = new THREE.Mesh(
@@ -542,7 +561,9 @@ function init() {
     .querySelector("#play-icon")
     .addEventListener("pointerdown", (evt) => {
       evt.preventDefault();
-      switchAudio();
+      //switchAudio();
+      console.log("visitorLocation0: ", visitorLocation0)
+      handleAudio(scene.getObjectByName("trembitaSound"))
     });
 
   // optimized raycaster after click
@@ -573,7 +594,7 @@ function init() {
         const viewer = document.createElement("div");
         viewer.className = "viewer";
         viewer.id = "viewer";
-        viewer.style.animation = "fadeIn 2s forwards";
+        viewer.style.animation = "fadeInViewer 2s forwards";
         viewer.innerHTML = "</br>";
         const viewImage = document.createElement("img");
         viewImage.id = "image-view";
@@ -837,6 +858,21 @@ const switchAudio = () => {
     }
   }
 };
+
+const handleAudio = (audioToTurn) => {
+  const playIconImg = document.querySelector("#play-icon img");
+  const audioOn = document.querySelector("#audio-on");
+
+  if (audioToTurn.isPlaying) {
+    playIconImg.src = "/icons/audioMuted.png";
+    audioOn.style.display = "none";
+    audioToTurn.pause();
+  } else if (!audioToTurn.isPlaying) {
+    audioToTurn.play();
+    playIconImg.src = "/icons/audioButton.png";
+    audioOn.style.display = "block";
+  }
+}
 
 // load environment
 // load environment
@@ -1107,6 +1143,18 @@ async function updateVisitor(delta) {
       } else {
         params.canSeeGizmo = false;
         switchAudio();
+      }
+
+      // AUDIO trembita
+      const handleSoundTrembita = scene.getObjectByName("trembitaSound");
+      console.log("trembita", handleSoundTrembita);
+      if (handleSoundTrembita) {
+        if (lightsToTurnValue === "lightsVincenz") {
+          console.log("trembitasound", handleSoundTrembita);
+          handleAudio(handleSoundTrembita);
+        } else {
+          handleAudio(handleSoundTrembita);
+        }
       }
 
       for (const el of lightsToTurn) {
