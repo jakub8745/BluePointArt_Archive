@@ -117,6 +117,8 @@ function ileElementow() {
 
 //
 const listener = new THREE.AudioListener();
+const textureCache = new Map();
+
 
 //
 const modifyObjects = {
@@ -1168,23 +1170,31 @@ async function updateVisitor(delta) {
           if (intersectVisitorUserData.bgTexture !== bgTexture0) {
             intersectVisitorUserData.bgTexture = intersectVisitorUserData.bgTexture || "textures/bg_color.jpg";
             intersectVisitorUserData.bgInt = intersectVisitorUserData.bgInt || 1;
-
-            bgTexture0 = intersectVisitorUserData.bgTexture;
-
-            await bgDissolve(scene.backgroundIntensity, 0);
-
-            const loader = new THREE.TextureLoader();
-            const texture = loader.load(
-              intersectVisitorUserData.bgTexture,
-              () => {
-                texture.mapping = THREE.EquirectangularReflectionMapping;
-                texture.colorSpace = THREE.SRGBColorSpace;
-                scene.background = texture;
-                scene.backgroundBlurriness = intersectVisitorUserData.bgBlur;
-                bgDissolve(0, intersectVisitorUserData.bgInt);
-              }
-            );
-          }
+        
+            if (intersectVisitorUserData.bgTexture !== bgTexture0) {
+                bgTexture0 = intersectVisitorUserData.bgTexture;
+        
+                if (textureCache.has(intersectVisitorUserData.bgTexture)) {
+                    setSceneBackground(scene, textureCache.get(intersectVisitorUserData.bgTexture), intersectVisitorUserData.bgBlur, intersectVisitorUserData.bgInt);
+                } else {
+                    const loader = new THREE.TextureLoader();
+                    loader.load(intersectVisitorUserData.bgTexture, (texture) => {
+                        texture.mapping = THREE.EquirectangularReflectionMapping;
+                        texture.colorSpace = THREE.SRGBColorSpace;
+                        textureCache.set(intersectVisitorUserData.bgTexture, texture);
+                        setSceneBackground(scene, texture, intersectVisitorUserData.bgBlur, intersectVisitorUserData.bgInt);
+                    });
+                }
+            }
+        }
+        
+        function setSceneBackground(scene, texture, blur, int) {
+            scene.background = texture;
+            scene.backgroundBlurriness = blur;
+            bgDissolve(scene.backgroundIntensity, 0).then(() => {
+                bgDissolve(0, int);
+            });
+        }
 
 
 
