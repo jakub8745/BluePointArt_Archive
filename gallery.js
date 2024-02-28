@@ -49,6 +49,47 @@ const params = {
   archiveModelPath: "../models/galeriaGLTF/archive_vincenz.glb",
 };
 
+class VisitorLocationChecker {
+  constructor(scene) {
+    this.scene = scene;
+    this.raycaster = new THREE.Raycaster();
+    this.downVector = new THREE.Vector3(0, -1, 0);
+  }
+  checkVisitorLocation(visitor) {
+    this.raycaster.firstHitOnly = true;
+    this.raycaster.set(visitor.position, this.downVector);
+    const intersectedObjects = this.raycaster.intersectObjects(this.scene.children, true).find(({ object }) => object.userData.type === "visitorLocation")?.object;
+    return intersectedObjects
+  }
+}
+
+class AudioHandler {
+  handleAudio(audioToTurn) {
+
+    const playIconImg = document.querySelector("#play-icon img");
+    const audioOn = document.querySelector("#audio-on");
+
+    if (!audioToTurn || audioToTurn.type !== "Audio") {
+      for (const el of audioObjects) {
+        el.children[0].pause();
+        playIconImg.src = "/icons/audioMuted.png";
+        audioOn.style.display = "none";
+      }
+      return
+    }
+
+    if (audioToTurn.isPlaying) {
+      playIconImg.src = "/icons/audioMuted.png";
+      audioOn.style.display = "none";
+      audioToTurn.stop();
+    } else if (!audioToTurn.isPlaying) {
+      audioToTurn.play();
+      playIconImg.src = "/icons/audioButton.png";
+      audioOn.style.display = "block";
+    }
+  }
+}
+
 //
 const fadeOutEl = (el) => {
   //el.style.opacity = 0;
@@ -58,7 +99,7 @@ const fadeOutEl = (el) => {
     el.remove();
   }, 2000);
 };
-let ileE = 1,
+let ileE = 2,
   ileMesh = 0,
   ileRazy = 0;
 
@@ -218,21 +259,6 @@ const modifyObjects = {
       control.attach(mesh);
       scene.add(control);
 
-      // AUDIO
-
-      const sound = new THREE.PositionalAudio(listener);
-      const audioLoader = new THREE.AudioLoader();
-      audioLoader.load("audio/pouring_milk.mp3", (buffer) => {
-        sound.name = "pouringMilk";
-        sound.setBuffer(buffer);
-        sound.setLoop(true);
-        sound.setRefDistance(0.04);
-        sound.setRolloffFactor(4);
-        //sound.setMaxDistance(5);
-        sound.setVolume(15);
-
-        mesh.add(sound);
-      });
     }
 
     modifyObjects.element(mesh, true, true);
@@ -255,24 +281,21 @@ const modifyObjects = {
     ileElementow();
   },
   Audio: (mesh) => {
-    //
-    if (mesh.userData.name === "trembita") {
-      //
-      const sound = new THREE.PositionalAudio(listener);
-      const audioLoader = new THREE.AudioLoader();
-      audioLoader.load("audio/trembita.mp3", (buffer) => {
-        sound.name = "trembitaSound";
-        sound.setBuffer(buffer);
-        sound.setLoop(true);
-        sound.setRefDistance(0.04);
-        sound.setRolloffFactor(4);
-        //sound.setMaxDistance(5);
-        sound.setVolume(15);
 
-        mesh.add(sound);
-      });
+    const sound = new THREE.PositionalAudio(listener);
+    const audioLoader = new THREE.AudioLoader();
+    audioLoader.load(mesh.userData.audio, (buffer) => {
+      sound.name = mesh.userData.name;
+      sound.setBuffer(buffer);
+      sound.setLoop(true);
+      sound.setRefDistance(mesh.userData.audioRefDistance);
+      sound.setRolloffFactor(mesh.userData.audioRolloffFactor);
+      //sound.setMaxDistance(mesh.userData.audioMaxDistance);
+      sound.setVolume(mesh.userData.audioVolume);
 
-    }
+      mesh.add(sound);
+      audioObjects.push(mesh);
+    });
   },
 };
 
@@ -300,6 +323,7 @@ const raycasterVisitor = new THREE.Raycaster();
 let visitorLocation0 = "xxx";
 let bgTexture0;
 const lightsToTurn = [];
+const audioObjects = [];
 const visitorEnter = new THREE.Vector3();
 
 //const newWindow = window.open();
@@ -381,6 +405,8 @@ const waitForMe = async (millisec) => {
 
 init();
 animate();
+
+
 
 function init() {
   // przeniesione z loadera100%
@@ -557,13 +583,23 @@ function init() {
   //
   scene.add(environment);
 
+
+
+
+
+
+
   document
     .querySelector("#play-icon")
     .addEventListener("pointerdown", (evt) => {
       evt.preventDefault();
-      //switchAudio();
-      console.log("visitorLocation0: ", visitorLocation0)
-      handleAudio(scene.getObjectByName("trembitaSound"))
+      const floorChecker = new VisitorLocationChecker(scene);
+      const audioHandler = new AudioHandler();
+      const el = floorChecker.checkVisitorLocation(visitor);
+      // console.log(" floor checked", el.userData.audioToPlay, "audio:", scene.getObjectByName(el.userData.audioToPlay));
+      //if (el.userData.audioToPlay) {
+      audioHandler.handleAudio(scene.getObjectByName(el.userData.audioToPlay));
+      //}
     });
 
   // optimized raycaster after click
@@ -824,8 +860,8 @@ function init() {
       control.reset();
     }
     if (keysPressed["t"]) {
-      console.log("width", window.innerWidth, "height", window.innerHeight);
-
+      console.log(scene, visitor)
+      floorChecker.checkVisitorLocation(visitor);
       // is for testing
     }
     clearInterval(intervalId);
@@ -840,41 +876,7 @@ function init() {
   });
 }
 
-// handle audio
-const switchAudio = () => {
-  const handleSoundPouring = scene.getObjectByName("pouringMilk");
-  const playIconImg = document.querySelector("#play-icon img");
-  const audioOn = document.querySelector("#audio-on");
 
-  if (handleSoundPouring) {
-    if (handleSoundPouring.isPlaying || !params.canSeeGizmo) {
-      playIconImg.src = "/icons/audioMuted.png";
-      audioOn.style.display = "none";
-      handleSoundPouring.pause();
-    } else if (!handleSoundPouring.isPlaying && params.canSeeGizmo) {
-      handleSoundPouring.play();
-      playIconImg.src = "/icons/audioButton.png";
-      audioOn.style.display = "block";
-    }
-  }
-};
-
-const handleAudio = (audioToTurn) => {
-  const playIconImg = document.querySelector("#play-icon img");
-  const audioOn = document.querySelector("#audio-on");
-
-  if (audioToTurn.isPlaying) {
-    playIconImg.src = "/icons/audioMuted.png";
-    audioOn.style.display = "none";
-    audioToTurn.pause();
-  } else if (!audioToTurn.isPlaying) {
-    audioToTurn.play();
-    playIconImg.src = "/icons/audioButton.png";
-    audioOn.style.display = "block";
-  }
-}
-
-// load environment
 // load environment
 async function loadColliderEnvironment(modelPath) {
   const gltfLoader = new GLTFLoader();
@@ -1002,6 +1004,8 @@ function reset() {
     circleMap.position.copy(target);
     circleMap.position.y = 10;
   }
+
+
 }
 
 // update visitor
@@ -1122,50 +1126,44 @@ async function updateVisitor(delta) {
   }
 
   // checkin where the visitor is => tutning on/off lights & video/animations & audio & gizmo
-  origVec.setFromMatrixPosition(visitor.matrixWorld);
-  dirVec.copy(origVec).multiply(new THREE.Vector3(0, 1, 0)).normalize();
-  raycasterVisitor.set(origVec, dirVec);
-  raycasterVisitor.firstHitOnly = true;
+  const floorChecker = new VisitorLocationChecker(scene);
+  const audioHandler = new AudioHandler();
 
-  const intersectVisitorObject = raycasterVisitor
-    .intersectObjects(scene.children)
-    .find(({ object }) => object.userData.type === "visitorLocation")?.object;
 
-  if (intersectVisitorObject) {
-    const lightsToTurnValue = intersectVisitorObject.userData.lightsToTurn;
+  const intersectedFloor = floorChecker.checkVisitorLocation(visitor);
+  if (intersectedFloor) {
+
+    const lightsToTurnValue = intersectedFloor.userData.lightsToTurn;
+
 
     if (lightsToTurn && visitorLocation0 !== lightsToTurnValue) {
-      console.log("lightsToTurn: ", lightsToTurnValue);
 
-      if (lightsToTurnValue === "lightsDystopia") {
-        params.canSeeGizmo = true;
-        switchAudio();
-      } else {
-        params.canSeeGizmo = false;
-        switchAudio();
-      }
+      params.canSeeGizmo = (lightsToTurnValue === "lightsDystopia") ? true : false;
 
-      // AUDIO trembita
-      const handleSoundTrembita = scene.getObjectByName("trembitaSound");
-      console.log("trembita", handleSoundTrembita);
-      if (handleSoundTrembita) {
-        if (lightsToTurnValue === "lightsVincenz") {
-          console.log("trembitasound", handleSoundTrembita);
-          handleAudio(handleSoundTrembita);
-        } else {
-          handleAudio(handleSoundTrembita);
+      if (intersectedFloor.userData.audioToPlay) {
+        console.log("audioObject: ", audioObjects, "intersectedFloor.userData.audioToPlay: ", intersectedFloor.userData.audioToPlay);
+        ///
+        for (const el of audioObjects) {
+          console.log("el.children[0].name: ", el.children[0].name, "intersectedFloor.userData.audioToPlay: ", intersectedFloor.userData.audioToPlay);
+
+          if (el.children[0].name === intersectedFloor.userData.audioToPlay) {
+            audioHandler.handleAudio(el.children[0]);
+          }
         }
+      } else {
+        audioHandler.handleAudio(null);
       }
 
       for (const el of lightsToTurn) {
         if (el.userData.name === lightsToTurnValue) {
           const userData = el.userData;
-          const intersectVisitorUserData = intersectVisitorObject.userData;
+          const intersectVisitorUserData = intersectedFloor.userData;
 
           intensityTo = userData.intensity;
           el.intensity = 0;
           el.visible = true;
           visitorLocation0 = lightsToTurnValue;
+          lightOn(el, intensityTo);
 
           if (intersectVisitorUserData.bgTexture !== bgTexture0) {
             intersectVisitorUserData.bgTexture = intersectVisitorUserData.bgTexture || "textures/bg_color.jpg";
@@ -1188,7 +1186,7 @@ async function updateVisitor(delta) {
             );
           }
 
-          lightOn(el, intensityTo);
+
 
           if (userData.videoID) {
             const video = document.getElementById(userData.videoID);
@@ -1283,3 +1281,4 @@ function animate() {
 
   controls.update();
 }
+
