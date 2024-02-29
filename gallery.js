@@ -315,9 +315,12 @@ const modifyObjects = {
       //if(mesh.userData.audioDirectionalCone) sound.setDirectionalCone(mesh.userData.audioDirectionalCone)
      
 
-      gui.add(sound.panner, "coneInnerAngle", 0, 500, 0.01).name("Inner")// + mesh.name);
+      gui.add(sound.panner, "coneInnerAngle", 0, 500, 0.01).name("Inner")// + mesh.name);refDistance
       gui.add(sound.panner, "coneOuterAngle", 0, 500, 0.01).name("Outer")
       gui.add(sound.panner, "coneOuterGain", 0, 1, 0.01).name("Outer")
+      gui.add(sound.panner, "refDistance", 0, 10, 0.01).name("refDistance")
+      gui.add(sound.panner, "rolloffFactor", 0, 100, 0.01).name("rolloffFactor")
+
       gui.add(mesh.rotation, "y", 0, 10, 0.01).name("Rotate")
       // */
       const helper = new PositionalAudioHelper(sound, 20);
