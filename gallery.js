@@ -1,6 +1,7 @@
 //todo:
-// poprawna tekstura na oknie dystopii
-// panel boczny z mapą i przyciskami
+// dźwięk 
+// * poprawna tekstura na oknie dystopii
+// * panel boczny z mapą i przyciskami
 //
 // * rozjaśnić --> identity --> dystopia
 // * opisy Wystawę
@@ -33,6 +34,7 @@ import { JoyStick } from "three/addons/controls/joy.js";
 import * as TWEEN from "three/addons/tween/tween.esm.js";
 
 const loader = new THREE.TextureLoader();
+import { PositionalAudioHelper } from 'three/addons/helpers/PositionalAudioHelper.js';
 
 const params = {
   firstPerson: true, //false, //true,
@@ -117,7 +119,23 @@ function ileElementow() {
 
 //
 const listener = new THREE.AudioListener();
+// Preload textures from the "textures" folder
+const textureFolder = "textures/";
 const textureCache = new Map();
+
+function preloadTextures() {
+  const textureLoader = new THREE.TextureLoader();
+  const textureFiles = ['bg_puent.jpg', 'bg_color.jpg', 'dystopia/bgVermeerViewofDelft.jpg', 'bg_lockdowns.jpg']; // Add all texture filenames here
+
+  textureFiles.forEach((textureFile) => {
+    const textureUrl = textureFolder + textureFile;
+    textureLoader.load(textureUrl, (texture) => {
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      texture.colorSpace = THREE.SRGBColorSpace;
+      textureCache.set(textureUrl, texture);
+    });
+  });
+}
 
 
 //
@@ -156,7 +174,6 @@ const modifyObjects = {
     mesh.shadow.blurSamples = 15;
     mesh.shadow.radius = 1;
 
-    //console.log("")
     if (mesh.userData.name === "____lightsNorwid") {
       const params = { folder: mesh.name };
       gui.add(params, "intensity", 0, 50, 0.01).name("intensity" + mesh.name);
@@ -254,7 +271,6 @@ const modifyObjects = {
     modifyObjects.element(mesh, false, false);
   },
   Sculpture: (mesh) => {
-    //console.log("sculpture: ", mesh.userData.name, "control: ", control);
     if (mesh.userData.name === "dzbanDystopia") {
       control._gizmo.visible = params.gizmoVisible;
       control.setMode(params.transControlsMode);
@@ -283,6 +299,7 @@ const modifyObjects = {
     ileElementow();
   },
   Audio: (mesh) => {
+    mesh.scale.setScalar(0.1) 
 
     const sound = new THREE.PositionalAudio(listener);
     const audioLoader = new THREE.AudioLoader();
@@ -294,9 +311,22 @@ const modifyObjects = {
       sound.setRolloffFactor(mesh.userData.audioRolloffFactor);
       //sound.setMaxDistance(mesh.userData.audioMaxDistance);
       sound.setVolume(mesh.userData.audioVolume);
+      sound.setDirectionalCone(10, 23, 0.1)
+      //if(mesh.userData.audioDirectionalCone) sound.setDirectionalCone(mesh.userData.audioDirectionalCone)
+     
 
+      gui.add(sound.panner, "coneInnerAngle", 0, 500, 0.01).name("Inner")// + mesh.name);
+      gui.add(sound.panner, "coneOuterAngle", 0, 500, 0.01).name("Outer")
+      gui.add(sound.panner, "coneOuterGain", 0, 1, 0.01).name("Outer")
+      gui.add(mesh.rotation, "y", 0, 10, 0.01).name("Rotate")
+      // */
+      const helper = new PositionalAudioHelper(sound, 20);
+      sound.add(helper);
       mesh.add(sound);
       audioObjects.push(mesh);
+
+
+      console.log("audioObjects", sound.panner.coneInnerAngle);
     });
   },
 };
@@ -323,7 +353,7 @@ let tempSegment = new THREE.Line3();
 const raycaster = new THREE.Raycaster();
 const raycasterVisitor = new THREE.Raycaster();
 let visitorLocation0 = "xxx";
-let bgTexture0;
+let bgTexture0 = "textures/xxxbg_puent.jpg";
 const lightsToTurn = [];
 const audioObjects = [];
 const visitorEnter = new THREE.Vector3();
@@ -364,38 +394,10 @@ const joyIntervalCheck = () => {
     rgtPressed = false;
     fwdPressed = false;
     bkdPressed = false;
-    switch (joyEvt) {
-      case "W":
-        lftPressed = true;
-        break;
-      case "E":
-        rgtPressed = true;
-        break;
-      case "N":
-        fwdPressed = true;
-        break;
-      case "S":
-        bkdPressed = true;
-        break;
-      case "NE":
-        fwdPressed = true;
-        rgtPressed = true;
-        break;
-      case "SW":
-        bkdPressed = true;
-        lftPressed = true;
-        break;
-      case "SE":
-        bkdPressed = true;
-        rgtPressed = true;
-        break;
-      case "NW":
-        fwdPressed = true;
-        lftPressed = true;
-        break;
-      default:
-        break;
-    }
+    lftPressed = joyEvt.includes('W') || joyEvt.includes('NW') || joyEvt.includes('SW');
+    rgtPressed = joyEvt.includes('E') || joyEvt.includes('NE') || joyEvt.includes('SE');
+    fwdPressed = joyEvt.includes('N') || joyEvt.includes('NE') || joyEvt.includes('NW');
+    bkdPressed = joyEvt.includes('S') || joyEvt.includes('SE') || joyEvt.includes('SW');
   }, 50);
 };
 joyIntervalCheck();
@@ -405,19 +407,19 @@ const waitForMe = async (millisec) => {
   await new Promise(resolve => setTimeout(resolve, millisec, ''));
 };
 
+preloadTextures();
 init();
 animate();
 
 
 
 function init() {
+
   // przeniesione z loadera100%
   let sidebar = document.querySelector(".sidebar");
   sidebar.style.display = "block";
   sidebar.style.animation = "fadeIn 2s forwards";
   //
-
-  // joystick controls
 
 
   // renderer setup
@@ -585,11 +587,7 @@ function init() {
   //
   scene.add(environment);
 
-
-
-
-
-
+  //
 
   document
     .querySelector("#play-icon")
@@ -598,10 +596,19 @@ function init() {
       const floorChecker = new VisitorLocationChecker(scene);
       const audioHandler = new AudioHandler();
       const el = floorChecker.checkVisitorLocation(visitor);
-      // console.log(" floor checked", el.userData.audioToPlay, "audio:", scene.getObjectByName(el.userData.audioToPlay));
-      //if (el.userData.audioToPlay) {
       audioHandler.handleAudio(scene.getObjectByName(el.userData.audioToPlay));
-      //}
+
+    }); //html body img#audio-on
+
+  document
+    .querySelector("img#audio-on")
+    .addEventListener("pointerdown", (evt) => {
+      evt.preventDefault();
+      const floorChecker = new VisitorLocationChecker(scene);
+      const audioHandler = new AudioHandler();
+      const el = floorChecker.checkVisitorLocation(visitor);
+      audioHandler.handleAudio(scene.getObjectByName(el.userData.audioToPlay));
+
     });
 
   // optimized raycaster after click
@@ -625,7 +632,6 @@ function init() {
     // checking if clicked obj needs description
     const image = intersects.find(({ object }) => object.userData.opis);
 
-    console.log("intersects", intersects, "image", image, "intersects.indexOf(image)", intersects.indexOf(image), "intersects.indexOf(Wall)", intersects.indexOf(Wall));
 
     if (image && intersects.indexOf(image) < intersects.indexOf(Wall)) {
       if (!document.getElementById("viewer")) {
@@ -695,32 +701,7 @@ function init() {
       }
     }
   };
-  //
-  //notes
-  /*
-  document.querySelectorAll('a').forEach(link => {
-    link.addEventListener('click', (e) => {
-    
-      // Get target div ID
-      var divID = e.target.getAttribute('data-divid');
-  
-      document.querySelectorAll('div').forEach(div => {
-        
-        if (div.id === divID) {
-          // Adds 'open' class if it doesn't have it, removes if it does
-          div.classList.toggle('open');
-        } else {
-          // Makes sure other divs are hidden
-          div.classList.remove('open');
-        }
-        
-      });
-      
-      // Prevents the default action of the link
-      e.preventDefault();
-    });
-  });
-  */
+
 
   // sidebar buttons events
   function handleSBbuttonsClick(divID) {
@@ -749,7 +730,6 @@ function init() {
   // info
   document.querySelector("#info-icon").addEventListener("pointerdown", (e) => {
     e.preventDefault();
-    console.log("info", e.target.getAttribute("data-divid"));
     handleSBbuttonsClick(e.target.getAttribute("data-divid"));
   });
 
@@ -862,9 +842,11 @@ function init() {
       control.reset();
     }
     if (keysPressed["t"]) {
-      console.log(scene, visitor)
-      floorChecker.checkVisitorLocation(visitor);
-      // is for testing
+      // t is for testing
+      const sound = scene.getObjectByName("trembitaAudio");
+      sound.children[0].update();
+      console.log("sound", sound, "positionalaudiohelper", sound.children[0]);
+
     }
     clearInterval(intervalId);
   });
@@ -949,7 +931,6 @@ async function loadColliderEnvironment(modelPath) {
   environment.traverse((c) => {
     if (c.isLight || c.isMesh) {
       modifyObjects[c.userData.type](c);
-      //console.log("ligthtsto turn", lightsToTurn);
     }
   });
 
@@ -1075,7 +1056,6 @@ async function updateVisitor(delta) {
         capsulePoint
       );
       if (distance < capsuleInfo.radius) {
-        //console.log("distance", distance);
         const depth = capsuleInfo.radius - distance;
         const direction = capsulePoint.sub(triPoint).normalize();
 
@@ -1119,8 +1099,7 @@ async function updateVisitor(delta) {
   camera.position.add(visitor.position);
 
   sceneMap.getObjectByName("circleMap").position.copy(visitor.position);
-  //sceneMap.getObjectByName("circleMap").position.y = - 2;
-  // animateMap();
+
 
   // if the visitor has fallen too far below the level reset their position to the start
   if (visitor.position.y < -10) {
@@ -1143,10 +1122,8 @@ async function updateVisitor(delta) {
       params.canSeeGizmo = (lightsToTurnValue === "lightsDystopia") ? true : false;
 
       if (intersectedFloor.userData.audioToPlay) {
-        console.log("audioObject: ", audioObjects, "intersectedFloor.userData.audioToPlay: ", intersectedFloor.userData.audioToPlay);
         ///
         for (const el of audioObjects) {
-          console.log("el.children[0].name: ", el.children[0].name, "intersectedFloor.userData.audioToPlay: ", intersectedFloor.userData.audioToPlay);
 
           if (el.children[0].name === intersectedFloor.userData.audioToPlay) {
             audioHandler.handleAudio(el.children[0]);
@@ -1170,31 +1147,36 @@ async function updateVisitor(delta) {
           if (intersectVisitorUserData.bgTexture !== bgTexture0) {
             intersectVisitorUserData.bgTexture = intersectVisitorUserData.bgTexture || "textures/bg_color.jpg";
             intersectVisitorUserData.bgInt = intersectVisitorUserData.bgInt || 1;
-        
+
             if (intersectVisitorUserData.bgTexture !== bgTexture0) {
-                bgTexture0 = intersectVisitorUserData.bgTexture;
-        
-                if (textureCache.has(intersectVisitorUserData.bgTexture)) {
-                    setSceneBackground(scene, textureCache.get(intersectVisitorUserData.bgTexture), intersectVisitorUserData.bgBlur, intersectVisitorUserData.bgInt);
-                } else {
-                    const loader = new THREE.TextureLoader();
-                    loader.load(intersectVisitorUserData.bgTexture, (texture) => {
-                        texture.mapping = THREE.EquirectangularReflectionMapping;
-                        texture.colorSpace = THREE.SRGBColorSpace;
-                        textureCache.set(intersectVisitorUserData.bgTexture, texture);
-                        setSceneBackground(scene, texture, intersectVisitorUserData.bgBlur, intersectVisitorUserData.bgInt);
-                    });
-                }
+              bgTexture0 = intersectVisitorUserData.bgTexture;
+
+              if (textureCache.has(intersectVisitorUserData.bgTexture)) {
+                setSceneBackgroundWithTransition(scene, textureCache.get(intersectVisitorUserData.bgTexture), intersectVisitorUserData.bgBlur, intersectVisitorUserData.bgInt);
+              } else {
+                // Use the preloaded texture instead of loading it again
+                setSceneBackgroundWithTransition(scene, textureCache.get("textures/bg_color.jpg"), intersectVisitorUserData.bgBlur, intersectVisitorUserData.bgInt);
+              }
             }
-        }
-        
-        function setSceneBackground(scene, texture, blur, int) {
-            scene.background = texture;
-            scene.backgroundBlurriness = blur;
-            bgDissolve(scene.backgroundIntensity, 0).then(() => {
-                bgDissolve(0, int);
-            });
-        }
+          }
+
+          function setSceneBackgroundWithTransition(scene, newTexture, blurIntensity) {
+            const transitionDuration = 2000; // in milliseconds
+
+            scene.background = newTexture;
+            scene.backgroundIntensity = 0;
+
+            new TWEEN.Tween(scene)
+              .to({ backgroundIntensity: 1 }, transitionDuration)
+              .onUpdate(() => {
+                scene.backgroundBlurriness = blurIntensity;
+              })
+              .onComplete(() => {
+                scene.backgroundIntensity = 1;
+              })
+              .start();
+          }
+
 
 
 
@@ -1233,19 +1215,6 @@ async function lightOn(el, intensityTo) {
   }
 }
 
-// transmission of backgrounds, atually only fade them in/out
-async function bgDissolve(intensityFrom, intensityTo) {
-  const wspo = (intensityFrom > intensityTo) ? 0.01 : -0.01;
-  const iTo = Math.abs(intensityFrom - intensityTo);
-  const duration = 0.3 / iTo;
-
-  for (let i = 0; i <= iTo; i = i + Math.abs(wspo)) {
-    setTimeout(() => {
-      intensityFrom -= wspo;
-      scene.backgroundIntensity = intensityFrom;
-    }, i * duration * 1000);
-  }
-}
 
 //
 
@@ -1292,3 +1261,45 @@ function animate() {
   controls.update();
 }
 
+/*
+// transmission of backgrounds, atually only fade them in/out
+async function bgDissolve(intensityFrom, intensityTo) {
+  const wspo = (intensityFrom > intensityTo) ? 0.01 : -0.01;
+  const iTo = Math.abs(intensityFrom - intensityTo);
+  const duration = 0.3 / iTo;
+
+  for (let i = 0; i <= iTo; i = i + Math.abs(wspo)) {
+    setTimeout(() => {
+      intensityFrom -= wspo;
+      scene.backgroundIntensity = intensityFrom;
+    }, i * duration * 1000);
+  }
+}
+
+*/
+//
+//notes
+/*
+document.querySelectorAll('a').forEach(link => {
+  link.addEventListener('click', (e) => {
+  
+    // Get target div ID
+    var divID = e.target.getAttribute('data-divid');
+ 
+    document.querySelectorAll('div').forEach(div => {
+      
+      if (div.id === divID) {
+        // Adds 'open' class if it doesn't have it, removes if it does
+        div.classList.toggle('open');
+      } else {
+        // Makes sure other divs are hidden
+        div.classList.remove('open');
+      }
+      
+    });
+    
+    // Prevents the default action of the link
+    e.preventDefault();
+  });
+});
+*/
