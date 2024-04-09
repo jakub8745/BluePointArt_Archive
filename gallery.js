@@ -49,6 +49,8 @@ const params = {
   canSeeGizmo: false,
   transControlsMode: "rotate",
   archiveModelPath: "../models/galeriaGLTF/archive_vincenz.glb",
+  heightOffset: new THREE.Vector3(0, 0.25, 0),// offset the camera from the visitor
+
 };
 
 class VisitorLocationChecker {
@@ -67,6 +69,8 @@ class VisitorLocationChecker {
 
 class AudioHandler {
   handleAudio(audioToTurn) {
+
+    console.log("audioToTurn", audioToTurn)
 
     const playIconImg = document.querySelector("#play-icon img");
     const audioOn = document.querySelector("#audio-on");
@@ -299,7 +303,8 @@ const modifyObjects = {
     ileElementow();
   },
   Audio: (mesh) => {
-    mesh.scale.setScalar(0.1) 
+    mesh.scale.setScalar(0.1)
+    mesh.rotation.set(3.77, 1.89, 2.38);
 
     const sound = new THREE.PositionalAudio(listener);
     const audioLoader = new THREE.AudioLoader();
@@ -307,13 +312,15 @@ const modifyObjects = {
       sound.name = mesh.userData.name;
       sound.setBuffer(buffer);
       sound.setLoop(true);
+      sound.autoplay = true;
       sound.setRefDistance(mesh.userData.audioRefDistance);
       sound.setRolloffFactor(mesh.userData.audioRolloffFactor);
       //sound.setMaxDistance(mesh.userData.audioMaxDistance);
       sound.setVolume(mesh.userData.audioVolume);
       sound.setDirectionalCone(10, 23, 0.1)
+
       //if(mesh.userData.audioDirectionalCone) sound.setDirectionalCone(mesh.userData.audioDirectionalCone)
-     
+
 
       gui.add(sound.panner, "coneInnerAngle", 0, 500, 0.01).name("Inner")// + mesh.name);refDistance
       gui.add(sound.panner, "coneOuterAngle", 0, 500, 0.01).name("Outer")
@@ -321,15 +328,21 @@ const modifyObjects = {
       gui.add(sound.panner, "refDistance", 0, 10, 0.01).name("refDistance")
       gui.add(sound.panner, "rolloffFactor", 0, 100, 0.01).name("rolloffFactor")
 
-      gui.add(mesh.rotation, "y", 0, 10, 0.01).name("Rotate")
+      gui.add(mesh.rotation, "y", 0, 10, 0.01).name("RotateY")
+      gui.add(mesh.rotation, "x", 0, 10, 0.01).name("RotateX")
+      gui.add(mesh.rotation, "z", 0, 10, 0.01).name("RotateZ")
+
       // */
       const helper = new PositionalAudioHelper(sound, 20);
       sound.add(helper);
       mesh.add(sound);
+
+      params.sound = sound;
+      params.mesh = mesh;
       audioObjects.push(mesh);
 
 
-      console.log("audioObjects", sound.panner.coneInnerAngle);
+      console.log("audioObjects", mesh.name, sound, params.sound, params.mesh);
     });
   },
 };
@@ -355,7 +368,7 @@ let tempMat = new THREE.Matrix4();
 let tempSegment = new THREE.Line3();
 const raycaster = new THREE.Raycaster();
 const raycasterVisitor = new THREE.Raycaster();
-let visitorLocation0 = "xxx";
+let visitorLocation0 = "FloorOut";
 let bgTexture0 = "textures/xxxbg_puent.jpg";
 const lightsToTurn = [];
 const audioObjects = [];
@@ -617,92 +630,78 @@ function init() {
   // optimized raycaster after click
   const onPointerDown = (event) => {
     const { clientX, clientY } = event;
-    pointer.x = (clientX / window.innerWidth) * 2 - 1;
-    pointer.y = -(clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(pointer.set((clientX / window.innerWidth) * 2 - 1, -(clientY / window.innerHeight) * 2 + 1, 0), camera);
+    intersects = raycaster.intersectObjects(scene.children, true);
 
-    raycaster.setFromCamera(pointer, camera);
-    raycaster.firstHitOnly = true;
-    intersects = raycaster.intersectObjects(scene.children);
+    const image = intersects.find(({ object }) => object.userData.opis);
+    const result = intersects.find(({ object }) => object.userData.type === "Video");
+    const floorCheck = intersects.find(({ object }) => object.userData.type === "visitorLocation");
 
-    Wall = intersects.find(({ object }) => object.userData.name === "Wall");
+    if (image && intersects.indexOf(image) < intersects.indexOf(floorCheck)) {
+      const viewer = document.getElementById("viewer");
+      if (!viewer) {
+        createViewer(image, scene);
+      } else {
+        fadeOutEl(viewer);
+        setTimeout(() => {
+          createViewer(image, scene);
+        }, 200);
+      }
+    } else {
+      const viewer = document.getElementById("viewer");
+      if (viewer) {
+        fadeOutEl(viewer);
+      }
+    }
 
-    result = intersects.find(({ object }) => object.userData.type === "Video");
     if (result) {
-      video = document.getElementById(result.object.userData.elementID);
+      const video = document.getElementById(result.object.userData.elementID);
       video.paused ? video.play() : video.pause();
     }
 
-    // checking if clicked obj needs description
-    const image = intersects.find(({ object }) => object.userData.opis);
-
-
-    if (image && intersects.indexOf(image) < intersects.indexOf(Wall)) {
-      if (!document.getElementById("viewer")) {
-        const viewer = document.createElement("div");
-        viewer.className = "viewer";
-        viewer.id = "viewer";
-        viewer.style.animation = "fadeInViewer 2s forwards";
-        viewer.innerHTML = "</br>";
-        const viewImage = document.createElement("img");
-        viewImage.id = "image-view";
-        viewImage.src = image.object.userData.Map;
-        viewer.appendChild(viewImage);
-
-        // text-on-screen
-        if (image.object.userData.opis) {
-          const textOnscreen = document.createElement("div");
-          textOnscreen.id = "text-on-screen";
-          viewer.appendChild(textOnscreen);
-          textOnscreen.innerText = `${image.object.userData.opis}`;
-        }
-        document.body.appendChild(viewer);
-      }
-    } else {
-      if (document.getElementById("viewer")) {
-        const el = document.getElementById("viewer");
-        fadeOutEl(el);
+    if (floorCheck) {
+      const { distance, point } = floorCheck;
+      const index = intersects.indexOf(floorCheck);
+      if (index <= 1) {
+        tweenVisitor(visitor, point, distance);
       }
     }
+  };
 
-    // is floor clicked?
-    result = intersects.find(
-      ({ object }) => object.userData.type === "visitorLocation"
-    );
+  const createViewer = (image, scene) => {
+    const viewer = document.createElement("div");
+    viewer.className = "viewer";
+    viewer.id = "viewer";
+    viewer.style.animation = "fadeInViewer 2s forwards";
+    viewer.innerHTML = "</br>";
+    const viewImage = document.createElement("img");
+    viewImage.id = "image-view";
+    viewImage.src = image.object.userData.Map;
+    viewer.appendChild(viewImage);
+    if (image.object.userData.opis) {
+      const textOnscreen = document.createElement("div");
+      textOnscreen.id = "text-on-screen";
+      textOnscreen.innerText = image.object.userData.opis;
+      viewer.appendChild(textOnscreen);
+    }
+    document.body.appendChild(viewer);
+  };
 
-    if (result) {
-      const index = intersects.indexOf(result);
+  const tweenVisitor = (visitor, point, distance) => {
+    const tween = new TWEEN.Tween(visitor.position)
+      .to(point.setY(point.y + 0.01), (distance * 1000) / params.visitorSpeed)
+      .onUpdate(() => {
+        visitor.updateMatrixWorld();
+      })
+      .start();
 
-      // if clicked floor is on 1st plan
-      if (index <= 1) {
-        const { distance, point } = result;
-        clickedPoint.copy(point);
-        visitorPos.copy(visitor.position);
-        clickedPoint.y = visitor.position.y;
-
-        // Tween
-        tween = new TWEEN.Tween(visitorPos)
-          .to(clickedPoint, (distance * 1000) / params.visitorSpeed)
-          .onUpdate(() => {
-            visitor.position.copy(visitorPos);
-            visitor.updateMatrixWorld();
-
-            // because of event change on controls
-            //renderer.render(scene, camera);
-          });
-        tween.start(); // Start the tween immediately
-
-        let innerRad = new THREE.Vector3(1, 1, 1);
-        const zero = new THREE.Vector3(0, 0, 0);
+    const tweenCircle = new TWEEN.Tween(circle.scale)
+      .to(new THREE.Vector3(0, 0, 0), 3000 / params.visitorSpeed)
+      .onUpdate(() => {
         circle.position.copy(point);
         circle.position.y += 0.01;
-        const tweenCircle = new TWEEN.Tween(innerRad);
-        tweenCircle.to(zero, 3000 / params.visitorSpeed);
-        tweenCircle.onUpdate(() => {
-          circle.scale.copy(innerRad);
-        });
-        tweenCircle.start();
-      }
-    }
+      })
+      .start();
   };
 
 
@@ -975,7 +974,7 @@ async function loadColliderEnvironment(modelPath) {
 }
 
 // reset visitor
-function reset() {
+async function reset() {
   bgTexture0 = "/textures/xxxbg_puent.jpg";
   visitorVelocity.set(0, 0, 0);
 
@@ -990,7 +989,19 @@ function reset() {
     circleMap.position.copy(target);
     circleMap.position.y = 10;
   }
+  // Wait until params.sound and params.mesh are defined
+  while (!params.sound || !params.mesh) {
+    // This loop will keep running until both params.sound and params.mesh are defined
+    // Be cautious with this approach to avoid performance issues
 
+    // You can add a delay here to reduce the impact on performance
+    await new Promise(resolve => setTimeout(resolve, 10000));
+  }
+
+  console.log("params.sound", params.sound, params.mesh);
+  const audioHandler = new AudioHandler();
+
+  audioHandler.handleAudio(params.sound);
 
 }
 
@@ -1097,9 +1108,14 @@ async function updateVisitor(delta) {
   } else {
     visitorVelocity.set(0, 0, 0);
   }
+
+
+  // offset the camera - this is a bit hacky
+  tempVector.copy(visitor.position).add(params.heightOffset);
+
   camera.position.sub(controls.target);
-  controls.target.copy(visitor.position);
-  camera.position.add(visitor.position);
+  controls.target.copy(tempVector);
+  camera.position.add(tempVector);
 
   sceneMap.getObjectByName("circleMap").position.copy(visitor.position);
 
