@@ -14,13 +14,13 @@
 //
 
 import * as THREE from "three";
-import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
+import { modifyObjects } from 'three/addons/libs/modifyObjects.js';
+
 import Stats from "three/addons/libs/stats.module.js";
 import { GUI } from "three/addons/libs/lil-gui.module.min.js";
 import {
@@ -34,7 +34,6 @@ import { JoyStick } from "three/addons/controls/joy.js";
 import * as TWEEN from "three/addons/tween/tween.esm.js";
 
 const loader = new THREE.TextureLoader();
-import { PositionalAudioHelper } from 'three/addons/helpers/PositionalAudioHelper.js';
 
 const params = {
   firstPerson: true, //false, //true,
@@ -139,206 +138,7 @@ function preloadTextures() {
 
 
 //
-const modifyObjects = {
-  SpotLight: (mesh) => {
-    mesh.matrixWorldAutoUpdate = true;
-    mesh.userData.intensity = mesh.intensity;
 
-    const targetObject = new THREE.Object3D();
-    mesh.target = targetObject;
-    const target = environment.getObjectByName(mesh.userData.whichTarget);
-    if (target) {
-      target.getWorldPosition(mesh.target.position);
-      mesh.castShadow = true;
-            mesh.shadow.mapSize.set(1024, 1024);
-            mesh.shadow.camera.near = 0.5;
-            mesh.shadow.camera.far = 500;
-            mesh.shadow.bias = -0.005;
-            //mesh.shadow.blurSamples = 15;
-            //mesh.shadow.radius = 1;
-       environment.attach(targetObject);
-
-      if (mesh.userData.name === "mmmmlightsDystopia") {
-        gui.add(mesh, "visible").name("visible" + mesh.name);
-        gui.add(mesh, "intensity", 0, 50, 0.01).name("intensity" + mesh.name);
-        gui.add(mesh, "distance", 0, 500, 0.1).name("distance" + mesh.name);
-        gui.add(mesh, "decay", 0, 10, 0.01).name("decay" + mesh.name);
-        gui.add(mesh.position, "y", -10, 50, 0.01).name("y" + mesh.name);
-      }
-    }
-    lightsToTurn.push(mesh);
-  },
-  PointLight: (mesh) => {
-
-    mesh.visible = true;
-    mesh.userData.intensity = mesh.intensity;
-    mesh.castShadow = true;
-    mesh.shadow.mapSize.set(1024, 1024);
-    mesh.shadow.camera.near = 0.5;
-    mesh.shadow.camera.far = 500;
-    mesh.shadow.bias = -0.005;
-    //mesh.shadow.blurSamples = 15;
-    //mesh.shadow.radius = 1;
-  
-    if (mesh.userData.name === "____lightsNorwid") {
-      const params = { folder: mesh.name };
-      gui.add(params, "intensity", 0, 50, 0.01).name("intensity" + mesh.name);
-      gui.add(params, "distance", 0, 500, 0.1).name("distance" + mesh.name);
-      gui.add(params, "decay", 0, 10, 0.01).name("decay" + mesh.name);
-      gui.add(mesh.position, "y", -10, 50, 0.01).name("y" + mesh.name);
-      gui.add(mesh.position, "x", -50, 50, 0.01).name("x" + mesh.name);
-      gui.add(mesh.position, "z", -50, 50, 0.01).name("z" + mesh.name);
-      gui.add(mesh, "visible").name("visible");
-    }
-    lightsToTurn.push(mesh);
-  },
-  AmbientLight: () => {
-    console.log("ambientLight");
-  },
-  SpotLightTarget: (mesh) => {
-    mesh.visible = false;
-    //
-    ileElementow();
-  },
-  ShaderBox: (mesh) => {
-    //
-    ileElementow();
-  },
-  VisitorEnter: (mesh) => {
-    //mesh.getWorldPosition(visitorEnter);
-    mesh.visible = false;
-    mesh.removeFromParent();
-    //
-    ileElementow();
-  },
-  Text: (mesh) => {
-    new FontLoader().load("txt/Lato_Regular.json", function (font) {
-      const geometry = new TextGeometry(mesh.userData.name, {
-        font: font,
-        size: mesh.scale.y * 0.7, //mesh.userData.size,
-        height: mesh.userData.size / 4,
-        curveSegments: 6,
-        bevelEnabled: false,
-        bevelThickness: 1,
-        bevelSize: 0.5,
-        bevelOffset: 0,
-        bevelSegments: 5,
-      });
-      const material = new THREE.MeshLambertMaterial({
-        color: mesh.material.color,
-      });
-      const object = new THREE.Mesh(geometry, material);
-      object.castShadow = true;
-      object.visible = true;
-      object.position.copy(mesh.position);
-      object.rotation.copy(mesh.rotation);
-      scene.add(object);
-      mesh.removeFromParent();
-    });
-    //
-    ileElementow();
-  },
-  visitorLocation: (mesh) => {
-    const { Map, wS, wT } = mesh.userData;
-    const material = new THREE.MeshLambertMaterial({ map: loader.load(Map) });
-    material.map.wrapS = THREE.RepeatWrapping;
-    material.map.wrapT = THREE.RepeatWrapping;
-    material.map.anisotropy = anisotropy;
-    material.map.repeat.set(wS, wT);
-    material.minFilter = THREE.LinearMipMapLinearFilter;
-    material.magFilter = THREE.LinearFilter;
-    material.map.rotate = Math.PI / 2;
-    mesh.material = material;
-    mesh.receiveShadow = true;
-    mesh.castShadow = false;
-    mesh.material.needsUpdate = true;
-    ileElementow();
-  },
-  element: (mesh, receiveShadow, castShadow) => {
-    const { userData, material } = mesh;
-    const { Map, normalhMap, RoughMap, name } = userData;
-    if (Map) material.map = loader.load(Map);
-    if (normalhMap) material.normalMap = loader.load(normalhMap);
-    if (RoughMap) material.roughnessMap = loader.load(RoughMap);
-    if (name === "Wall") { receiveShadow = true; castShadow = true; }
-    mesh.receiveShadow = receiveShadow;
-    mesh.castShadow = castShadow;
-    Object.assign(material, {
-      mapping: THREE.UVMapping,
-      colorSpace: THREE.SRGBColorSpace,
-      minFilter: THREE.LinearMipmapNearestFilter,
-      magFilter: THREE.LinearFilter,
-      needsUpdate: true,
-    });
-    ileElementow();
-  },
-  Image: (mesh) => {
-    mesh.material = new THREE.MeshLambertMaterial({ transparent: true });
-    modifyObjects.element(mesh, false, false);
-  },
-  Sculpture: (mesh) => {
-    if (mesh.userData.name === "dzbanDystopia") {
-      control._gizmo.visible = params.gizmoVisible;
-      control.setMode(params.transControlsMode);
-      control.attach(mesh);
-      scene.add(control);
-
-    }
-
-    modifyObjects.element(mesh, true, true);
-  },
-  Video: (mesh) => {
-    const video = document.getElementById(mesh.userData.elementID);
-
-    let texture = new THREE.VideoTexture(video);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    mesh.material = new THREE.MeshBasicMaterial({
-      map: texture,
-      side: THREE.DoubleSide,
-      color: 0xffffff,
-    });
-    mesh.receiveShadow = false;
-    mesh.castShadow = false;
-    mesh.material.needsUpdate = true;
-
-    //
-    ileElementow();
-  },
-  Audio: (mesh) => {
-    mesh.scale.setScalar(0.1)
-
-    const sound = new THREE.PositionalAudio(listener);
-    const audioLoader = new THREE.AudioLoader();
-    audioLoader.load(mesh.userData.audio, (buffer) => {
-      sound.name = mesh.userData.name;
-      sound.setBuffer(buffer);
-      sound.setLoop(true);
-      sound.setRefDistance(mesh.userData.audioRefDistance);
-      sound.setRolloffFactor(mesh.userData.audioRolloffFactor);
-      //sound.setMaxDistance(mesh.userData.audioMaxDistance);
-      sound.setVolume(mesh.userData.audioVolume);
-      sound.setDirectionalCone(10, 23, 0.1)
-      //if(mesh.userData.audioDirectionalCone) sound.setDirectionalCone(mesh.userData.audioDirectionalCone)
-
-
-      gui.add(sound.panner, "coneInnerAngle", 0, 500, 0.01).name("Inner")// + mesh.name);refDistance
-      gui.add(sound.panner, "coneOuterAngle", 0, 500, 0.01).name("Outer")
-      gui.add(sound.panner, "coneOuterGain", 0, 1, 0.01).name("Outer")
-      gui.add(sound.panner, "refDistance", 0, 10, 0.01).name("refDistance")
-      gui.add(sound.panner, "rolloffFactor", 0, 100, 0.01).name("rolloffFactor")
-
-      gui.add(mesh.rotation, "y", 0, 10, 0.01).name("Rotate")
-      // */
-      const helper = new PositionalAudioHelper(sound, 20);
-      sound.add(helper);
-      mesh.add(sound);
-      audioObjects.push(mesh);
-
-
-      console.log("audioObjects", sound.panner.coneInnerAngle);
-    });
-  },
-};
 
 let renderer, camera, scene, clock, tween, stats, anisotropy;
 let rendererMap, sceneMap, cameraMap;
@@ -871,7 +671,6 @@ function init() {
   });
 }
 
-
 // load environment
 async function loadColliderEnvironment(modelPath) {
   const gltfLoader = new GLTFLoader();
@@ -890,6 +689,19 @@ async function loadColliderEnvironment(modelPath) {
   gltfScene.updateMatrixWorld(true);
 
   const toMerge = {};
+  const deps = {
+    params,
+    control,
+    environment,
+    gui,
+    lightsToTurn,
+    scene,
+    loader,
+    listener,
+    audioObjects,
+    sphereSize: params.sphereSize,
+    visitor,
+  };
 
   gltfScene.traverse((c) => {
     if (c.isMesh || c.isLight) {
@@ -941,7 +753,8 @@ async function loadColliderEnvironment(modelPath) {
 
   environment.traverse((c) => {
     if (c.isLight || c.isMesh) {
-      modifyObjects[c.userData.type](c);
+      modifyObjects[c.userData.type]?.(c, deps);
+      ileElementow()
     }
   });
 
