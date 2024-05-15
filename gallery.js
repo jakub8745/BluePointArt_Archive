@@ -1,15 +1,3 @@
-//todo:
-// dźwięk 
-// * poprawna tekstura na oknie dystopii
-// * panel boczny z mapą i przyciskami
-//
-// * rozjaśnić --> identity --> dystopia
-// * opisy Wystawę
-// * DODAĆ DZWIEK DO DYSTOPII --> dźwięk dystopii tylko kiedy visitor jest w dystopi
-// * dodatkowy kontrol dla garnka
-
-//wyczyścić kod z niepotrzebnych bibliote
-// [ przenikanie się teł]
 
 //
 
@@ -51,95 +39,15 @@ const params = {
   archiveModelPath: "../models/galeriaGLTF/archive_vincenz.glb",
 };
 
-class VisitorLocationChecker {
-  constructor(scene) {
-    this.scene = scene;
-    this.raycaster = new THREE.Raycaster();
-    this.downVector = new THREE.Vector3(0, -1, 0);
-  }
-  checkVisitorLocation(visitor) {
-    this.raycaster.firstHitOnly = true;
-    this.raycaster.set(visitor.position, this.downVector);
-    const intersectedObjects = this.raycaster.intersectObjects(this.scene.children, true).find(({ object }) => object.userData.type === "visitorLocation")?.object;
-    return intersectedObjects
-  }
-}
-
-class AudioHandler {
-  handleAudio(audioToTurn) {
-
-    const playIconImg = document.querySelector("#play-icon img");
-    const audioOn = document.querySelector("#audio-on");
-
-    if (!audioToTurn || audioToTurn.type !== "Audio") {
-      for (const el of audioObjects) {
-        el.children[0].pause();
-        playIconImg.src = "/icons/audioMuted.png";
-        audioOn.style.display = "none";
-      }
-      return
-    }
-
-    if (audioToTurn.isPlaying) {
-      playIconImg.src = "/icons/audioMuted.png";
-      audioOn.style.display = "none";
-      audioToTurn.stop();
-    } else if (!audioToTurn.isPlaying) {
-      audioToTurn.play();
-      playIconImg.src = "/icons/audioButton.png";
-      audioOn.style.display = "block";
-    }
-  }
-}
-
-//
-const fadeOutEl = (el) => {
-  //el.style.opacity = 0;
-  // el.style.transition = "opacity 1.5s";
-  el.style.animation = "fadeOut 2s forwards";
-  setTimeout(() => {
-    el.remove();
-  }, 2000);
-};
 let ileE = 2,
   ileMesh = 0,
   ileRazy = 0;
-
-function ileElementow() {
-  ileE++;
-  if (ileRazy < 1 && ileE <= ileMesh) {
-    const progress = Math.round((ileE / ileMesh) * 100);
-    document.getElementById("loading").textContent = progress + "% loaded";
-    if (progress === 100) {
-      ileRazy++;
-      fadeOutEl(document.getElementById("overlay"));
-    }
-  }
-}
 
 //
 const listener = new THREE.AudioListener();
 // Preload textures from the "textures" folder
 const textureFolder = "textures/";
 const textureCache = new Map();
-
-function preloadTextures() {
-  const textureLoader = new THREE.TextureLoader();
-  const textureFiles = ['bg_puent.jpg', 'bg_color.jpg', 'dystopia/bgVermeerViewofDelft.jpg', 'bg_lockdowns.jpg', 'equMap_podMostem.jpg']; // Add all texture filenames here
-
-  textureFiles.forEach((textureFile) => {
-    const textureUrl = textureFolder + textureFile;
-    textureLoader.load(textureUrl, (texture) => {
-      texture.mapping = THREE.EquirectangularReflectionMapping;
-      texture.colorSpace = THREE.SRGBColorSpace;
-      textureCache.set(textureUrl, texture);
-    });
-  });
-}
-
-
-//
-
 
 let renderer, camera, scene, clock, tween, stats, anisotropy;
 let rendererMap, sceneMap, cameraMap;
@@ -167,12 +75,6 @@ let bgTexture0 = "textures/xxxbg_puent.jpg";
 const lightsToTurn = [];
 const audioObjects = [];
 const visitorEnter = new THREE.Vector3();
-
-//const newWindow = window.open();
-
-// for simulating change event in controls case it is needed to continue flow of animation when visitor isn't moving
-const changeEvent = { type: "change" };
-
 
 const pointer = new THREE.Vector2();
 const clickedPoint = new THREE.Vector3();
@@ -210,12 +112,15 @@ const joyIntervalCheck = () => {
     bkdPressed = joyEvt.includes('S') || joyEvt.includes('SE') || joyEvt.includes('SW');
   }, 50);
 };
-joyIntervalCheck();
 
 
+//
 const waitForMe = async (millisec) => {
   await new Promise(resolve => setTimeout(resolve, millisec, ''));
 };
+
+//
+joyIntervalCheck();
 
 preloadTextures();
 init();
@@ -246,18 +151,15 @@ function init() {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap; //;PCFSoftShadowMapVSMShadowMap
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = params.exposure;
+  renderer.gammaOutput = true;
+  renderer.gammaFactor = 2.2;
   document.body.appendChild(renderer.domElement);
   anisotropy = renderer.capabilities.getMaxAnisotropy();
-
-  const pmremGenerator = new THREE.PMREMGenerator(renderer);
-
 
 
   // scene setup
   scene = new THREE.Scene();
   scene.fog = new THREE.Fog(0x373739, 3.1, 10);
-
-  // gui.add(params, "firstPerson", false).name("firstPerson");
 
   // camera setup
   camera = new THREE.PerspectiveCamera(
@@ -324,14 +226,20 @@ function init() {
   stats = new Stats();
   document.body.appendChild(stats.dom);
 
+
+
   // ambientLight
   let ambientLight = new THREE.AmbientLight(0xffffff, 0);
   scene.add(ambientLight);
 
-  lightOn(ambientLight, 0.2);
+  lightOn(ambientLight, 0.3);
+
+
 
   // load ENVIRONMENT (scene contains only pure geometries with userData.paths to load TEXTURES later)
   loadColliderEnvironment(params.archiveModelPath); //, gtaoPass);
+
+
 
   // visitor
   visitor = new THREE.Mesh(
@@ -400,8 +308,9 @@ function init() {
   //
   scene.add(environment);
 
-  //
 
+
+  // events
   document
     .querySelector("#play-icon")
     .addEventListener("pointerdown", (evt) => {
@@ -1092,4 +1001,84 @@ function animate() {
   renderer.render(scene, camera);
 
   controls.update();
+}
+function ileElementow() {
+  ileE++;
+  if (ileRazy < 1 && ileE <= ileMesh) {
+    const progress = Math.round((ileE / ileMesh) * 100);
+    document.getElementById("loading").textContent = progress + "% loaded";
+    if (progress === 100) {
+      ileRazy++;
+      fadeOutEl(document.getElementById("overlay"));
+    }
+  }
+}
+
+//
+function preloadTextures() {
+  const textureLoader = new THREE.TextureLoader();
+  const textureFiles = ['bg_puent.jpg', 'bg_color.jpg', 'dystopia/bgVermeerViewofDelft.jpg', 'bg_lockdowns.jpg', 'equMap_podMostem.jpg']; // Add all texture filenames here
+
+  textureFiles.forEach((textureFile) => {
+    const textureUrl = textureFolder + textureFile;
+    textureLoader.load(textureUrl, (texture) => {
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      texture.colorSpace = THREE.SRGBColorSpace;
+      textureCache.set(textureUrl, texture);
+    });
+  });
+}
+
+//
+const fadeOutEl = (el) => {
+  //el.style.opacity = 0;
+  // el.style.transition = "opacity 1.5s";
+  el.style.animation = "fadeOut 2s forwards";
+  setTimeout(() => {
+    el.remove();
+  }, 2000);
+};
+
+//
+class AudioHandler {
+  handleAudio(audioToTurn) {
+
+    const playIconImg = document.querySelector("#play-icon img");
+    const audioOn = document.querySelector("#audio-on");
+
+    if (!audioToTurn || audioToTurn.type !== "Audio") {
+      for (const el of audioObjects) {
+        el.children[0].pause();
+        playIconImg.src = "/icons/audioMuted.png";
+        audioOn.style.display = "none";
+      }
+      return
+    }
+
+    if (audioToTurn.isPlaying) {
+      playIconImg.src = "/icons/audioMuted.png";
+      audioOn.style.display = "none";
+      audioToTurn.stop();
+    } else if (!audioToTurn.isPlaying) {
+      audioToTurn.play();
+      playIconImg.src = "/icons/audioButton.png";
+      audioOn.style.display = "block";
+    }
+  }
+}
+
+
+//
+class VisitorLocationChecker {
+  constructor(scene) {
+    this.scene = scene;
+    this.raycaster = new THREE.Raycaster();
+    this.downVector = new THREE.Vector3(0, -1, 0);
+  }
+  checkVisitorLocation(visitor) {
+    this.raycaster.firstHitOnly = true;
+    this.raycaster.set(visitor.position, this.downVector);
+    const intersectedObjects = this.raycaster.intersectObjects(this.scene.children, true).find(({ object }) => object.userData.type === "visitorLocation")?.object;
+    return intersectedObjects
+  }
 }

@@ -11,7 +11,7 @@ let i
 export const modifyObjects = {
     SpotLight: (mesh, deps) => {
         mesh.matrixWorldAutoUpdate = true;
-        mesh.userData.intensity = mesh.intensity;
+        // mesh.userData.intensity = 10//mesh.intensity;
 
         const targetObject = new THREE.Object3D();
         mesh.target = targetObject;
@@ -27,7 +27,10 @@ export const modifyObjects = {
             //mesh.shadow.radius = 1;
             deps.environment.attach(targetObject);
 
-            if (mesh.userData.name === "mmmmlightsDystopia") {
+            if (mesh.userData.name === "lightsArTour") {
+
+                let gui = deps.gui
+
                 gui.add(mesh, "visible").name("visible" + mesh.name);
                 gui.add(mesh, "intensity", 0, 50, 0.01).name("intensity" + mesh.name);
                 gui.add(mesh, "distance", 0, 500, 0.1).name("distance" + mesh.name);
@@ -49,15 +52,15 @@ export const modifyObjects = {
         //mesh.shadow.blurSamples = 15;
         //mesh.shadow.radius = 1;
 
-        if (mesh.userData.name === "____lightsNorwid") {
-            const params = { folder: mesh.name };
-            gui.add(params, "intensity", 0, 50, 0.01).name("intensity" + mesh.name);
-            gui.add(params, "distance", 0, 500, 0.1).name("distance" + mesh.name);
-            gui.add(params, "decay", 0, 10, 0.01).name("decay" + mesh.name);
+        if (mesh.userData.name === "lightsArTour") {
+            let gui = deps.gui
+
+
+            gui.add(mesh, "visible").name("visible" + mesh.name);
+            gui.add(mesh, "intensity", 0, 50, 0.01).name("intensity" + mesh.name);
+            gui.add(mesh, "distance", 0, 500, 0.1).name("distance" + mesh.name);
+            gui.add(mesh, "decay", 0, 10, 0.01).name("decay" + mesh.name);
             gui.add(mesh.position, "y", -10, 50, 0.01).name("y" + mesh.name);
-            gui.add(mesh.position, "x", -50, 50, 0.01).name("x" + mesh.name);
-            gui.add(mesh.position, "z", -50, 50, 0.01).name("z" + mesh.name);
-            gui.add(mesh, "visible").name("visible");
         }
         deps.lightsToTurn.push(mesh);
     },
@@ -108,7 +111,7 @@ export const modifyObjects = {
         //
     },
     visitorLocation: (mesh, deps) => {
-       
+
         const { Map, wS, wT } = mesh.userData;
         const material = new THREE.MeshLambertMaterial({ map: loader.load(Map), transparent: true });
         material.map.wrapS = THREE.RepeatWrapping;
@@ -117,6 +120,8 @@ export const modifyObjects = {
         material.map.repeat.set(wS, wT);
         material.minFilter = THREE.LinearMipMapLinearFilter;
         material.magFilter = THREE.LinearFilter;
+
+
         material.map.rotate = Math.PI / 2;
 
         if (mesh.userData.name === "FloorArTour") {
@@ -142,12 +147,28 @@ export const modifyObjects = {
         Object.assign(material, {
             mapping: THREE.UVMapping,
             colorSpace: THREE.SRGBColorSpace,
-            minFilter: THREE.LinearMipmapNearestFilter,
-            magFilter: THREE.LinearFilter,
+            minFilter: THREE.NearestFilter,//THREE.LinearMipmapNearestFilter,
+            magFilter: THREE.NearestFilter,//THREE.LinearFilter,
             needsUpdate: true,
             depthWrite: true,
 
         });
+        if (mesh.name === "Wall_ArTour") {
+            if (mesh.material && mesh.material.map) {
+                // Set texture wrapping to repeat (this might already be set, but it's safe to ensure it)
+                mesh.material.map.wrapS = THREE.RepeatWrapping;
+                mesh.material.map.wrapT = THREE.RepeatWrapping; // Also set for vertical if necessary
+
+                // Flip the texture horizontally
+                mesh.material.map.repeat.x = -1;
+
+                // Update the texture settings to apply changes
+                mesh.material.map.needsUpdate = true;
+            }
+        } else if (mesh.name === "photoScreen") {
+            mesh.geometry.thetaStart = Math.PI / 2
+            mesh.geometry.thetaLength = Math.PI
+        }
         //
     },
     Image: (mesh, deps) => {
