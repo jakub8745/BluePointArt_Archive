@@ -36,7 +36,7 @@ import * as TWEEN from "three/addons/tween/tween.esm.js";
 const loader = new THREE.TextureLoader();
 
 const params = {
-  firstPerson: true, //false, //true,
+  firstPerson: true,
   displayCollider: false, //true,
   visualizeDepth: 10,
   gravity: -30,
@@ -47,6 +47,7 @@ const params = {
   gizmoVisible: false,
   canSeeGizmo: false,
   transControlsMode: "rotate",
+  heightOffset: new THREE.Vector3(0, 0.1, 0),// offset the camera from the visitor
   archiveModelPath: "../models/galeriaGLTF/archive_vincenz.glb",
 };
 
@@ -124,7 +125,7 @@ const textureCache = new Map();
 
 function preloadTextures() {
   const textureLoader = new THREE.TextureLoader();
-  const textureFiles = ['bg_puent.jpg', 'bg_color.jpg', 'dystopia/bgVermeerViewofDelft.jpg', 'bg_lockdowns.jpg', 'equMap_podMostem.jpeg']; // Add all texture filenames here
+  const textureFiles = ['bg_puent.jpg', 'bg_color.jpg', 'dystopia/bgVermeerViewofDelft.jpg', 'bg_lockdowns.jpg', 'equMap_podMostem.jpg']; // Add all texture filenames here
 
   textureFiles.forEach((textureFile) => {
     const textureUrl = textureFolder + textureFile;
@@ -334,7 +335,7 @@ function init() {
 
   // visitor
   visitor = new THREE.Mesh(
-    new RoundedBoxGeometry(1.0, 2.0, 1.0, 10, 0.5),
+    new RoundedBoxGeometry(0.2, 0.2, 0.2, 10, 0.5),
     new THREE.MeshStandardMaterial()
   );
   //visitor.scale.setScalar(0.01);
@@ -347,7 +348,8 @@ function init() {
     ),
   };
   visitor.castShadow = false;
-  visitor.material.wireframe = false;
+  visitor.material.wireframe = true;
+  visitor.visible = false;
   scene.add(visitor);
 
   // visitor Map
@@ -918,9 +920,16 @@ async function updateVisitor(delta) {
   } else {
     visitorVelocity.set(0, 0, 0);
   }
+
+  // offset the camera - this is a bit hacky
+  tempVector.copy(visitor.position).add(params.heightOffset);
+
+
+
   camera.position.sub(controls.target);
-  controls.target.copy(visitor.position);
-  camera.position.add(visitor.position);
+  controls.target.copy(tempVector);
+  camera.position.add(tempVector);
+
 
   sceneMap.getObjectByName("circleMap").position.copy(visitor.position);
 
@@ -1084,46 +1093,3 @@ function animate() {
 
   controls.update();
 }
-
-/*
-// transmission of backgrounds, atually only fade them in/out
-async function bgDissolve(intensityFrom, intensityTo) {
-  const wspo = (intensityFrom > intensityTo) ? 0.01 : -0.01;
-  const iTo = Math.abs(intensityFrom - intensityTo);
-  const duration = 0.3 / iTo;
-
-  for (let i = 0; i <= iTo; i = i + Math.abs(wspo)) {
-    setTimeout(() => {
-      intensityFrom -= wspo;
-      scene.backgroundIntensity = intensityFrom;
-    }, i * duration * 1000);
-  }
-}
-
-*/
-//
-//notes
-/*
-document.querySelectorAll('a').forEach(link => {
-  link.addEventListener('click', (e) => {
-  
-    // Get target div ID
-    var divID = e.target.getAttribute('data-divid');
- 
-    document.querySelectorAll('div').forEach(div => {
-      
-      if (div.id === divID) {
-        // Adds 'open' class if it doesn't have it, removes if it does
-        div.classList.toggle('open');
-      } else {
-        // Makes sure other divs are hidden
-        div.classList.remove('open');
-      }
-      
-    });
-    
-    // Prevents the default action of the link
-    e.preventDefault();
-  });
-});
-*/

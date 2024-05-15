@@ -108,8 +108,9 @@ export const modifyObjects = {
         //
     },
     visitorLocation: (mesh, deps) => {
+       
         const { Map, wS, wT } = mesh.userData;
-        const material = new THREE.MeshLambertMaterial({ map: loader.load(Map) });
+        const material = new THREE.MeshLambertMaterial({ map: loader.load(Map), transparent: true });
         material.map.wrapS = THREE.RepeatWrapping;
         material.map.wrapT = THREE.RepeatWrapping;
         material.map.anisotropy = deps.anisotropy;
@@ -117,6 +118,12 @@ export const modifyObjects = {
         material.minFilter = THREE.LinearMipMapLinearFilter;
         material.magFilter = THREE.LinearFilter;
         material.map.rotate = Math.PI / 2;
+
+        if (mesh.userData.name === "FloorArTour") {
+            console.log("FloorArTour");
+            material.opacity = 1;
+        }
+
         mesh.material = material;
         mesh.receiveShadow = true;
         mesh.castShadow = false;
@@ -138,6 +145,8 @@ export const modifyObjects = {
             minFilter: THREE.LinearMipmapNearestFilter,
             magFilter: THREE.LinearFilter,
             needsUpdate: true,
+            depthWrite: true,
+
         });
         //
     },
