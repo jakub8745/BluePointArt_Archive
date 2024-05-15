@@ -125,7 +125,7 @@ const textureCache = new Map();
 
 function preloadTextures() {
   const textureLoader = new THREE.TextureLoader();
-  const textureFiles = ['bg_puent.jpg', 'bg_color.jpg', 'dystopia/bgVermeerViewofDelft.jpg', 'bg_lockdowns.jpg']; // Add all texture filenames here
+  const textureFiles = ['bg_puent.jpg', 'bg_color.jpg', 'dystopia/bgVermeerViewofDelft.jpg', 'bg_lockdowns.jpg', 'equMap_podMostem.jpeg']; // Add all texture filenames here
 
   textureFiles.forEach((textureFile) => {
     const textureUrl = textureFolder + textureFile;
@@ -150,10 +150,13 @@ const modifyObjects = {
     if (target) {
       target.getWorldPosition(mesh.target.position);
       mesh.castShadow = true;
-      mesh.shadow.mapSize.set(1024, 1024);
-      mesh.shadow.blurSamples = 15;
-      mesh.shadow.radius = 1;
-      environment.attach(targetObject);
+            mesh.shadow.mapSize.set(1024, 1024);
+            mesh.shadow.camera.near = 0.5;
+            mesh.shadow.camera.far = 500;
+            mesh.shadow.bias = -0.005;
+            //mesh.shadow.blurSamples = 15;
+            //mesh.shadow.radius = 1;
+       environment.attach(targetObject);
 
       if (mesh.userData.name === "mmmmlightsDystopia") {
         gui.add(mesh, "visible").name("visible" + mesh.name);
@@ -171,9 +174,12 @@ const modifyObjects = {
     mesh.userData.intensity = mesh.intensity;
     mesh.castShadow = true;
     mesh.shadow.mapSize.set(1024, 1024);
-    mesh.shadow.blurSamples = 15;
-    mesh.shadow.radius = 1;
-
+    mesh.shadow.camera.near = 0.5;
+    mesh.shadow.camera.far = 500;
+    mesh.shadow.bias = -0.005;
+    //mesh.shadow.blurSamples = 15;
+    //mesh.shadow.radius = 1;
+  
     if (mesh.userData.name === "____lightsNorwid") {
       const params = { folder: mesh.name };
       gui.add(params, "intensity", 0, 50, 0.01).name("intensity" + mesh.name);
@@ -299,7 +305,7 @@ const modifyObjects = {
     ileElementow();
   },
   Audio: (mesh) => {
-    mesh.scale.setScalar(0.1) 
+    mesh.scale.setScalar(0.1)
 
     const sound = new THREE.PositionalAudio(listener);
     const audioLoader = new THREE.AudioLoader();
@@ -313,7 +319,7 @@ const modifyObjects = {
       sound.setVolume(mesh.userData.audioVolume);
       sound.setDirectionalCone(10, 23, 0.1)
       //if(mesh.userData.audioDirectionalCone) sound.setDirectionalCone(mesh.userData.audioDirectionalCone)
-     
+
 
       gui.add(sound.panner, "coneInnerAngle", 0, 500, 0.01).name("Inner")// + mesh.name);refDistance
       gui.add(sound.panner, "coneOuterAngle", 0, 500, 0.01).name("Outer")
@@ -436,13 +442,15 @@ function init() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap; //VSMShadowMap;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap; //;PCFSoftShadowMapVSMShadowMap
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = params.exposure;
   document.body.appendChild(renderer.domElement);
   anisotropy = renderer.capabilities.getMaxAnisotropy();
 
   const pmremGenerator = new THREE.PMREMGenerator(renderer);
+
+
 
   // scene setup
   scene = new THREE.Scene();
