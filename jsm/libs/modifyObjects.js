@@ -153,6 +153,9 @@ export const modifyObjects = {
             depthWrite: true,
 
         });
+
+
+
         if (mesh.name === "Wall_ArTour") {
             if (mesh.material && mesh.material.map) {
                 // Set texture wrapping to repeat (this might already be set, but it's safe to ensure it)
@@ -169,9 +172,14 @@ export const modifyObjects = {
         //
     },
     photoScreen: (mesh, deps) => {
+        mesh.material = new THREE.MeshLambertMaterial({ map: loader.load(mesh.userData.Map), transparent: false, side: THREE.DoubleSide });
+        mesh.material.map.wrapT = THREE.RepeatWrapping;
+        mesh.material.map.wrapS = THREE.RepeatWrapping; // Ensure wrapping is enabled
+        mesh.material.map.repeat.x = -1;
 
+        console.log(mesh.material.map, mesh.userData.Map);
         modifyObjects.element(mesh, deps, false, true);
-        mesh.scale.divideScalar(1.5);
+        //mesh.scale.divideScalar(1.5);
 
     },
     Image: (mesh, deps) => {
