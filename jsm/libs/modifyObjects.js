@@ -4,6 +4,10 @@ import { PositionalAudioHelper } from 'three/addons/helpers/PositionalAudioHelpe
 
 import * as THREE from 'three';
 const loader = new THREE.TextureLoader();
+
+const worldPosition = new THREE.Vector3();
+const worldScale = new THREE.Vector3();
+
 let i
 
 
@@ -135,7 +139,7 @@ export const modifyObjects = {
         mesh.material.needsUpdate = true;
         //
     },
-    element: (mesh, desp, receiveShadow, castShadow) => {
+    element: (mesh, deps, receiveShadow, castShadow) => {
         const { userData, material } = mesh;
         const { Map, normalhMap, RoughMap, name } = userData;
         if (Map) material.map = loader.load(Map);
@@ -168,6 +172,42 @@ export const modifyObjects = {
                 // Update the texture settings to apply changes
                 mesh.material.map.needsUpdate = true;
             }
+        } else if (
+
+            /Wall/.test(mesh.userData.name) ||
+            /visitorLocation/.test(mesh.userData.type)
+
+        ) {
+
+            const cClone = mesh.clone();
+
+            cClone.material = new THREE.MeshBasicMaterial();
+
+            if (cClone.userData.type === "visitorLocation") {
+
+                cClone.material.color.set(0x1b689f);
+
+            } else {
+
+                cClone.material.color = new THREE.Color(0xffffff);
+
+            }
+            cClone.material.needsUpdate = true;
+
+
+            mesh.getWorldPosition(worldPosition);
+            cClone.position.copy(worldPosition);
+
+            mesh.getWorldScale(worldScale);
+            cClone.scale.copy(worldScale);
+
+
+            if (deps.sceneMap) deps.sceneMap.add(cClone);
+
+
+
+
+
         }
         //
     },

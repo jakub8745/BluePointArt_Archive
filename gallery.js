@@ -50,8 +50,11 @@ const textureFolder = "textures/";
 const textureCache = new Map();
 
 let renderer, camera, scene, clock, tween, stats, anisotropy;
-let rendererMap, sceneMap, cameraMap;
+let rendererMap, cameraMap, circleMap, sceneMap
+
+
 let collider, visitor, controls, control;
+let circle, circleYellow, circleBlue
 let environment = new THREE.Group();
 //const objectsToAdd = [];
 let animationId = null; // defined in outer scope
@@ -190,7 +193,9 @@ function init() {
 
   //
   // sceneMap
+
   sceneMap = new THREE.Scene();
+
   sceneMap.scale.setScalar(25);
   sceneMap.rotation.x = Math.PI / 2;
   sceneMap.rotation.y = -Math.PI / 2;
@@ -237,76 +242,79 @@ function init() {
 
 
   // load ENVIRONMENT (scene contains only pure geometries with userData.paths to load TEXTURES later)
-  loadColliderEnvironment(params.archiveModelPath); //, gtaoPass);
+  loadColliderEnvironment(params.archiveModelPath).then(({ toMerge }) => {
+
+    addVisitorMapCircle();
+
+    const deps = {
+      params,
+      control,
+      environment,
+      gui,
+      lightsToTurn,
+      scene,
+      sceneMap,
+      loader,
+      listener,
+      audioObjects,
+      sphereSize: params.sphereSize,
+      visitor,
+    };
+
+    toMerge.forEach((mesh) => {
+      if (mesh.userData.name !== "VisitorEnter") {
+        environment.attach(mesh);
+      } else {
+        const visitorQuaternion = new THREE.Quaternion();
+        mesh.getWorldPosition(visitor.position);
+        mesh.getWorldQuaternion(visitorQuaternion);
+
+        mesh.needsUpdate = true;
+
+      }
+    });
+
+
+    environment.traverse((c) => {
+
+      if (c.userData.name === "FloorOut") {
+
+        return
+
+      } else if (c.isLight || c.isMesh) {
+
+        modifyObjects[c.userData.type]?.(c, deps);
+        ileElementow()
+
+      }
+
+
+    });
+
+
+    const staticGenerator = new StaticGeometryGenerator(environment);
+    staticGenerator.attributes = ["position"];
+
+    const mergedGeometry = staticGenerator.generate();
+    mergedGeometry.boundsTree = new MeshBVH(mergedGeometry, {
+      lazyGeneration: false,
+    });
+
+    collider = new THREE.Mesh(mergedGeometry);
+    collider.material.wireframe = true;
+    collider.material.opacity = 0;
+    collider.material.transparent = true;
+
+    scene.add(collider);
+
+
+    reset();
 
 
 
-  // visitor
-  visitor = new THREE.Mesh(
-    new RoundedBoxGeometry(0.2, 0.2, 0.2, 10, 0.5),
-    new THREE.MeshStandardMaterial()
-  );
-  //visitor.scale.setScalar(0.01);
-  visitor.name = "visitor";
-  visitor.capsuleInfo = {
-    radius: 0.45,
-    segment: new THREE.Line3(
-      new THREE.Vector3(),
-      new THREE.Vector3(0, 0.1, 0.0)
-    ),
-  };
-  visitor.castShadow = false;
-  visitor.material.wireframe = true;
-  visitor.visible = false;
-  scene.add(visitor);
-
-  // visitor Map
-  const circleMap = new THREE.Mesh(
-    new THREE.RingGeometry(0.1, 1, 32),
-    new THREE.MeshBasicMaterial({
-      color: 0xbf011f,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 1,
-    })
-  );
-  circleMap.position.copy(visitor.position);
-  circleMap.name = "circleMap";
-  circleMap.rotation.x = (90 * Math.PI) / 180;
-
-  sceneMap.add(circleMap);
-
-  /// circle (pointer)
-  const circle = new THREE.Group();
-  circle.position.copy(visitor.position);
-  circle.position.y = -30;
-
-  const circleYellow = new THREE.Mesh(
-    new THREE.RingGeometry(0.1, 0.12, 32),
-    new THREE.MeshBasicMaterial({
-      color: 0xffcc00,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.5,
-    })
-  );
-  circleYellow.rotation.x = (90 * Math.PI) / 180;
-  const circleBlue = new THREE.Mesh(
-    new THREE.RingGeometry(0.12, 0.14, 32),
-    new THREE.MeshBasicMaterial({
-      color: 0x0066cc,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.5,
-    })
-  );
-  circleBlue.rotation.x = (90 * Math.PI) / 180;
-  circle.add(circleYellow);
-  circle.add(circleBlue);
-  scene.add(circle);
-
-  //
-  scene.add(environment);
+  }).catch(error => {
+    console.error("Failed to load models:", error);
+  });
 
 
 
@@ -320,7 +328,7 @@ function init() {
       const el = floorChecker.checkVisitorLocation(visitor);
       audioHandler.handleAudio(scene.getObjectByName(el.userData.audioToPlay));
 
-    }); //html body img#audio-on
+    });
 
   document
     .querySelector("img#audio-on")
@@ -582,6 +590,9 @@ function init() {
   });
 }
 
+
+
+//
 // load environment
 async function loadColliderEnvironment(modelPath) {
   const gltfLoader = new GLTFLoader();
@@ -592,6 +603,8 @@ async function loadColliderEnvironment(modelPath) {
   const res = await gltfLoader.loadAsync(modelPath);
   const gltfScene = res.scene;
 
+  const toMerge = [];
+
   gltfScene.scale.setScalar(1);
 
   const box = new THREE.Box3().setFromObject(gltfScene);
@@ -599,114 +612,23 @@ async function loadColliderEnvironment(modelPath) {
 
   gltfScene.updateMatrixWorld(true);
 
-  const toMerge = {};
-  const deps = {
-    params,
-    control,
-    environment,
-    gui,
-    lightsToTurn,
-    scene,
-    loader,
-    listener,
-    audioObjects,
-    sphereSize: params.sphereSize,
-    visitor,
-  };
-
-  gltfScene.traverse((c) => {
+  gltfScene.traverse(c => {
     if (c.isMesh || c.isLight) {
       if (c.isLight) {
         c.visible = false;
       } else {
-        ileMesh = ileMesh + 1;
+        ileMesh += 1;
       }
-      const typeOfmesh = c.userData.type;
-      toMerge[typeOfmesh] = toMerge[typeOfmesh] || [];
-      toMerge[typeOfmesh].push(c);
+      toMerge.push(c);
+      //const typeOfmesh = c.userData.type;
+      //toMerge.set(typeOfmesh, (toMerge.get(typeOfmesh) || []).concat(c));
     }
   });
-
-  console.log("toMerge", toMerge);
-
-  for (const typeOfmesh in toMerge) {
-    const arr = toMerge[typeOfmesh];
-
-    arr.forEach((mesh) => {
-      if (mesh.userData.name !== "VisitorEnter") {
-        environment.attach(mesh);
-      } else {
-        const visitorDir = new THREE.Vector3();
-        const visitorQuaternion = new THREE.Quaternion();
-        mesh.getWorldPosition(visitor.position);
-        mesh.getWorldQuaternion(visitorQuaternion);
-        //mesh.getWorldDirection(visitorDir)
-        //visitor.applyQuaternion(visitorQuaternion)
-        //visitor.lookAt(visitorDir)
-        mesh.needsUpdate = true;
-
-      }
-    });
-  }
-
-  const staticGenerator = new StaticGeometryGenerator(environment);
-  staticGenerator.attributes = ["position"];
-
-  const mergedGeometry = staticGenerator.generate();
-  mergedGeometry.boundsTree = new MeshBVH(mergedGeometry, {
-    lazyGeneration: false,
-  });
-
-  collider = new THREE.Mesh(mergedGeometry);
-  collider.material.wireframe = true;
-  collider.material.opacity = 0;
-  collider.material.transparent = true;
-
-  scene.add(collider);
-
-  environment.traverse((c) => {
-    if (c.isLight || c.isMesh) {
-      modifyObjects[c.userData.type]?.(c, deps);
-      ileElementow()
-    }
-  });
-
-  environment.traverse((c) => {
-    if (/FloorOut/.test(c.userData.name)) {
-      return;
-    } else if (
-      /Wall/.test(c.userData.name) ||
-      /Wall_dystopia/.test(c.userData.name) ||
-      /WallLockdowns/.test(c.userData.name) ||
-      /WallWakeUp/.test(c.userData.name) ||
-      /visitorLocation/.test(c.userData.type)
-    ) {
-      const cClone = c.clone();
-      cClone.material = new THREE.MeshBasicMaterial();
-      if (/visitorLocation/.test(cClone.userData.type)) {
-        cClone.material.color.set(0x1b689f);
-      } else {
-        cClone.material.color = new THREE.Color(0xffffff);
-      }
-      cClone.material.needsUpdate = true;
-
-      const worldPosition = new THREE.Vector3();
-      const worldScale = new THREE.Vector3();
-
-      c.getWorldPosition(worldPosition);
-      cClone.position.copy(worldPosition);
-
-      c.getWorldScale(worldScale);
-      cClone.scale.copy(worldScale);
-
-      sceneMap.add(cClone);
-    } else {
-      return;
-    }
-  });
-
-  reset();
+  return { toMerge }
+  //return { toMerge: Array.from(toMerge.values()) }; // Returns an array of arrays
 }
+
+
 
 // reset visitor
 function reset() {
@@ -1004,6 +926,86 @@ function animate() {
 
   controls.update();
 }
+
+
+
+////
+
+function addVisitorMapCircle() {
+
+
+  // visitor
+  visitor = new THREE.Mesh(
+    new RoundedBoxGeometry(0.2, 0.2, 0.2, 10, 0.5),
+    new THREE.MeshStandardMaterial()
+  );
+  //visitor.scale.setScalar(0.01);
+  visitor.name = "visitor";
+  visitor.capsuleInfo = {
+    radius: 0.45,
+    segment: new THREE.Line3(
+      new THREE.Vector3(),
+      new THREE.Vector3(0, 0.1, 0.0)
+    ),
+  };
+  visitor.castShadow = false;
+  visitor.material.wireframe = true;
+  visitor.visible = false;
+  scene.add(visitor);
+
+  // visitor Map
+  circleMap = new THREE.Mesh(
+    new THREE.RingGeometry(0.1, 1, 32),
+    new THREE.MeshBasicMaterial({
+      color: 0xbf011f,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 1,
+    })
+  );
+  circleMap.position.copy(visitor.position);
+  circleMap.name = "circleMap";
+  circleMap.rotation.x = (90 * Math.PI) / 180;
+
+  sceneMap.add(circleMap);
+
+  /// circle (pointer)
+  circle = new THREE.Group();
+  circle.position.copy(visitor.position);
+  circle.position.y = -30;
+
+  circleYellow = new THREE.Mesh(
+    new THREE.RingGeometry(0.1, 0.12, 32),
+    new THREE.MeshBasicMaterial({
+      color: 0xffcc00,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.5,
+    })
+  );
+  circleYellow.rotation.x = (90 * Math.PI) / 180;
+
+  circleBlue = new THREE.Mesh(
+    new THREE.RingGeometry(0.12, 0.14, 32),
+    new THREE.MeshBasicMaterial({
+      color: 0x0066cc,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.5,
+    })
+  );
+  circleBlue.rotation.x = (90 * Math.PI) / 180;
+  circle.add(circleYellow);
+  circle.add(circleBlue);
+  scene.add(circle);
+
+  //
+  scene.add(environment);
+
+}
+
+//
+
 function ileElementow() {
   ileE++;
   if (ileRazy < 1 && ileE <= ileMesh) {
