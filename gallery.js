@@ -197,9 +197,9 @@ function init() {
   sceneMap = new THREE.Scene();
 
   sceneMap.scale.setScalar(25);
-  sceneMap.rotation.x = Math.PI / 2;
+  sceneMap.rotation.x = Math.PI;
   sceneMap.rotation.y = -Math.PI / 2;
-  sceneMap.position.set(0, 130, 0);
+  sceneMap.position.set(0, 0, 0);
   sceneMap.updateMatrixWorld(true);
   // camera
   let innerWidth = 780,
@@ -212,16 +212,16 @@ function init() {
     0.1,
     10000
   );
-  cameraMap.position.set(79, 59, 10);
-  cameraMap.lookAt(new THREE.Vector3(80, 60, 0));
-  //
-  // rendererMap //html body div.sidebar.open div#map_in_sidebar.info_sidebar.open canvas
+  cameraMap.position.set(0, 130, 0);
+  cameraMap.lookAt(new THREE.Vector3(0, 0, 0));
+
   rendererMap = new THREE.WebGLRenderer();
   rendererMap.setClearColor(0x142236);
   document
     .querySelector("div#map_in_sidebar.info_sidebar")
     .appendChild(rendererMap.domElement);
-  rendererMap.setSize(390, 400);
+  rendererMap.setSize(500, 500);
+
   // AmbientLight
   const light = new THREE.AmbientLight(0x404040, 30); // soft white light
   sceneMap.add(light);
@@ -238,7 +238,6 @@ function init() {
   scene.add(ambientLight);
 
   lightOn(ambientLight, 0.3);
-
 
 
   // load ENVIRONMENT (scene contains only pure geometries with userData.paths to load TEXTURES later)
@@ -273,7 +272,6 @@ function init() {
 
       }
     });
-
 
     environment.traverse((c) => {
 
@@ -1021,7 +1019,7 @@ function ileElementow() {
 //
 function preloadTextures() {
   const textureLoader = new THREE.TextureLoader();
-  const textureFiles = ['bg_puent.jpg', 'bg_color.jpg', 'dystopia/bgVermeerViewofDelft.jpg', 'bg_lockdowns.jpg', 'equMap_podMostem.jpg']; // Add all texture filenames here
+  const textureFiles = ['bg_puent.jpg', 'bg_color.jpg', 'galaktyka.jpg', 'dystopia/bgVermeerViewofDelft.jpg', 'bg_lockdowns.jpg', 'equMap_podMostem.jpg', 'bg_kratka.jpg']; // Add all texture filenames here
 
   textureFiles.forEach((textureFile) => {
     const textureUrl = textureFolder + textureFile;

@@ -65,6 +65,7 @@ export const modifyObjects = {
             gui.add(mesh, "distance", 0, 500, 0.1).name("distance" + mesh.name);
             gui.add(mesh, "decay", 0, 10, 0.01).name("decay" + mesh.name);
             gui.add(mesh.position, "y", -10, 50, 0.01).name("y" + mesh.name);
+            gui.open(false)
         }
         deps.lightsToTurn.push(mesh);
     },
@@ -160,19 +161,7 @@ export const modifyObjects = {
 
 
 
-        if (mesh.name === "Wall_ArTour") {
-            if (mesh.material && mesh.material.map) {
-                // Set texture wrapping to repeat (this might already be set, but it's safe to ensure it)
-                mesh.material.map.wrapS = THREE.RepeatWrapping;
-                mesh.material.map.wrapT = THREE.RepeatWrapping; // Also set for vertical if necessary
-
-                // Flip the texture horizontally
-                mesh.material.map.repeat.x = -1;
-
-                // Update the texture settings to apply changes
-                mesh.material.map.needsUpdate = true;
-            }
-        } else if (
+        if  (
 
             /Wall/.test(mesh.userData.name) ||
             /visitorLocation/.test(mesh.userData.type)
@@ -192,32 +181,23 @@ export const modifyObjects = {
                 cClone.material.color = new THREE.Color(0xffffff);
 
             }
+
             cClone.material.needsUpdate = true;
 
-
-            mesh.getWorldPosition(worldPosition);
-            cClone.position.copy(worldPosition);
-
-            mesh.getWorldScale(worldScale);
-            cClone.scale.copy(worldScale);
-
+            cClone.position.copy(mesh.position);
+            cClone.scale.copy(mesh.scale);
 
             if (deps.sceneMap) deps.sceneMap.add(cClone);
-
-
-
-
 
         }
         //
     },
     photoScreen: (mesh, deps) => {
-        mesh.material = new THREE.MeshLambertMaterial({ map: loader.load(mesh.userData.Map), transparent: false, side: THREE.DoubleSide });
+        mesh.material = new THREE.MeshLambertMaterial({ map: loader.load(mesh.userData.Map), transparent: false, side: THREE.FrontSide });
         mesh.material.map.wrapT = THREE.RepeatWrapping;
         mesh.material.map.wrapS = THREE.RepeatWrapping; // Ensure wrapping is enabled
         mesh.material.map.repeat.x = -1;
 
-        console.log(mesh.material.map, mesh.userData.Map);
         modifyObjects.element(mesh, deps, false, true);
         //mesh.scale.divideScalar(1.5);
 
