@@ -289,6 +289,9 @@ function init() {
 
     });
 
+    gui.show( false );
+
+
 
     const staticGenerator = new StaticGeometryGenerator(environment);
     staticGenerator.attributes = ["position"];
@@ -570,11 +573,9 @@ function init() {
       control.reset();
     }
     if (keysPressed["t"]) {
+      
       // t is for testing
-      const sound = scene.getObjectByName("trembitaAudio");
-      sound.children[0].update();
-      console.log("sound", sound, "positionalaudiohelper", sound.children[0]);
-
+      gui.show( gui._hidden);
     }
     clearInterval(intervalId);
   });

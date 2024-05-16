@@ -65,7 +65,7 @@ export const modifyObjects = {
             gui.add(mesh, "distance", 0, 500, 0.1).name("distance" + mesh.name);
             gui.add(mesh, "decay", 0, 10, 0.01).name("decay" + mesh.name);
             gui.add(mesh.position, "y", -10, 50, 0.01).name("y" + mesh.name);
-            gui.open(false)
+            //gui.show( false );
         }
         deps.lightsToTurn.push(mesh);
     },
@@ -74,7 +74,7 @@ export const modifyObjects = {
     },
     SpotLightTarget: (mesh, deps) => {
         mesh.visible = false;
-        //
+        //!
         //
     },
     ShaderBox: (mesh) => {
@@ -258,6 +258,7 @@ export const modifyObjects = {
             gui.add(sound.panner, "rolloffFactor", 0, 100, 0.01).name("rolloffFactor")
 
             gui.add(mesh.rotation, "y", 0, 10, 0.01).name("Rotate")
+
             // */
             const helper = new PositionalAudioHelper(sound, 20);
             sound.add(helper);
