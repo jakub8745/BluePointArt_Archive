@@ -11,7 +11,7 @@ let i
 export const modifyObjects = {
     SpotLight: (mesh, deps) => {
         mesh.matrixWorldAutoUpdate = true;
-        // mesh.userData.intensity = 10//mesh.intensity;
+        mesh.userData.intensity = mesh.intensity;
 
         const targetObject = new THREE.Object3D();
         mesh.target = targetObject;
@@ -135,7 +135,7 @@ export const modifyObjects = {
         mesh.material.needsUpdate = true;
         //
     },
-    element: (mesh, receiveShadow, castShadow) => {
+    element: (mesh, desp, receiveShadow, castShadow) => {
         const { userData, material } = mesh;
         const { Map, normalhMap, RoughMap, name } = userData;
         if (Map) material.map = loader.load(Map);
@@ -165,11 +165,14 @@ export const modifyObjects = {
                 // Update the texture settings to apply changes
                 mesh.material.map.needsUpdate = true;
             }
-        } else if (mesh.name === "photoScreen") {
-            mesh.geometry.thetaStart = Math.PI / 2
-            mesh.geometry.thetaLength = Math.PI
         }
         //
+    },
+    photoScreen: (mesh, deps) => {
+
+        modifyObjects.element(mesh, deps, false, true);
+        mesh.scale.divideScalar(1.5);
+
     },
     Image: (mesh, deps) => {
         mesh.material = new THREE.MeshLambertMaterial({ transparent: true });

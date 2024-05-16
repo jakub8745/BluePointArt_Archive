@@ -151,8 +151,8 @@ function init() {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap; //;PCFSoftShadowMapVSMShadowMap
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = params.exposure;
-  renderer.gammaOutput = true;
-  renderer.gammaFactor = 2.2;
+  //renderer.gammaOutput = true;
+  //renderer.gammaFactor = 0.1;
   document.body.appendChild(renderer.domElement);
   anisotropy = renderer.capabilities.getMaxAnisotropy();
 
@@ -626,6 +626,8 @@ async function loadColliderEnvironment(modelPath) {
       toMerge[typeOfmesh].push(c);
     }
   });
+
+  console.log("toMerge", toMerge);
 
   for (const typeOfmesh in toMerge) {
     const arr = toMerge[typeOfmesh];
