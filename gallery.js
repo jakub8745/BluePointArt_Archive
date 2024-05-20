@@ -258,6 +258,7 @@ function init() {
       audioObjects,
       sphereSize: params.sphereSize,
       visitor,
+      anisotropy,
     };
 
     toMerge.forEach((mesh) => {

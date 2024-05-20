@@ -152,10 +152,11 @@ export const modifyObjects = {
         Object.assign(material, {
             mapping: THREE.UVMapping,
             colorSpace: THREE.SRGBColorSpace,
-            minFilter: THREE.NearestFilter,//THREE.LinearMipmapNearestFilter,
-            magFilter: THREE.NearestFilter,//THREE.LinearFilter,
+            minFilter: THREE.LinearMipmapNearestFilter,
+            magFilter: THREE.LinearFilter, //THREE.NearestFilter
             needsUpdate: true,
             depthWrite: true,
+            anisotropy: deps.anisotropy,
 
         });
 
