@@ -980,7 +980,7 @@ async function loadTexturesAndDispose(belongsTo) {
     visitor,
     anisotropy,
   };
-  console.log('TODO: Mapka-visitor jest za nisko, ikonka AUDIO powinna się pojawia tylko wtedy, gdy visitor jest w sali z dźwiękiem ');
+  console.log('TODO: Mapka-visitor jest za nisko, ikonka AUDIO powinna się pojawia tylko wtedy, gdy visitor jest w sali z dźwiękiem , nazwy wystaw na mapce, przenoszenie do wystawy po kliknięciu na ni na mapce, publikacje i link do strony bpa pod mapk');
 
   const objectsToDispose = [];
   const objectsToLoad = [];
