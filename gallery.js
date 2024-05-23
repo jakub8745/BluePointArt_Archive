@@ -288,7 +288,7 @@ function init() {
 
   // scene setup
   scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0x373739, 3.1, 10);
+  scene.fog = new THREE.Fog(0x2b0a07, 3.1, 18);
 
   // camera setup
   camera = new THREE.PerspectiveCamera(
@@ -324,7 +324,11 @@ function init() {
 
   sceneMap.scale.setScalar(25);
   sceneMap.rotation.x = Math.PI;
-  sceneMap.rotation.y = -Math.PI / 2;
+  sceneMap.rotation.y = -Math.PI /4;
+
+  const scaleX=sceneMap.scale.x
+  sceneMap.scale.x = scaleX *-1;
+
   sceneMap.position.set(0, 0, 0);
   sceneMap.updateMatrixWorld(true);
   // camera
@@ -360,10 +364,9 @@ function init() {
 
 
   // ambientLight
-  let ambientLight = new THREE.AmbientLight(0xffffff, 0);
+  let ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
   scene.add(ambientLight);
 
-  lightOn(ambientLight, 0.3);
 
   // events
   document
@@ -855,10 +858,7 @@ async function updateVisitor(delta) {
   const intersectedFloor = floorChecker.checkVisitorLocation(visitor);
   if (intersectedFloor) {
 
-
-
     const lightsToTurnValue = intersectedFloor.userData.lightsToTurn;
-
 
     if (lightsToTurn && intersectedFloor.name && intersectedFloor0.name !== intersectedFloor.name) {
 
@@ -879,14 +879,7 @@ async function updateVisitor(delta) {
       for (const el of lightsToTurn) {
         if (el.userData.name === lightsToTurnValue) {
           const userData = el.userData;
-          const intersectVisitorUserData = intersectedFloor.userData;
-
-          intensityTo = userData.intensity;
-          el.intensity = 0;
-          el.visible = true;
-          //intersectedFloor0 = lightsToTurnValue;
-
-          lightOn(el, intensityTo);
+      
 
           if (userData.videoID) {
             const video = document.getElementById(userData.videoID);
@@ -980,56 +973,23 @@ async function loadTexturesAndDispose(belongsTo) {
     visitor,
     anisotropy,
   };
-  console.log('TODO:ROZJASNIC WSZYSTKO, nowy obiekt FadeInLight i zobaczy jak na mobilach ewentualnie zrezygnowa z efektu światła i tła na mobilach, IDENTITY na jednej podłodze, mute sound w video,  Mapka-visitor jest za nisko, ikonka AUDIO powinna się pojawia tylko wtedy, gdy visitor jest w sali z dźwiękiem , obróci mapkę w odpowiedni do strzałek stronę,nazwy wystaw na mapce, przenoszenie do wystawy po kliknięciu na ni na mapce, publikacje i link do strony bpa pod mapk');
+
+  console.log('TODO: IDENTITY na jednej podłodze, mute sound w video,  Mapka-visitor jest za nisko, ikonka AUDIO powinna się pojawia tylko wtedy, gdy visitor jest w sali z dźwiękiem , obróci mapkę w odpowiedni do strzałek stronę,nazwy wystaw na mapce, przenoszenie do wystawy po kliknięciu na ni na mapce');
 
   const objectsToDispose = [];
-  const objectsToLoad = [];
 
   scene.traverse(c => {
 
-    //console.log('c.userData.type: przedddd: ', c.userData.type, c.userData.belongsTo, belongsTo);
-
     if (!c.userData.belongsTo) return;
-
-    // console.log('c.userData.type: przedzaaaazzz: ', c.userData.type);
 
     if (c.userData.belongsTo !== belongsTo && c.material && !c.userData.isMaterialDisposed) {
       objectsToDispose.push(c);
+
     } else if (c.userData.belongsTo === belongsTo) {
 
-      const { userData, material } = c;
+      modifyObjects[c.userData.type]?.(c, deps);
 
-      modifyObjects[userData.type]?.(c, deps);
-      if (!c.isMesh) return
-
-
-      const fadeDuration = 2000; // Duration of the fade-in animation in milliseconds
-      const fadeInterval = 100; // Interval between opacity updates
-
-      const totalSteps = fadeDuration / fadeInterval;
-      let currentStep = 0;
-
-      const fadeIn = () => {
-        if (currentStep >= totalSteps) {
-          material.opacity = 1;
-          return;
-        }
-
-        const opacity = currentStep / totalSteps;
-        material.opacity = opacity;
-
-        currentStep++;
-        requestAnimationFrame(fadeIn);
-      };
-
-      if (/Wall/.test(name)) {
-        material.opacity = 1;
-      } else {
-        fadeIn();
-      }
-
-      c.material.needsUpdate = true;
-      userData.isMaterialDisposed = false;
+      c.userData.isMaterialDisposed = false;
     }
   });
 
@@ -1043,20 +1003,6 @@ async function loadTexturesAndDispose(belongsTo) {
 }
 
 
-// turning chosen light on slowly
-
-//
-async function lightOn(el, intensityTo) {
-  for (let i = 0; i < intensityTo + 0.07; i = i + 0.07) {
-    await waitForMe(15 / intensityTo).catch((error) => console.log('Error:', error));
-    el.intensity = i;
-    if (!el.visible) {
-      i = intensityTo;
-    }
-  }
-}
-
-
 //
 
 function animateMap() {
@@ -1064,9 +1010,6 @@ function animateMap() {
 
   rendererMap.render(sceneMap, cameraMap);
 }
-
-// }
-//
 
 //
 function animate() {
@@ -1262,22 +1205,3 @@ class VisitorLocationChecker {
     return intersectedObjects
   }
 }
-
-/*
- 
-     environment.traverse((c) => {
- 
-       if (c.userData.name === "FloorOut") {
- 
-         return
- 
-       } else if (c.isLight || c.isMesh) {
- 
-         modifyObjects[c.userData.type]?.(c, deps);
-         ileElementow()
- 
-       }
- 
- 
-     });
- */

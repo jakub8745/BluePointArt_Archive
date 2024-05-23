@@ -2,9 +2,11 @@ import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { PositionalAudioHelper } from 'three/addons/helpers/PositionalAudioHelper.js';
 import FadeInMaterial from 'three/addons/libs/FadeInMaterial.js';
+import { TextureLoader, Object3D, MeshLambertMaterial, MeshBasicMaterial, Mesh, Color, PositionalAudio, AudioLoader, VideoTexture, RepeatWrapping, DoubleSide, SRGBColorSpace } from 'three';
 
-import * as THREE from 'three';
-const loader = new THREE.TextureLoader();
+
+//import * as THREE from 'three';
+const loader = new TextureLoader();
 
 export const modifyObjects = {
     SpotLight: (mesh, deps) => {
@@ -12,7 +14,7 @@ export const modifyObjects = {
         mesh.matrixWorldAutoUpdate = true;
         mesh.userData.intensity = mesh.intensity;
 
-        const targetObject = new THREE.Object3D();
+        const targetObject = new Object3D();
         mesh.target = targetObject;
         const target = deps.environment.getObjectByName(mesh.userData.whichTarget);
 
@@ -96,10 +98,10 @@ export const modifyObjects = {
                 bevelOffset: 0,
                 bevelSegments: 5,
             });
-            const material = new THREE.MeshLambertMaterial({
+            const material = new MeshLambertMaterial({
                 color: mesh.material.color,
             });
-            const object = new THREE.Mesh(geometry, material);
+            const object = new Mesh(geometry, material);
             object.castShadow = true;
             object.visible = true;
             object.position.copy(mesh.position);
@@ -112,7 +114,7 @@ export const modifyObjects = {
     },
     visitorLocation: (mesh, deps) => {
 
-        mesh.material = new THREE.MeshLambertMaterial({ transparent: false });
+        mesh.material = new MeshLambertMaterial({ transparent: false });
 
         deps.receiveShadow = true
         deps.castShadow = false
@@ -129,8 +131,8 @@ export const modifyObjects = {
         if (normalhMap) material.normalMap = loader.load(normalhMap);
         if (RoughMap) material.roughnessMap = loader.load(RoughMap);
         if (wS) {
-            material.map.wrapS = THREE.RepeatWrapping;
-            material.map.wrapT = THREE.RepeatWrapping;
+            material.map.wrapS = RepeatWrapping;
+            material.map.wrapT = RepeatWrapping;
             material.map.repeat.set(wS, wT);
             material.map.rotate = Math.PI / 2;
 
@@ -140,18 +142,6 @@ export const modifyObjects = {
         mesh.receiveShadow = deps.receiveShadow
         mesh.castShadow = deps.castShadow
 
-        /*
-        Object.assign(material, {
-            mapping: THREE.UVMapping,
-            colorSpace: THREE.SRGBColorSpace,
-            minFilter: THREE.LinearMipmapNearestFilter,
-            magFilter: THREE.LinearFilter, //THREE.NearestFilter
-            needsUpdate: true,
-            depthWrite: true,
-            anisotropy: deps.anisotropy,
-
-        });
-        */
 
         if (
 
@@ -161,7 +151,7 @@ export const modifyObjects = {
         ) {
 
             const cClone = mesh.clone();
-            cClone.material = new THREE.MeshBasicMaterial();
+            cClone.material = new MeshBasicMaterial();
 
             if (cClone.userData.type === "visitorLocation") {
 
@@ -169,7 +159,7 @@ export const modifyObjects = {
 
             } else {
 
-                cClone.material.color = new THREE.Color(0xffffff);
+                cClone.material.color = new Color(0xffffff);
 
             }
 
@@ -184,9 +174,9 @@ export const modifyObjects = {
     },
     photoScreen: (mesh, deps) => {
 
-        mesh.material = new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: THREE.DoubleSide });
-        mesh.material.map.wrapT = THREE.RepeatWrapping;
-        mesh.material.map.wrapS = THREE.RepeatWrapping; // Ensure wrapping is enabled
+        mesh.material = new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide });
+        mesh.material.map.wrapT = RepeatWrapping;
+        mesh.material.map.wrapS = RepeatWrapping; // Ensure wrapping is enabled
         mesh.material.map.repeat.x = -1;
 
         deps.receiveShadow = false
@@ -197,7 +187,7 @@ export const modifyObjects = {
     },
     Image: (mesh, deps) => {
 
-        mesh.material = new FadeInMaterial({ transparent: true, side: THREE.DoubleSide, color: 0xffffff });
+        mesh.material = new FadeInMaterial({ transparent: true, side: DoubleSide, color: 0xffffff });
         mesh.material.needsUpdate = true;
 
         deps.receiveShadow = false
@@ -224,11 +214,11 @@ export const modifyObjects = {
     Video: (mesh, deps) => {
         const video = document.getElementById(mesh.userData.elementID);
 
-        let texture = new THREE.VideoTexture(video);
-        texture.colorSpace = THREE.SRGBColorSpace;
-        mesh.material = new THREE.MeshBasicMaterial({
+        let texture = new VideoTexture(video);
+        texture.colorSpace = SRGBColorSpace;
+        mesh.material = new MeshBasicMaterial({
             map: texture,
-            side: THREE.DoubleSide,
+            side: DoubleSide,
             color: 0xffffff,
         });
         mesh.receiveShadow = false;
@@ -240,8 +230,8 @@ export const modifyObjects = {
     Audio: (mesh, deps) => {
         mesh.scale.setScalar(0.1)
 
-        const sound = new THREE.PositionalAudio(deps.listener);
-        const audioLoader = new THREE.AudioLoader();
+        const sound = new PositionalAudio(deps.listener);
+        const audioLoader = new AudioLoader();
         audioLoader.load(mesh.userData.audio, (buffer) => {
             sound.name = mesh.userData.name;
             sound.setBuffer(buffer);
