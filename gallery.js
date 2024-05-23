@@ -31,7 +31,7 @@ const params = {
   visitorSpeed: 3,
   physicsSteps: 5,
   reset: reset,
-  exposure: 1,
+  exposure: 1.3,
   gizmoVisible: false,
   canSeeGizmo: false,
   transControlsMode: "rotate",
@@ -916,7 +916,7 @@ async function updateVisitor(delta) {
         const textureLoader = new THREE.TextureLoader();
 
         textureLoader.load(bgTexture, (texture) => {
-          
+
           texture.mapping = THREE.EquirectangularReflectionMapping;
           texture.colorSpace = THREE.SRGBColorSpace;
           setSceneBackgroundWithTransition(scene, texture, bgBlur, bgInt);
@@ -948,7 +948,7 @@ async function updateVisitor(delta) {
       const belongsTo = intersectedFloor.userData.belongsTo;
 
 
-      
+
 
       // Load textures and dispose of other objects based on the exhibit and belongsTo categories
       loadTexturesAndDispose(belongsTo);
@@ -980,7 +980,7 @@ async function loadTexturesAndDispose(belongsTo) {
     visitor,
     anisotropy,
   };
-  console.log('TODO: Mapka-visitor jest za nisko, ikonka AUDIO powinna się pojawia tylko wtedy, gdy visitor jest w sali z dźwiękiem , nazwy wystaw na mapce, przenoszenie do wystawy po kliknięciu na ni na mapce, publikacje i link do strony bpa pod mapk');
+  console.log('TODO:ROZJASNIC WSZYSTKO, nowy obiekt FadeInLight i zobaczy jak na mobilach ewentualnie zrezygnowa z efektu światła i tła na mobilach, IDENTITY na jednej podłodze, mute sound w video,  Mapka-visitor jest za nisko, ikonka AUDIO powinna się pojawia tylko wtedy, gdy visitor jest w sali z dźwiękiem , obróci mapkę w odpowiedni do strzałek stronę,nazwy wystaw na mapce, przenoszenie do wystawy po kliknięciu na ni na mapce, publikacje i link do strony bpa pod mapk');
 
   const objectsToDispose = [];
   const objectsToLoad = [];
