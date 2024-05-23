@@ -56,6 +56,7 @@ let rendererMap, cameraMap, circleMap, sceneMap
 let collider, visitor, controls, control;
 let circle, circleYellow, circleBlue
 let environment = new THREE.Group();
+const exhibits = {};
 //const objectsToAdd = [];
 let animationId = null; // defined in outer scope
 
@@ -73,7 +74,7 @@ let tempMat = new THREE.Matrix4();
 let tempSegment = new THREE.Line3();
 const raycaster = new THREE.Raycaster();
 const raycasterVisitor = new THREE.Raycaster();
-let visitorLocation0 = "xxx";
+let intersectedFloor0 = new THREE.Object3D();
 let bgTexture0 = "textures/xxxbg_puent.jpg";
 const lightsToTurn = [];
 const audioObjects = [];
@@ -125,9 +126,134 @@ const waitForMe = async (millisec) => {
 //
 joyIntervalCheck();
 
-preloadTextures();
+
 init();
-animate();
+
+
+loadColliderEnvironment(params.archiveModelPath).then(({ exhibits }) => {
+
+
+  addVisitorMapCircle();
+
+
+  const deps = {
+    params,
+    control,
+    environment,
+    gui,
+    lightsToTurn,
+    scene,
+    sceneMap,
+    loader,
+    listener,
+    audioObjects,
+    sphereSize: params.sphereSize,
+    visitor,
+    anisotropy,
+  };
+
+  for (const typeOfmesh in exhibits) {
+
+    const arr = exhibits[typeOfmesh];
+
+    arr.forEach((mesh) => {
+
+      if (mesh.userData.name !== "VisitorEnter") {
+        environment.attach(mesh);
+      } else {
+        const visitorQuaternion = new THREE.Quaternion();
+        mesh.getWorldPosition(visitor.position);
+        mesh.getWorldQuaternion(visitorQuaternion);
+
+        mesh.needsUpdate = true;
+
+      }
+
+
+    });
+  }
+
+  environment.traverse((c) => {
+
+    if (c.isLight) {
+
+      modifyObjects[c.userData.type]?.(c, deps);
+
+    } else {
+
+      ileElementow()
+    }
+
+
+    //
+    if (c.userData.type === "Text") {
+      modifyObjects[c.userData.type]?.(c, deps);
+
+    } else if (
+
+      /Wall/.test(c.userData.name) ||
+      /visitorLocation/.test(c.userData.type)
+
+    ) {
+
+      const cClone = c.clone();
+
+      cClone.material = new THREE.MeshBasicMaterial();
+
+      if (cClone.userData.type === "visitorLocation") {
+
+        cClone.material.color.set(0x1b689f);
+
+      } else {
+
+        cClone.material.color = new THREE.Color(0xffffff);
+
+      }
+
+      cClone.material.needsUpdate = true;
+
+      cClone.position.copy(c.position);
+      cClone.scale.copy(c.scale);
+
+      if (deps.sceneMap) deps.sceneMap.add(cClone);
+
+    }
+
+  });
+
+
+  gui.show(false);
+
+
+
+  const staticGenerator = new StaticGeometryGenerator(environment);
+  staticGenerator.attributes = ["position"];
+
+  const mergedGeometry = staticGenerator.generate();
+  mergedGeometry.boundsTree = new MeshBVH(mergedGeometry, {
+    lazyGeneration: false,
+  });
+
+  collider = new THREE.Mesh(mergedGeometry);
+  collider.material.wireframe = true;
+  collider.material.opacity = 0;
+  collider.material.transparent = true;
+
+  scene.add(collider);
+
+  preloadTextures();
+
+  reset();
+
+  animate();
+
+
+
+}).catch(error => {
+  console.error("Failed to load models:", error);
+});
+
+
 
 
 
@@ -238,87 +364,6 @@ function init() {
   scene.add(ambientLight);
 
   lightOn(ambientLight, 0.3);
-
-
-  // load ENVIRONMENT (scene contains only pure geometries with userData.paths to load TEXTURES later)
-  loadColliderEnvironment(params.archiveModelPath).then(({ toMerge }) => {
-
-    addVisitorMapCircle();
-
-    const deps = {
-      params,
-      control,
-      environment,
-      gui,
-      lightsToTurn,
-      scene,
-      sceneMap,
-      loader,
-      listener,
-      audioObjects,
-      sphereSize: params.sphereSize,
-      visitor,
-      anisotropy,
-    };
-
-    toMerge.forEach((mesh) => {
-      if (mesh.userData.name !== "VisitorEnter") {
-        environment.attach(mesh);
-      } else {
-        const visitorQuaternion = new THREE.Quaternion();
-        mesh.getWorldPosition(visitor.position);
-        mesh.getWorldQuaternion(visitorQuaternion);
-
-        mesh.needsUpdate = true;
-
-      }
-    });
-
-    environment.traverse((c) => {
-
-      if (c.userData.name === "FloorOut") {
-
-        return
-
-      } else if (c.isLight || c.isMesh) {
-
-        modifyObjects[c.userData.type]?.(c, deps);
-        ileElementow()
-
-      }
-
-
-    });
-
-    gui.show( false );
-
-
-
-    const staticGenerator = new StaticGeometryGenerator(environment);
-    staticGenerator.attributes = ["position"];
-
-    const mergedGeometry = staticGenerator.generate();
-    mergedGeometry.boundsTree = new MeshBVH(mergedGeometry, {
-      lazyGeneration: false,
-    });
-
-    collider = new THREE.Mesh(mergedGeometry);
-    collider.material.wireframe = true;
-    collider.material.opacity = 0;
-    collider.material.transparent = true;
-
-    scene.add(collider);
-
-
-    reset();
-
-
-
-  }).catch(error => {
-    console.error("Failed to load models:", error);
-  });
-
-
 
   // events
   document
@@ -574,9 +619,9 @@ function init() {
       control.reset();
     }
     if (keysPressed["t"]) {
-      
+
       // t is for testing
-      gui.show( gui._hidden);
+      gui.show(gui._hidden);
     }
     clearInterval(intervalId);
   });
@@ -588,6 +633,8 @@ function init() {
     fwdPressed = false;
     bkdPressed = false;
   });
+
+
 }
 
 
@@ -603,7 +650,7 @@ async function loadColliderEnvironment(modelPath) {
   const res = await gltfLoader.loadAsync(modelPath);
   const gltfScene = res.scene;
 
-  const toMerge = [];
+  const exhibits = [];
 
   gltfScene.scale.setScalar(1);
 
@@ -612,6 +659,10 @@ async function loadColliderEnvironment(modelPath) {
 
   gltfScene.updateMatrixWorld(true);
 
+
+
+
+
   gltfScene.traverse(c => {
     if (c.isMesh || c.isLight) {
       if (c.isLight) {
@@ -619,16 +670,38 @@ async function loadColliderEnvironment(modelPath) {
       } else {
         ileMesh += 1;
       }
-      toMerge.push(c);
-      //const typeOfmesh = c.userData.type;
-      //toMerge.set(typeOfmesh, (toMerge.get(typeOfmesh) || []).concat(c));
+      let parent = c.parent;
+      while (parent && parent.name !== 'Scene') {
+        if (/Exhibition/.test(parent.name)) {
+          c.userData.belongsTo = parent.name;
+
+          if (!c.material) break;
+
+          c.material.map = null;
+          c.material.dispose();
+          c.material.needsUpdate = true;
+          c.userData.isMaterialDisposed = true
+
+          break;
+        }
+        parent = parent.parent;
+      }
+      if (!c.userData.belongsTo) {
+        c.userData.belongsTo = 'Scene';
+      }
+      //
+      const typeOfmesh = c.userData.belongsTo;
+      exhibits[typeOfmesh] = exhibits[typeOfmesh] || [];
+      exhibits[typeOfmesh].push(c);
+      //
+
     }
   });
-  return { toMerge }
-  //return { toMerge: Array.from(toMerge.values()) }; // Returns an array of arrays
+
+  // Now you have the segregated objects in the 'exhibits' object
+  return { exhibits }
+
 }
-
-
 
 // reset visitor
 function reset() {
@@ -774,16 +847,20 @@ async function updateVisitor(delta) {
 
   // checkin where the visitor is => tutning on/off lights & video/animations & audio & gizmo
   const floorChecker = new VisitorLocationChecker(scene);
+
+
   const audioHandler = new AudioHandler();
 
 
   const intersectedFloor = floorChecker.checkVisitorLocation(visitor);
   if (intersectedFloor) {
 
+
+
     const lightsToTurnValue = intersectedFloor.userData.lightsToTurn;
 
 
-    if (lightsToTurn && visitorLocation0 !== lightsToTurnValue) {
+    if (lightsToTurn && intersectedFloor.name && intersectedFloor0.name !== intersectedFloor.name) {
 
       params.canSeeGizmo = (lightsToTurnValue === "lightsDystopia") ? true : false;
 
@@ -807,44 +884,9 @@ async function updateVisitor(delta) {
           intensityTo = userData.intensity;
           el.intensity = 0;
           el.visible = true;
-          visitorLocation0 = lightsToTurnValue;
+          //intersectedFloor0 = lightsToTurnValue;
+
           lightOn(el, intensityTo);
-
-          if (intersectVisitorUserData.bgTexture !== bgTexture0) {
-            intersectVisitorUserData.bgTexture = intersectVisitorUserData.bgTexture || "textures/bg_color.jpg";
-            intersectVisitorUserData.bgInt = intersectVisitorUserData.bgInt || 1;
-
-            if (intersectVisitorUserData.bgTexture !== bgTexture0) {
-              bgTexture0 = intersectVisitorUserData.bgTexture;
-
-              if (textureCache.has(intersectVisitorUserData.bgTexture)) {
-                setSceneBackgroundWithTransition(scene, textureCache.get(intersectVisitorUserData.bgTexture), intersectVisitorUserData.bgBlur, intersectVisitorUserData.bgInt);
-              } else {
-                // Use the preloaded texture instead of loading it again
-                setSceneBackgroundWithTransition(scene, textureCache.get("textures/bg_color.jpg"), intersectVisitorUserData.bgBlur, intersectVisitorUserData.bgInt);
-              }
-            }
-          }
-
-          function setSceneBackgroundWithTransition(scene, newTexture, blurIntensity) {
-            const transitionDuration = 2000; // in milliseconds
-
-            scene.background = newTexture;
-            scene.backgroundIntensity = 0;
-
-            new TWEEN.Tween(scene)
-              .to({ backgroundIntensity: 1 }, transitionDuration)
-              .onUpdate(() => {
-                scene.backgroundBlurriness = blurIntensity;
-              })
-              .onComplete(() => {
-                scene.backgroundIntensity = 1;
-              })
-              .start();
-          }
-
-
-
 
           if (userData.videoID) {
             const video = document.getElementById(userData.videoID);
@@ -862,8 +904,141 @@ async function updateVisitor(delta) {
         }
       }
 
+      const bgTexture = intersectedFloor.userData.bgTexture || "textures/bg_color.jpg";
+      const bgInt = intersectedFloor.userData.bgInt || 1;
+      const bgBlur = intersectedFloor.userData.bgBlur || 0;
+
+      if (textureCache.has(bgTexture)) {
+
+        setSceneBackgroundWithTransition(scene, textureCache.get(bgTexture), bgBlur, bgInt);
+      } else {
+
+        const textureLoader = new THREE.TextureLoader();
+
+        textureLoader.load(bgTexture, (texture) => {
+          
+          texture.mapping = THREE.EquirectangularReflectionMapping;
+          texture.colorSpace = THREE.SRGBColorSpace;
+          setSceneBackgroundWithTransition(scene, texture, bgBlur, bgInt);
+
+        });
+
+      }
+
+      //
+      function setSceneBackgroundWithTransition(scene, newTexture, blurIntensity, intensity) {
+
+        const transitionDuration = 2000; // in milliseconds
+
+        scene.background = newTexture;
+        scene.backgroundIntensity = 0;
+
+        new TWEEN.Tween(scene)
+          .to({ backgroundIntensity: intensity }, transitionDuration)
+          .onUpdate(() => {
+            scene.backgroundBlurriness = blurIntensity;
+          })
+          .onComplete(() => {
+            scene.backgroundIntensity = intensity;
+          })
+          .start();
+      }
+
+      //const exhibit = intersectedObjects.userData.exhibit;
+      const belongsTo = intersectedFloor.userData.belongsTo;
+
+
+      
+
+      // Load textures and dispose of other objects based on the exhibit and belongsTo categories
+      loadTexturesAndDispose(belongsTo);
+
+      intersectedFloor0 = intersectedFloor
+
     }
+
   }
+
+}
+//
+
+async function loadTexturesAndDispose(belongsTo) {
+
+
+  const deps = {
+    params,
+    control,
+    environment,
+    gui,
+    lightsToTurn,
+    scene,
+    sceneMap,
+    loader,
+    listener,
+    audioObjects,
+    sphereSize: params.sphereSize,
+    visitor,
+    anisotropy,
+  };
+  console.log('TODO: Mapka-visitor jest za nisko, ikonka AUDIO powinna się pojawia tylko wtedy, gdy visitor jest w sali z dźwiękiem ');
+
+  const objectsToDispose = [];
+  const objectsToLoad = [];
+
+  scene.traverse(c => {
+
+    //console.log('c.userData.type: przedddd: ', c.userData.type, c.userData.belongsTo, belongsTo);
+
+    if (!c.userData.belongsTo) return;
+
+    // console.log('c.userData.type: przedzaaaazzz: ', c.userData.type);
+
+    if (c.userData.belongsTo !== belongsTo && c.material && !c.userData.isMaterialDisposed) {
+      objectsToDispose.push(c);
+    } else if (c.userData.belongsTo === belongsTo) {
+
+      const { userData, material } = c;
+
+      modifyObjects[userData.type]?.(c, deps);
+      if (!c.isMesh) return
+
+
+      const fadeDuration = 2000; // Duration of the fade-in animation in milliseconds
+      const fadeInterval = 100; // Interval between opacity updates
+
+      const totalSteps = fadeDuration / fadeInterval;
+      let currentStep = 0;
+
+      const fadeIn = () => {
+        if (currentStep >= totalSteps) {
+          material.opacity = 1;
+          return;
+        }
+
+        const opacity = currentStep / totalSteps;
+        material.opacity = opacity;
+
+        currentStep++;
+        requestAnimationFrame(fadeIn);
+      };
+
+      if (/Wall/.test(name)) {
+        material.opacity = 1;
+      } else {
+        fadeIn();
+      }
+
+      c.material.needsUpdate = true;
+      userData.isMaterialDisposed = false;
+    }
+  });
+
+  await Promise.all(objectsToDispose.map(async (c) => {
+    c.material.map = null;
+    c.material.dispose();
+    c.material.needsUpdate = true;
+    c.userData.isMaterialDisposed = true;
+  }));
 
 }
 
@@ -895,6 +1070,7 @@ function animateMap() {
 
 //
 function animate() {
+
   //time *= 0.001;
   stats.update();
   TWEEN.update();
@@ -921,12 +1097,12 @@ function animate() {
     }
   }
 
+
   requestAnimationFrame(animate);
   renderer.render(scene, camera);
 
   controls.update();
 }
-
 
 
 ////
@@ -1054,19 +1230,19 @@ class AudioHandler {
       for (const el of audioObjects) {
         el.children[0].pause();
         playIconImg.src = "/icons/audioMuted.png";
-        audioOn.style.display = "none";
+        audioOn.src = "/icons/audioMuted.png";
       }
       return
     }
 
     if (audioToTurn.isPlaying) {
       playIconImg.src = "/icons/audioMuted.png";
-      audioOn.style.display = "none";
+      audioOn.src = "/icons/audioMuted.png";
       audioToTurn.stop();
     } else if (!audioToTurn.isPlaying) {
       audioToTurn.play();
       playIconImg.src = "/icons/audioButton.png";
-      audioOn.style.display = "block";
+      audioOn.src = "/icons/audioButton.png";
     }
   }
 }
@@ -1086,3 +1262,22 @@ class VisitorLocationChecker {
     return intersectedObjects
   }
 }
+
+/*
+ 
+     environment.traverse((c) => {
+ 
+       if (c.userData.name === "FloorOut") {
+ 
+         return
+ 
+       } else if (c.isLight || c.isMesh) {
+ 
+         modifyObjects[c.userData.type]?.(c, deps);
+         ileElementow()
+ 
+       }
+ 
+ 
+     });
+ */

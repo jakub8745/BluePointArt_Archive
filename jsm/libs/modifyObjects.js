@@ -1,25 +1,21 @@
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { PositionalAudioHelper } from 'three/addons/helpers/PositionalAudioHelper.js';
+import FadeInMaterial from 'three/addons/libs/FadeInMaterial.js';
 
 import * as THREE from 'three';
 const loader = new THREE.TextureLoader();
 
-const worldPosition = new THREE.Vector3();
-const worldScale = new THREE.Vector3();
-
-let i
-
-
-
 export const modifyObjects = {
     SpotLight: (mesh, deps) => {
+
         mesh.matrixWorldAutoUpdate = true;
         mesh.userData.intensity = mesh.intensity;
 
         const targetObject = new THREE.Object3D();
         mesh.target = targetObject;
         const target = deps.environment.getObjectByName(mesh.userData.whichTarget);
+
         if (target) {
             target.getWorldPosition(mesh.target.position);
             mesh.castShadow = true;
@@ -42,6 +38,7 @@ export const modifyObjects = {
                 gui.add(mesh.position, "y", -10, 50, 0.01).name("y" + mesh.name);
             }
         }
+
         deps.lightsToTurn.push(mesh);
     },
     PointLight: (mesh, deps) => {
@@ -59,13 +56,11 @@ export const modifyObjects = {
         if (mesh.userData.name === "lightsArTour") {
             let gui = deps.gui
 
-
             gui.add(mesh, "visible").name("visible" + mesh.name);
             gui.add(mesh, "intensity", 0, 50, 0.01).name("intensity" + mesh.name);
             gui.add(mesh, "distance", 0, 500, 0.1).name("distance" + mesh.name);
             gui.add(mesh, "decay", 0, 10, 0.01).name("decay" + mesh.name);
             gui.add(mesh.position, "y", -10, 50, 0.01).name("y" + mesh.name);
-            //gui.show( false );
         }
         deps.lightsToTurn.push(mesh);
     },
@@ -74,12 +69,12 @@ export const modifyObjects = {
     },
     SpotLightTarget: (mesh, deps) => {
         mesh.visible = false;
-        //!
+
         //
     },
     ShaderBox: (mesh) => {
         //
-        //
+
     },
     VisitorEnter: (mesh, deps) => {
         //mesh.getWorldPosition(visitorEnter);
@@ -117,38 +112,35 @@ export const modifyObjects = {
     },
     visitorLocation: (mesh, deps) => {
 
-        const { Map, wS, wT } = mesh.userData;
-        const material = new THREE.MeshLambertMaterial({ map: loader.load(Map), transparent: true });
-        material.map.wrapS = THREE.RepeatWrapping;
-        material.map.wrapT = THREE.RepeatWrapping;
-        material.map.anisotropy = deps.anisotropy;
-        material.map.repeat.set(wS, wT);
-        material.minFilter = THREE.LinearMipMapLinearFilter;
-        material.magFilter = THREE.LinearFilter;
+        mesh.material = new THREE.MeshLambertMaterial({ transparent: false });
 
+        deps.receiveShadow = true
+        deps.castShadow = false
 
-        material.map.rotate = Math.PI / 2;
+        modifyObjects.element(mesh, deps);
 
-        if (mesh.userData.name === "FloorArTour") {
-            console.log("FloorArTour");
-            material.opacity = 1;
-        }
-
-        mesh.material = material;
-        mesh.receiveShadow = true;
-        mesh.castShadow = false;
-        mesh.material.needsUpdate = true;
-        //
     },
-    element: (mesh, deps, receiveShadow, castShadow) => {
+    element: (mesh, deps) => {
+
         const { userData, material } = mesh;
-        const { Map, normalhMap, RoughMap, name } = userData;
+        const { Map, normalhMap, RoughMap, name, wS, wT } = userData;
+
         if (Map) material.map = loader.load(Map);
         if (normalhMap) material.normalMap = loader.load(normalhMap);
         if (RoughMap) material.roughnessMap = loader.load(RoughMap);
-        if (name === "Wall") { receiveShadow = true; castShadow = true; }
-        mesh.receiveShadow = receiveShadow;
-        mesh.castShadow = castShadow;
+        if (wS) {
+            material.map.wrapS = THREE.RepeatWrapping;
+            material.map.wrapT = THREE.RepeatWrapping;
+            material.map.repeat.set(wS, wT);
+            material.map.rotate = Math.PI / 2;
+
+        }
+
+        if (name === "Wall") { deps.receiveShadow = true; deps.castShadow = true; }
+        mesh.receiveShadow = deps.receiveShadow
+        mesh.castShadow = deps.castShadow
+
+        /*
         Object.assign(material, {
             mapping: THREE.UVMapping,
             colorSpace: THREE.SRGBColorSpace,
@@ -159,10 +151,9 @@ export const modifyObjects = {
             anisotropy: deps.anisotropy,
 
         });
+        */
 
-
-
-        if  (
+        if (
 
             /Wall/.test(mesh.userData.name) ||
             /visitorLocation/.test(mesh.userData.type)
@@ -170,7 +161,6 @@ export const modifyObjects = {
         ) {
 
             const cClone = mesh.clone();
-
             cClone.material = new THREE.MeshBasicMaterial();
 
             if (cClone.userData.type === "visitorLocation") {
@@ -184,7 +174,6 @@ export const modifyObjects = {
             }
 
             cClone.material.needsUpdate = true;
-
             cClone.position.copy(mesh.position);
             cClone.scale.copy(mesh.scale);
 
@@ -194,21 +183,32 @@ export const modifyObjects = {
         //
     },
     photoScreen: (mesh, deps) => {
-        mesh.material = new THREE.MeshLambertMaterial({ map: loader.load(mesh.userData.Map), transparent: false, side: THREE.FrontSide });
+
+        mesh.material = new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: THREE.DoubleSide });
         mesh.material.map.wrapT = THREE.RepeatWrapping;
         mesh.material.map.wrapS = THREE.RepeatWrapping; // Ensure wrapping is enabled
         mesh.material.map.repeat.x = -1;
 
-        modifyObjects.element(mesh, deps, false, true);
-        //mesh.scale.divideScalar(1.5);
+        deps.receiveShadow = false
+        deps.castShadow = true
+
+        modifyObjects.element(mesh, deps);
 
     },
     Image: (mesh, deps) => {
-        mesh.material = new THREE.MeshLambertMaterial({ transparent: true });
-        modifyObjects.element(mesh, false, false);
+
+        mesh.material = new FadeInMaterial({ transparent: true, side: THREE.DoubleSide, color: 0xffffff });
+        mesh.material.needsUpdate = true;
+
+        deps.receiveShadow = false
+        deps.castShadow = false
+
+        modifyObjects.element(mesh, deps);
     },
     Sculpture: (mesh, deps) => {
+
         if (mesh.userData.name === "dzbanDystopia") {
+
             deps.control._gizmo.visible = deps.params.gizmoVisible;
             deps.control.setMode(deps.params.transControlsMode);
             deps.control.attach(mesh);
@@ -216,7 +216,10 @@ export const modifyObjects = {
 
         }
 
-        modifyObjects.element(mesh, deps, true, true);
+        deps.receiveShadow = true
+        deps.castShadow = true
+
+        modifyObjects.element(mesh, deps);
     },
     Video: (mesh, deps) => {
         const video = document.getElementById(mesh.userData.elementID);
@@ -233,7 +236,6 @@ export const modifyObjects = {
         mesh.material.needsUpdate = true;
 
         //
-        //
     },
     Audio: (mesh, deps) => {
         mesh.scale.setScalar(0.1)
@@ -249,7 +251,6 @@ export const modifyObjects = {
             //sound.setMaxDistance(mesh.userData.audioMaxDistance);
             sound.setVolume(mesh.userData.audioVolume);
             sound.setDirectionalCone(10, 23, 0.1)
-            //if(mesh.userData.audioDirectionalCone) sound.setDirectionalCone(mesh.userData.audioDirectionalCone)
 
             let gui = deps.gui
             gui.add(sound.panner, "coneInnerAngle", 0, 500, 0.01).name("Inner")// + mesh.name);refDistance
@@ -266,10 +267,8 @@ export const modifyObjects = {
             mesh.add(sound);
             deps.audioObjects.push(mesh);
 
-
             console.log("audioObjects", sound.panner.coneInnerAngle);
         });
     },
 };
-
 
