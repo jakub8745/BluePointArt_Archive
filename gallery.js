@@ -1036,7 +1036,7 @@ async function loadTexturesAndDispose(belongsTo) {
     anisotropy,
   };
 
-  console.log('TODO:  MODEL: dorobic korytarze');
+  console.log('TODO:  MODEL: dorobic korytarze, poustawia swiatla');
 
   const objectsToDispose = [];
 

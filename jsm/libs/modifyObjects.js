@@ -18,9 +18,6 @@ export const modifyObjects = {
         SpotLight.target = targetObject;
         const target = deps.environment.getObjectByName(SpotLight.userData.whichTarget);
 
-
-        console.log("target", target, "light", SpotLight);
-
         if (target) {
 
             target.getWorldPosition(SpotLight.target.position);
@@ -232,10 +229,7 @@ export const modifyObjects = {
         mesh.receiveShadow = false;
         mesh.castShadow = false;
         mesh.material.needsUpdate = true;
-
-
-       //console.log("mesh.userData.belongsTo", mesh.userData.belongsTo, mesh);
-
+        
         //
     },
     Audio: (mesh, deps) => {
