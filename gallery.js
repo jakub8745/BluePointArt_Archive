@@ -8,6 +8,8 @@ import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
 import { modifyObjects } from 'three/addons/libs/modifyObjects.js';
+//import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
 import Stats from "three/addons/libs/stats.module.js";
 import { GUI } from "three/addons/libs/lil-gui.module.min.js";
@@ -50,7 +52,9 @@ const textureFolder = "textures/";
 const textureCache = new Map();
 
 let renderer, camera, scene, clock, tween, stats, anisotropy;
-let rendererMap, cameraMap, circleMap, sceneMap
+let rendererMap, cameraMap, circleMap, sceneMap, css2DRenderer;
+const cameraDirection = new THREE.Vector3();
+
 
 
 let collider, visitor, controls, control;
@@ -73,7 +77,6 @@ let tempBox = new THREE.Box3();
 let tempMat = new THREE.Matrix4();
 let tempSegment = new THREE.Line3();
 const raycaster = new THREE.Raycaster();
-const raycasterVisitor = new THREE.Raycaster();
 let intersectedFloor0 = new THREE.Object3D();
 let bgTexture0 = "textures/xxxbg_puent.jpg";
 const lightsToTurn = [];
@@ -164,6 +167,7 @@ loadColliderEnvironment(params.archiveModelPath).then(({ exhibits }) => {
         const visitorQuaternion = new THREE.Quaternion();
         mesh.getWorldPosition(visitor.position);
         mesh.getWorldQuaternion(visitorQuaternion);
+        visitorEnter.copy(visitor.position)
 
         mesh.needsUpdate = true;
 
@@ -202,7 +206,42 @@ loadColliderEnvironment(params.archiveModelPath).then(({ exhibits }) => {
 
       if (cClone.userData.type === "visitorLocation") {
 
+        if (cClone.name === "FloorOut") cClone.visible = false
+
         cClone.material.color.set(0x1b689f);
+        cClone.material.transparent = true;
+        cClone.material.opacity = 0.8;
+        //console.log(cClone.position, cClone);
+
+        if (cClone.userData.label) {
+
+          const labelDiv = document.createElement('div');
+          labelDiv.className = 'label';
+          labelDiv.textContent = cClone.userData.label;
+          labelDiv.style.marginTop = '1em'; // Adjust for correct centering
+          labelDiv.style.pointerEvents = 'auto'; // Ensure label can handle pointer events
+
+
+          // Add click event to label to move the visitor
+          labelDiv.addEventListener('click', () => {
+
+
+            const targetPosition = cClone.position.clone();
+
+            console.log('Current Position:', targetPosition);
+
+            visitorEnter.set(targetPosition.x, targetPosition.y, targetPosition.z);
+
+            reset();
+            //camera.position.set(targetPosition.x, targetPosition.y + 1.6, targetPosition.z + 5); // Adjust camera position
+          });
+
+          const labelObject = new CSS2DObject(labelDiv);
+          labelObject.position.set(0, 0, 0);
+          cClone.add(labelObject);
+
+
+        }
 
       } else {
 
@@ -318,22 +357,22 @@ function init() {
   });
 
   //
+  // CSS3DRenderer for DOM elements
+  const innerWidth = 780,
+    innerHeight = 800;
   // sceneMap
 
   sceneMap = new THREE.Scene();
 
   sceneMap.scale.setScalar(25);
   sceneMap.rotation.x = Math.PI;
-  sceneMap.rotation.y = -Math.PI /4;
-
-  const scaleX=sceneMap.scale.x
-  sceneMap.scale.x = scaleX *-1;
+  sceneMap.rotation.y = Math.PI / 180;
 
   sceneMap.position.set(0, 0, 0);
   sceneMap.updateMatrixWorld(true);
   // camera
-  let innerWidth = 780,
-    innerHeight = 800;
+
+
   cameraMap = new THREE.OrthographicCamera(
     innerWidth / -2,
     innerWidth / 2,
@@ -342,7 +381,7 @@ function init() {
     0.1,
     10000
   );
-  cameraMap.position.set(0, 130, 0);
+  cameraMap.position.set(0, -50, 0);
   cameraMap.lookAt(new THREE.Vector3(0, 0, 0));
 
   rendererMap = new THREE.WebGLRenderer();
@@ -351,6 +390,16 @@ function init() {
     .querySelector("div#map_in_sidebar.info_sidebar")
     .appendChild(rendererMap.domElement);
   rendererMap.setSize(500, 500);
+
+  // CSS2DRenderer for DOM elements
+  css2DRenderer = new CSS2DRenderer();
+  css2DRenderer.setSize(500, 500);
+  css2DRenderer.domElement.style.position = 'absolute';
+  css2DRenderer.domElement.style.top = '0';
+  css2DRenderer.domElement.style.pointerEvents = 'none'; // Make sure it doesn't block interactions
+  document.querySelector("div#map_in_sidebar.info_sidebar").appendChild(css2DRenderer.domElement);
+
+
 
   // AmbientLight
   const light = new THREE.AmbientLight(0x404040, 30); // soft white light
@@ -369,6 +418,8 @@ function init() {
 
 
   // events
+
+  /*
   document
     .querySelector("#play-icon")
     .addEventListener("pointerdown", (evt) => {
@@ -379,6 +430,7 @@ function init() {
       audioHandler.handleAudio(scene.getObjectByName(el.userData.audioToPlay));
 
     });
+    */
 
   document
     .querySelector("img#audio-on")
@@ -624,7 +676,10 @@ function init() {
     if (keysPressed["t"]) {
 
       // t is for testing
-      gui.show(gui._hidden);
+      //gui.show(gui._hidden);
+      console.log("target", visitor.position);
+      console.log(sceneMap.getObjectByName("circleMap").position, sceneMap.getObjectByName("FloorIdentity01").position);
+
     }
     clearInterval(intervalId);
   });
@@ -711,17 +766,24 @@ function reset() {
   bgTexture0 = "/textures/xxxbg_puent.jpg";
   visitorVelocity.set(0, 0, 0);
 
-  const target = visitor.position.clone();
+  const target = visitorEnter.clone();
+
+  console.log("target", target);
+
+  const circleMap = sceneMap.getObjectByName("circleMap");
+  if (circleMap) {
+    circleMap.position.copy(target);
+  }
+
+  target.y = 10;
   camera.position.sub(controls.target);
   controls.target.copy(target);
   camera.position.add(target);
   controls.update();
 
-  const circleMap = sceneMap.getObjectByName("circleMap");
-  if (circleMap) {
-    circleMap.position.copy(target);
-    circleMap.position.y = 10;
-  }
+  visitor.position.copy(target);
+
+  
 
 
 }
@@ -833,14 +895,17 @@ async function updateVisitor(delta) {
   // offset the camera - this is a bit hacky
   tempVector.copy(visitor.position).add(params.heightOffset);
 
-
-
   camera.position.sub(controls.target);
   controls.target.copy(tempVector);
   camera.position.add(tempVector);
 
+  //
+  const target = visitor.position.clone();
+  target.add(new THREE.Vector3(0, 0, 0));
+  sceneMap.getObjectByName("circleMap").position.copy(target);
 
-  sceneMap.getObjectByName("circleMap").position.copy(visitor.position);
+
+  ///console.log("target", target);
 
 
   // if the visitor has fallen too far below the level reset their position to the start
@@ -848,41 +913,60 @@ async function updateVisitor(delta) {
     reset();
   }
 
-  // checkin where the visitor is => tutning on/off lights & video/animations & audio & gizmo
+  // checkin where the visitor is => tutning on/off  video/animations & audio & gizmo
   const floorChecker = new VisitorLocationChecker(scene);
-
-
   const audioHandler = new AudioHandler();
-
 
   const intersectedFloor = floorChecker.checkVisitorLocation(visitor);
   if (intersectedFloor) {
 
+    const belongsTo = intersectedFloor.userData.belongsTo;
     const lightsToTurnValue = intersectedFloor.userData.lightsToTurn;
 
     if (lightsToTurn && intersectedFloor.name && intersectedFloor0.name !== intersectedFloor.name) {
 
       params.canSeeGizmo = (lightsToTurnValue === "lightsDystopia") ? true : false;
 
+
+      //AUDIO
       if (intersectedFloor.userData.audioToPlay) {
-        ///
+
+        const audioOn = document.querySelector("#audio-on");
+        audioOn.style.display = "block"
+        audioOn.classList.add("flash");
+
+        setTimeout(() => {
+          audioOn.classList.remove("flash");
+        }, 3000);
+
         for (const el of audioObjects) {
 
           if (el.children[0].name === intersectedFloor.userData.audioToPlay) {
+
             audioHandler.handleAudio(el.children[0]);
           }
         }
       } else {
+
         audioHandler.handleAudio(null);
       }
 
-      for (const el of lightsToTurn) {
-        if (el.userData.name === lightsToTurnValue) {
-          const userData = el.userData;
-      
 
-          if (userData.videoID) {
-            const video = document.getElementById(userData.videoID);
+      //LIGHTS
+      for (const el of lightsToTurn) {
+
+        el.visible = el.userData.name === lightsToTurnValue;
+      }
+
+
+      // VIDEOS
+      scene.traverse(c => {
+        if (c.userData.type === "Video" && c.userData.belongsTo === belongsTo) {
+          console.log("videos: ", c)
+
+
+          if (c.userData.elementID) {
+            const video = document.getElementById(c.userData.elementID);
             video.play();
           } else {
             const allVideos = document.getElementsByTagName("video");
@@ -892,11 +976,11 @@ async function updateVisitor(delta) {
               allVideos[i].pause();
             }
           }
-        } else {
-          el.visible = false;
-        }
-      }
 
+        }
+      })
+
+      //TEXTURES
       const bgTexture = intersectedFloor.userData.bgTexture || "textures/bg_color.jpg";
       const bgInt = intersectedFloor.userData.bgInt || 1;
       const bgBlur = intersectedFloor.userData.bgBlur || 0;
@@ -937,11 +1021,6 @@ async function updateVisitor(delta) {
           .start();
       }
 
-      //const exhibit = intersectedObjects.userData.exhibit;
-      const belongsTo = intersectedFloor.userData.belongsTo;
-
-
-
 
       // Load textures and dispose of other objects based on the exhibit and belongsTo categories
       loadTexturesAndDispose(belongsTo);
@@ -974,7 +1053,7 @@ async function loadTexturesAndDispose(belongsTo) {
     anisotropy,
   };
 
-  console.log('TODO: IDENTITY na jednej podłodze, mute sound w video,  Mapka-visitor jest za nisko, ikonka AUDIO powinna się pojawia tylko wtedy, gdy visitor jest w sali z dźwiękiem , obróci mapkę w odpowiedni do strzałek stronę,nazwy wystaw na mapce, przenoszenie do wystawy po kliknięciu na ni na mapce');
+  console.log('TODO: IDENTITY na jednej podłodze, zeby nie zapalaly sie obrazy jak sie przechodzi z sali do sali, MODEL: dorobic korytarze');
 
   const objectsToDispose = [];
 
@@ -1008,7 +1087,14 @@ async function loadTexturesAndDispose(belongsTo) {
 function animateMap() {
   animationId = requestAnimationFrame(animateMap);
 
+  camera.getWorldDirection(cameraDirection);
+  const angle = Math.atan2(cameraDirection.x, cameraDirection.z);
+  sceneMap.rotation.y = -angle + Math.PI;
+
+  sceneMap.updateMatrixWorld();
+
   rendererMap.render(sceneMap, cameraMap);
+  css2DRenderer.render(sceneMap, cameraMap);
 }
 
 //
@@ -1043,6 +1129,8 @@ function animate() {
 
   requestAnimationFrame(animate);
   renderer.render(scene, camera);
+
+
 
   controls.update();
 }
@@ -1083,8 +1171,11 @@ function addVisitorMapCircle() {
     })
   );
   circleMap.position.copy(visitor.position);
+  circleMap.position.y = visitor.position.y + 1000;
   circleMap.name = "circleMap";
   circleMap.rotation.x = (90 * Math.PI) / 180;
+  circleMap.visible = true
+  circleMap.material.depthWrite = true
 
   sceneMap.add(circleMap);
 
@@ -1166,25 +1257,46 @@ const fadeOutEl = (el) => {
 class AudioHandler {
   handleAudio(audioToTurn) {
 
-    const playIconImg = document.querySelector("#play-icon img");
+    //const playIconImg = document.querySelector("#play-icon img");
     const audioOn = document.querySelector("#audio-on");
 
+
+
     if (!audioToTurn || audioToTurn.type !== "Audio") {
+
+      console.log("no audio")
+
+      //playIconImg.src = "/icons/audioMuted.png";
+      audioOn.src = "/icons/audioMuted.png";
+      //playIconImg.style.display = "none"
+      audioOn.style.display = "none"
+
       for (const el of audioObjects) {
         el.children[0].pause();
-        playIconImg.src = "/icons/audioMuted.png";
-        audioOn.src = "/icons/audioMuted.png";
+
+
       }
       return
     }
 
+
+
     if (audioToTurn.isPlaying) {
-      playIconImg.src = "/icons/audioMuted.png";
+
+      console.log("playing audio stop")
+      //playIconImg.style.display = "block"
+      audioOn.style.display = "block"
+      //playIconImg.src = "/icons/audioMuted.png";
       audioOn.src = "/icons/audioMuted.png";
       audioToTurn.stop();
     } else if (!audioToTurn.isPlaying) {
+
+      console.log("playing audio")
+
       audioToTurn.play();
-      playIconImg.src = "/icons/audioButton.png";
+      //playIconImg.style.display = "block"
+      audioOn.style.display = "block"
+      //playIconImg.src = "/icons/audioButton.png";
       audioOn.src = "/icons/audioButton.png";
     }
   }

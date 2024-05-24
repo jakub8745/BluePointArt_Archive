@@ -142,7 +142,7 @@ export const modifyObjects = {
         mesh.receiveShadow = deps.receiveShadow
         mesh.castShadow = deps.castShadow
 
-
+/*
         if (
 
             /Wall/.test(mesh.userData.name) ||
@@ -170,6 +170,7 @@ export const modifyObjects = {
             if (deps.sceneMap) deps.sceneMap.add(cClone);
 
         }
+        */
         //
     },
     photoScreen: (mesh, deps) => {
@@ -224,6 +225,9 @@ export const modifyObjects = {
         mesh.receiveShadow = false;
         mesh.castShadow = false;
         mesh.material.needsUpdate = true;
+
+
+       //console.log("mesh.userData.belongsTo", mesh.userData.belongsTo, mesh);
 
         //
     },
