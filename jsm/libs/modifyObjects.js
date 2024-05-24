@@ -9,62 +9,69 @@ import { TextureLoader, Object3D, MeshLambertMaterial, MeshBasicMaterial, Mesh, 
 const loader = new TextureLoader();
 
 export const modifyObjects = {
-    SpotLight: (mesh, deps) => {
+    SpotLight: (SpotLight, deps) => {
 
-        mesh.matrixWorldAutoUpdate = true;
-        mesh.userData.intensity = mesh.intensity;
+        SpotLight.matrixWorldAutoUpdate = true;
+        SpotLight.userData.intensity = SpotLight.intensity;
 
         const targetObject = new Object3D();
-        mesh.target = targetObject;
-        const target = deps.environment.getObjectByName(mesh.userData.whichTarget);
+        SpotLight.target = targetObject;
+        const target = deps.environment.getObjectByName(SpotLight.userData.whichTarget);
+
+
+        console.log("target", target, "light", SpotLight);
 
         if (target) {
-            target.getWorldPosition(mesh.target.position);
-            mesh.castShadow = true;
-            mesh.shadow.mapSize.set(1024, 1024);
-            mesh.shadow.camera.near = 0.5;
-            mesh.shadow.camera.far = 500;
-            mesh.shadow.bias = -0.005;
+
+            target.getWorldPosition(SpotLight.target.position);
+
+            SpotLight.castShadow = true;
+            SpotLight.shadow.mapSize.set(2048, 2048);
+            SpotLight.shadow.camera.near = 0.5;
+            SpotLight.shadow.camera.far = 500;
+            SpotLight.shadow.bias = -0.005;
             //mesh.shadow.blurSamples = 15;
             //mesh.shadow.radius = 1;
             deps.environment.attach(targetObject);
 
-            if (mesh.userData.name === "lightsArTour") {
+            if (SpotLight.userData.name === "lightsArTour") {
 
                 let gui = deps.gui
 
-                gui.add(mesh, "visible").name("visible" + mesh.name);
-                gui.add(mesh, "intensity", 0, 50, 0.01).name("intensity" + mesh.name);
-                gui.add(mesh, "distance", 0, 500, 0.1).name("distance" + mesh.name);
-                gui.add(mesh, "decay", 0, 10, 0.01).name("decay" + mesh.name);
-                gui.add(mesh.position, "y", -10, 50, 0.01).name("y" + mesh.name);
+                gui.add(SpotLight, "visible").name("visible" + SpotLight.name);
+                gui.add(SpotLight, "intensity", 0, 50, 0.01).name("intensity" + SpotLight.name);
+                gui.add(SpotLight, "distance", 0, 500, 0.1).name("distance" + SpotLight.name);
+                gui.add(SpotLight, "decay", 0, 10, 0.01).name("decay" + SpotLight.name);
+                gui.add(SpotLight.position, "y", -10, 50, 0.01).name("y" + SpotLight.name);
             }
         }
 
-        deps.lightsToTurn.push(mesh);
+        deps.lightsToTurn.push(SpotLight);
     },
-    PointLight: (mesh, deps) => {
+    PointLight: (PointLight, deps) => {
 
-        mesh.visible = true;
-        mesh.userData.intensity = mesh.intensity;
-        mesh.castShadow = true;
-        mesh.shadow.mapSize.set(1024, 1024);
-        mesh.shadow.camera.near = 0.5;
-        mesh.shadow.camera.far = 500;
-        mesh.shadow.bias = -0.005;
+        PointLight.visible = true;
+
+        PointLight.userData.intensity = PointLight.intensity;
+        PointLight.castShadow = true;
+        PointLight.shadow.mapSize.set(1024, 1024);
+
+        PointLight.shadow.camera.near = 0.5;
+        PointLight.shadow.camera.far = 500;
+        PointLight.shadow.bias = -0.005;
         //mesh.shadow.blurSamples = 15;
         //mesh.shadow.radius = 1;
 
-        if (mesh.userData.name === "lightsArTour") {
+        if (PointLight.userData.name === "lightsArTour") {
             let gui = deps.gui
 
-            gui.add(mesh, "visible").name("visible" + mesh.name);
-            gui.add(mesh, "intensity", 0, 50, 0.01).name("intensity" + mesh.name);
-            gui.add(mesh, "distance", 0, 500, 0.1).name("distance" + mesh.name);
-            gui.add(mesh, "decay", 0, 10, 0.01).name("decay" + mesh.name);
-            gui.add(mesh.position, "y", -10, 50, 0.01).name("y" + mesh.name);
+            gui.add(PointLight, "visible").name("visible" + PointLight.name);
+            gui.add(PointLight, "intensity", 0, 50, 0.01).name("intensity" + PointLight.name);
+            gui.add(PointLight, "distance", 0, 500, 0.1).name("distance" + PointLight.name);
+            gui.add(PointLight, "decay", 0, 10, 0.01).name("decay" + PointLight.name);
+            gui.add(PointLight.position, "y", -10, 50, 0.01).name("y" + PointLight.name);
         }
-        deps.lightsToTurn.push(mesh);
+        deps.lightsToTurn.push(PointLight);
     },
     AmbientLight: () => {
         console.log("ambientLight");

@@ -211,7 +211,6 @@ loadColliderEnvironment(params.archiveModelPath).then(({ exhibits }) => {
         cClone.material.color.set(0x1b689f);
         cClone.material.transparent = true;
         cClone.material.opacity = 0.8;
-        //console.log(cClone.position, cClone);
 
         if (cClone.userData.label) {
 
@@ -228,12 +227,9 @@ loadColliderEnvironment(params.archiveModelPath).then(({ exhibits }) => {
 
             const targetPosition = cClone.position.clone();
 
-            console.log('Current Position:', targetPosition);
-
             visitorEnter.set(targetPosition.x, targetPosition.y, targetPosition.z);
 
             reset();
-            //camera.position.set(targetPosition.x, targetPosition.y + 1.6, targetPosition.z + 5); // Adjust camera position
           });
 
           const labelObject = new CSS2DObject(labelDiv);
@@ -286,14 +282,11 @@ loadColliderEnvironment(params.archiveModelPath).then(({ exhibits }) => {
 
   animate();
 
-
-
 }).catch(error => {
   console.error("Failed to load models:", error);
 });
 
-
-
+///////////////////////////
 
 
 function init() {
@@ -677,9 +670,7 @@ function init() {
 
       // t is for testing
       //gui.show(gui._hidden);
-      console.log("target", visitor.position);
-      console.log(sceneMap.getObjectByName("circleMap").position, sceneMap.getObjectByName("FloorIdentity01").position);
-
+     
     }
     clearInterval(intervalId);
   });
@@ -768,8 +759,6 @@ function reset() {
 
   const target = visitorEnter.clone();
 
-  console.log("target", target);
-
   const circleMap = sceneMap.getObjectByName("circleMap");
   if (circleMap) {
     circleMap.position.copy(target);
@@ -783,7 +772,7 @@ function reset() {
 
   visitor.position.copy(target);
 
-  
+
 
 
 }
@@ -904,10 +893,6 @@ async function updateVisitor(delta) {
   target.add(new THREE.Vector3(0, 0, 0));
   sceneMap.getObjectByName("circleMap").position.copy(target);
 
-
-  ///console.log("target", target);
-
-
   // if the visitor has fallen too far below the level reset their position to the start
   if (visitor.position.y < -10) {
     reset();
@@ -923,7 +908,7 @@ async function updateVisitor(delta) {
     const belongsTo = intersectedFloor.userData.belongsTo;
     const lightsToTurnValue = intersectedFloor.userData.lightsToTurn;
 
-    if (lightsToTurn && intersectedFloor.name && intersectedFloor0.name !== intersectedFloor.name) {
+    if (lightsToTurn && intersectedFloor.userData.name && intersectedFloor0.userData.name !== intersectedFloor.userData.name) {
 
       params.canSeeGizmo = (lightsToTurnValue === "lightsDystopia") ? true : false;
 
@@ -962,8 +947,6 @@ async function updateVisitor(delta) {
       // VIDEOS
       scene.traverse(c => {
         if (c.userData.type === "Video" && c.userData.belongsTo === belongsTo) {
-          console.log("videos: ", c)
-
 
           if (c.userData.elementID) {
             const video = document.getElementById(c.userData.elementID);
@@ -1053,7 +1036,7 @@ async function loadTexturesAndDispose(belongsTo) {
     anisotropy,
   };
 
-  console.log('TODO: IDENTITY na jednej podłodze, zeby nie zapalaly sie obrazy jak sie przechodzi z sali do sali, MODEL: dorobic korytarze');
+  console.log('TODO:  MODEL: dorobic korytarze');
 
   const objectsToDispose = [];
 
@@ -1260,43 +1243,31 @@ class AudioHandler {
     //const playIconImg = document.querySelector("#play-icon img");
     const audioOn = document.querySelector("#audio-on");
 
-
-
     if (!audioToTurn || audioToTurn.type !== "Audio") {
 
-      console.log("no audio")
-
-      //playIconImg.src = "/icons/audioMuted.png";
       audioOn.src = "/icons/audioMuted.png";
-      //playIconImg.style.display = "none"
       audioOn.style.display = "none"
 
       for (const el of audioObjects) {
-        el.children[0].pause();
 
+        el.children[0].pause();
 
       }
       return
     }
 
-
-
     if (audioToTurn.isPlaying) {
 
-      console.log("playing audio stop")
-      //playIconImg.style.display = "block"
       audioOn.style.display = "block"
-      //playIconImg.src = "/icons/audioMuted.png";
       audioOn.src = "/icons/audioMuted.png";
+      
       audioToTurn.stop();
+
     } else if (!audioToTurn.isPlaying) {
 
-      console.log("playing audio")
-
       audioToTurn.play();
-      //playIconImg.style.display = "block"
+
       audioOn.style.display = "block"
-      //playIconImg.src = "/icons/audioButton.png";
       audioOn.src = "/icons/audioButton.png";
     }
   }
