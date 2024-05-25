@@ -33,7 +33,7 @@ const params = {
   visitorSpeed: 3,
   physicsSteps: 5,
   reset: reset,
-  exposure: 1.3,
+  exposure: 0.3,
   gizmoVisible: false,
   canSeeGizmo: false,
   transControlsMode: "rotate",
@@ -406,7 +406,7 @@ function init() {
 
 
   // ambientLight
-  let ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+  let ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
   scene.add(ambientLight);
 
 
@@ -670,7 +670,7 @@ function init() {
 
       // t is for testing
       //gui.show(gui._hidden);
-     
+
     }
     clearInterval(intervalId);
   });
@@ -719,10 +719,22 @@ async function loadColliderEnvironment(modelPath) {
       } else {
         ileMesh += 1;
       }
+
+      // Traverse up the parent hierarchy to find exhibitions
       let parent = c.parent;
       while (parent && parent.name !== 'Scene') {
+
         if (/Exhibition/.test(parent.name)) {
-          c.userData.belongsTo = parent.name;
+
+          if (!c.userData.belongsTo) {
+            c.userData.belongsTo = [];
+          } else {
+            console.log(c.userData.belongsTo)
+          }
+
+          if (!c.userData.belongsTo.includes(parent.name)) {
+            c.userData.belongsTo.push(parent.name);
+          }
 
           if (!c.material) break;
 
@@ -943,25 +955,32 @@ async function updateVisitor(delta) {
         el.visible = el.userData.name === lightsToTurnValue;
       }
 
-
       // VIDEOS
       scene.traverse(c => {
-        if (c.userData.type === "Video" && c.userData.belongsTo === belongsTo) {
+        if (c.userData.type === "Video") {
+          // Ensure both c.userData.belongsTo and belongsTo are arrays
+          const belongsToArray = Array.isArray(belongsTo) ? belongsTo : [belongsTo];
+          const cBelongsToArray = Array.isArray(c.userData.belongsTo) ? c.userData.belongsTo : [c.userData.belongsTo];
 
-          if (c.userData.elementID) {
-            const video = document.getElementById(c.userData.elementID);
-            video.play();
-          } else {
-            const allVideos = document.getElementsByTagName("video");
-            const length = allVideos.length;
+          // Check if there is any intersection between cBelongsToArray and belongsToArray
+          const belongsToCurrentExhibit = cBelongsToArray.some(exhibit => belongsToArray.includes(exhibit));
 
-            for (let i = 0; i < length; i++) {
-              allVideos[i].pause();
+          if (belongsToCurrentExhibit) {
+            if (c.userData.elementID) {
+              const video = document.getElementById(c.userData.elementID);
+              video.play();
+            } else {
+              const allVideos = document.getElementsByTagName("video");
+              const length = allVideos.length;
+
+              for (let i = 0; i < length; i++) {
+                allVideos[i].pause();
+              }
             }
           }
-
         }
-      })
+      });
+
 
       //TEXTURES
       const bgTexture = intersectedFloor.userData.bgTexture || "textures/bg_color.jpg";
@@ -1018,8 +1037,6 @@ async function updateVisitor(delta) {
 //
 
 async function loadTexturesAndDispose(belongsTo) {
-
-
   const deps = {
     params,
     control,
@@ -1041,28 +1058,35 @@ async function loadTexturesAndDispose(belongsTo) {
   const objectsToDispose = [];
 
   scene.traverse(c => {
-
     if (!c.userData.belongsTo) return;
 
-    if (c.userData.belongsTo !== belongsTo && c.material && !c.userData.isMaterialDisposed) {
+    // Ensure both c.userData.belongsTo and belongsTo are arrays
+    const belongsToArray = Array.isArray(belongsTo) ? belongsTo : [belongsTo];
+    const cBelongsToArray = Array.isArray(c.userData.belongsTo) ? c.userData.belongsTo : [c.userData.belongsTo];
+
+    // Check if there is any intersection between cBelongsToArray and belongsToArray
+    const belongsToCurrentExhibit = cBelongsToArray.some(exhibit => belongsToArray.includes(exhibit));
+
+    if (!belongsToCurrentExhibit && c.material && !c.userData.isMaterialDisposed) {
       objectsToDispose.push(c);
 
-    } else if (c.userData.belongsTo === belongsTo) {
+    } else if (belongsToCurrentExhibit) {
 
       modifyObjects[c.userData.type]?.(c, deps);
-
       c.userData.isMaterialDisposed = false;
     }
   });
 
   await Promise.all(objectsToDispose.map(async (c) => {
+    
     c.material.map = null;
     c.material.dispose();
     c.material.needsUpdate = true;
     c.userData.isMaterialDisposed = true;
   }));
-
 }
+
+
 
 
 //
@@ -1260,7 +1284,7 @@ class AudioHandler {
 
       audioOn.style.display = "block"
       audioOn.src = "/icons/audioMuted.png";
-      
+
       audioToTurn.stop();
 
     } else if (!audioToTurn.isPlaying) {

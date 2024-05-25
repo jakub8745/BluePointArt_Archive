@@ -1,9 +1,12 @@
 //import * as THREE from 'three';
 
-import { MeshLambertMaterial } from 'three';
+//import { MeshLambertMaterial } from 'three';
+import { MeshBasicMaterial } from 'three';
 
 
-export default class FadeInMaterial extends MeshLambertMaterial {
+//export default class FadeInMaterial extends MeshLambertMaterial {
+  export default class FadeInMaterial extends MeshBasicMaterial {
+
   constructor(options) {
 
     super(options);

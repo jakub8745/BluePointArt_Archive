@@ -132,8 +132,8 @@ export const modifyObjects = {
         const { Map, normalhMap, RoughMap, name, wS, wT } = userData;
 
         if (Map) material.map = loader.load(Map);
-        if (normalhMap) material.normalMap = loader.load(normalhMap);
-        if (RoughMap) material.roughnessMap = loader.load(RoughMap);
+        //if (normalhMap) material.normalMap = loader.load(normalhMap);
+       // if (RoughMap) material.roughnessMap = loader.load(RoughMap);
         if (wS) {
             material.map.wrapS = RepeatWrapping;
             material.map.wrapT = RepeatWrapping;
@@ -192,7 +192,7 @@ export const modifyObjects = {
     },
     Image: (mesh, deps) => {
 
-        mesh.material = new FadeInMaterial({ transparent: true, side: DoubleSide, color: 0xffffff });
+        mesh.material = new FadeInMaterial({ transparent: true, side: DoubleSide, color: 0xeceff4 });
         mesh.material.needsUpdate = true;
 
         deps.receiveShadow = false
