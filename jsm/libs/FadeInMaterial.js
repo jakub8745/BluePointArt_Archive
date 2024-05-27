@@ -11,7 +11,7 @@ import { MeshBasicMaterial } from 'three';
 
     super(options);
     this.name = options.name || 'FadeInMaterial';
-    this.fadeDuration = options.fadeDuration || 5000; // Duration of the fade-in animation in milliseconds
+    this.fadeDuration = options.fadeDuration || 2000; // Duration of the fade-in animation in milliseconds
     this.fadeInterval = options.fadeInterval || 40; // Interval between opacity updates
     this.opacity = 0;
     this.isFadingIn = false;

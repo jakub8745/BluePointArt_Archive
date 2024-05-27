@@ -33,7 +33,7 @@ const params = {
   visitorSpeed: 3,
   physicsSteps: 5,
   reset: reset,
-  exposure: 0.3,
+  exposure: 0.4,
   gizmoVisible: false,
   canSeeGizmo: false,
   transControlsMode: "rotate",
@@ -953,6 +953,19 @@ async function updateVisitor(delta) {
       for (const el of lightsToTurn) {
 
         el.visible = el.userData.name === lightsToTurnValue;
+
+        /// //gui.destroy()
+        if (el.visible) {
+          gui.show(true);
+
+          gui.add(el, "visible").name("visible" + el.name);
+          gui.add(el, "intensity", 0, 1000, 0.1).name("intensity" + el.name);
+          gui.add(el, "distance", 0, 500, 0.1).name("distance" + el.name);
+          gui.add(el, "decay", 0, 2, 0.01).name("decay" + el.name);
+          gui.add(el.position, "y", -10, 50, 0.01).name("y" + el.name);
+
+        }
+
       }
 
       // VIDEOS
@@ -1078,7 +1091,7 @@ async function loadTexturesAndDispose(belongsTo) {
   });
 
   await Promise.all(objectsToDispose.map(async (c) => {
-    
+
     c.material.map = null;
     c.material.dispose();
     c.material.needsUpdate = true;
