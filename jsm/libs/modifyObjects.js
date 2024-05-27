@@ -192,7 +192,7 @@ export const modifyObjects = {
     },
     Image: (mesh, deps) => {
 
-        mesh.material = new FadeInMaterial({ transparent: true, side: DoubleSide, color: 0xeceff4 });
+        mesh.material = new FadeInMaterial({ transparent: true, side: DoubleSide, color: 0xffffff });
         mesh.material.needsUpdate = true;
 
         deps.receiveShadow = false

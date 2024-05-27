@@ -669,7 +669,9 @@ function init() {
     if (keysPressed["t"]) {
 
       // t is for testing
-      //gui.show(gui._hidden);
+      // Example usage:
+      const objectsInFrustum = getObjectsInFrustum(camera, scene);
+      console.log('Objects in frustum:', objectsInFrustum);
 
     }
     clearInterval(intervalId);
@@ -1325,3 +1327,34 @@ class VisitorLocationChecker {
     return intersectedObjects
   }
 }
+
+
+// Function to get objects in camera frustum
+function getObjectsInFrustum(camera, scene) {
+  const frustum = new THREE.Frustum();
+  const cameraViewProjectionMatrix = new THREE.Matrix4();
+
+  // Update the camera matrix
+  camera.updateMatrixWorld();
+  cameraViewProjectionMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+  frustum.setFromProjectionMatrix(cameraViewProjectionMatrix);
+
+  const objectsInFrustum = [];
+
+  scene.traverse((object) => {
+    if (object.isMesh) {
+      const geometry = object.geometry;
+      geometry.computeBoundingSphere();
+      const sphere = geometry.boundingSphere.clone();
+      sphere.applyMatrix4(object.matrixWorld);
+
+      if (frustum.intersectsSphere(sphere)) {
+        objectsInFrustum.push(object);
+      }
+    }
+  });
+
+  return objectsInFrustum;
+}
+
+
