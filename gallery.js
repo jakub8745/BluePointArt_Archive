@@ -38,7 +38,7 @@ const params = {
   canSeeGizmo: false,
   transControlsMode: "rotate",
   heightOffset: new THREE.Vector3(0, 0.1, 0),// offset the camera from the visitor
-  archiveModelPath: "../models/galeriaGLTF/archive_vincenz.glb",
+  archiveModelPath: "../models/galeriaGLTF/BPAarchiveModel.glb",
 };
 
 let ileE = 2,
@@ -76,6 +76,9 @@ let tempVector2 = new THREE.Vector3();
 let tempBox = new THREE.Box3();
 let tempMat = new THREE.Matrix4();
 let tempSegment = new THREE.Line3();
+
+let newPosition = new THREE.Vector3();
+let deltaVector = new THREE.Vector3();
 const raycaster = new THREE.Raycaster();
 let intersectedFloor0 = new THREE.Object3D();
 let bgTexture0 = "textures/xxxbg_puent.jpg";
@@ -92,8 +95,8 @@ let Wall,
   video
 let intensityTo, intervalId;
 
-const origVec = new THREE.Vector3();
-const dirVec = new THREE.Vector3(0, -1, 0).normalize();
+let audioHandler, floorChecker;
+
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
@@ -123,7 +126,7 @@ const joyIntervalCheck = () => {
 
 //
 const waitForMe = async (millisec) => {
-  await new Promise(resolve => setTimeout(resolve, millisec, ''));
+  await new Promise(resolve => requestAnimationFrame(time => resolve(time + millisec)));
 };
 
 //
@@ -133,7 +136,7 @@ joyIntervalCheck();
 init();
 
 
-loadColliderEnvironment(params.archiveModelPath).then(({ exhibits }) => {
+loadArchiveModel(params.archiveModelPath).then(({ exhibits }) => {
 
 
   addVisitorMapCircle();
@@ -631,58 +634,27 @@ function init() {
   );
 
   // key controls
-  const keysPressed = [];
+  const keysPressed = {};
   window.addEventListener("keydown", (event) => {
     keysPressed[event.key] = true;
-    if (keysPressed["ArrowDown"] || keysPressed["s"]) {
-      bkdPressed = true;
-    }
-    if (keysPressed["ArrowUp"] || keysPressed["w"]) {
-      fwdPressed = true;
-    }
-    if (keysPressed["ArrowRight"] || keysPressed["d"]) {
-      rgtPressed = true;
-    }
-    if (keysPressed["ArrowLeft"] || keysPressed["a"]) {
-      lftPressed = true;
-    }
-    if (keysPressed[" "]) {
-      if (visitorIsOnGround) {
-        visitorVelocity.y = 20.0;
-        visitorIsOnGround = false;
-      }
-    }
-    if (keysPressed["g"]) {
-      if (params.canSeeGizmo) {
-        control._gizmo.visible = !control._gizmo.visible;
-      }
-    }
-    if (keysPressed["m"]) {
-      // control.setMode("translate");
-    }
-    if (keysPressed["r"]) {
-      control.setMode("rotate");
-    }
-    if (keysPressed["Escape"]) {
-      control.reset();
-    }
-    if (keysPressed["t"]) {
-
-      // t is for testing
-      // Example usage:
-      const objectsInFrustum = getObjectsInFrustum(camera, scene);
-      console.log('Objects in frustum:', objectsInFrustum);
-
-    }
+    if (event.key === "ArrowDown" || event.key === "s") bkdPressed = true;
+    if (event.key === "ArrowUp" || event.key === "w") fwdPressed = true;
+    if (event.key === "ArrowRight" || event.key === "d") rgtPressed = true;
+    if (event.key === "ArrowLeft" || event.key === "a") lftPressed = true;
+    if (event.key === " ") visitorVelocity.y = visitorIsOnGround ? 20.0 : 0;
+    if (event.key === "g" && params.canSeeGizmo) control._gizmo.visible = !control._gizmo.visible;
+    if (event.key === "m") control.setMode("translate");
+    if (event.key === "r") control.setMode("rotate");
+    if (event.key === "Escape") control.reset();
     clearInterval(intervalId);
   });
 
   window.addEventListener("keyup", (event) => {
     delete keysPressed[event.key];
-    lftPressed = false;
-    rgtPressed = false;
-    fwdPressed = false;
-    bkdPressed = false;
+    if (event.key === "ArrowDown" || event.key === "s") bkdPressed = false;
+    if (event.key === "ArrowUp" || event.key === "w") fwdPressed = false;
+    if (event.key === "ArrowRight" || event.key === "d") rgtPressed = false;
+    if (event.key === "ArrowLeft" || event.key === "a") lftPressed = false;
   });
 
 
@@ -692,78 +664,55 @@ function init() {
 
 //
 // load environment
-async function loadColliderEnvironment(modelPath) {
+async function loadArchiveModel(modelPath) {
   const gltfLoader = new GLTFLoader();
   const dracoLoader = new DRACOLoader();
   dracoLoader.setDecoderPath("three/draco");
   gltfLoader.setDRACOLoader(dracoLoader);
 
-  const res = await gltfLoader.loadAsync(modelPath);
-  const gltfScene = res.scene;
+  try {
+    const { scene: gltfScene } = await gltfLoader.loadAsync(modelPath);
 
-  const exhibits = [];
+    const exhibits = [];
 
-  gltfScene.scale.setScalar(1);
+    gltfScene.scale.setScalar(1);
 
-  const box = new THREE.Box3().setFromObject(gltfScene);
-  box.getCenter(gltfScene.position).negate();
+    const box = new THREE.Box3().setFromObject(gltfScene);
+    box.getCenter(gltfScene.position).negate();
 
-  gltfScene.updateMatrixWorld(true);
+    gltfScene.updateMatrixWorld(true);
 
+    gltfScene.traverse(c => {
+      if (c.isMesh || c.isLight) {
+        if (c.isLight) {
+          c.visible = false;
+        } else {
+          ileMesh += 1;
 
+          if (c.material) {
 
-
-
-  gltfScene.traverse(c => {
-    if (c.isMesh || c.isLight) {
-      if (c.isLight) {
-        c.visible = false;
-      } else {
-        ileMesh += 1;
-      }
-
-      // Traverse up the parent hierarchy to find exhibitions
-      let parent = c.parent;
-      while (parent && parent.name !== 'Scene') {
-
-        if (/Exhibition/.test(parent.name)) {
-
-          if (!c.userData.belongsTo) {
-            c.userData.belongsTo = [];
-          } else {
-            console.log(c.userData.belongsTo)
+            c.material.map = null;
+            c.material.dispose();
+            c.material.needsUpdate = true;
           }
 
-          if (!c.userData.belongsTo.includes(parent.name)) {
-            c.userData.belongsTo.push(parent.name);
-          }
 
-          if (!c.material) break;
-
-          c.material.map = null;
-          c.material.dispose();
-          c.material.needsUpdate = true;
-          c.userData.isMaterialDisposed = true
-
-          break;
         }
-        parent = parent.parent;
+
+        const typeOfmesh = c.userData.belongsTo;
+        exhibits[typeOfmesh] = exhibits[typeOfmesh] || [];
+        exhibits[typeOfmesh].push(c);
+        //
+
       }
-      if (!c.userData.belongsTo) {
-        c.userData.belongsTo = 'Scene';
-      }
-      //
-      const typeOfmesh = c.userData.belongsTo;
-      exhibits[typeOfmesh] = exhibits[typeOfmesh] || [];
-      exhibits[typeOfmesh].push(c);
-      //
+    });
 
-    }
-  });
-
-  // Now you have the segregated objects in the 'exhibits' object
-  return { exhibits }
-
+    // Now you have the segregated objects in the 'exhibits' object
+    return { exhibits }
+  } catch (error) {
+    console.error('Error loading model:', error);
+    throw error;
+  }
 }
 
 // reset visitor
@@ -785,9 +734,6 @@ function reset() {
   controls.update();
 
   visitor.position.copy(target);
-
-
-
 
 }
 
@@ -868,11 +814,11 @@ async function updateVisitor(delta) {
   // get the adjusted position of the capsule collider in world space after checking
   // triangle collisions and moving it. capsuleInfo.segment.start is assumed to be
   // the origin of the visitor model.
-  const newPosition = tempVector;
+  newPosition = tempVector;
   newPosition.copy(tempSegment.start).applyMatrix4(collider.matrixWorld);
 
   // check how much the collider was moved
-  const deltaVector = tempVector2;
+  deltaVector = tempVector2;
   deltaVector.subVectors(newPosition, visitor.position);
 
   // if the visitor was primarily adjusted vertically we assume it's on something we should consider ground
@@ -913,8 +859,7 @@ async function updateVisitor(delta) {
   }
 
   // checkin where the visitor is => tutning on/off  video/animations & audio & gizmo
-  const floorChecker = new VisitorLocationChecker(scene);
-  const audioHandler = new AudioHandler();
+  floorChecker = new VisitorLocationChecker(scene);
 
   const intersectedFloor = floorChecker.checkVisitorLocation(visitor);
   if (intersectedFloor) {
@@ -928,118 +873,20 @@ async function updateVisitor(delta) {
 
 
       //AUDIO
-      if (intersectedFloor.userData.audioToPlay) {
+      audioHandler = new AudioHandler();
 
-        const audioOn = document.querySelector("#audio-on");
-        audioOn.style.display = "block"
-        audioOn.classList.add("flash");
-
-        setTimeout(() => {
-          audioOn.classList.remove("flash");
-        }, 3000);
-
-        for (const el of audioObjects) {
-
-          if (el.children[0].name === intersectedFloor.userData.audioToPlay) {
-
-            audioHandler.handleAudio(el.children[0]);
-          }
-        }
-      } else {
-
-        audioHandler.handleAudio(null);
-      }
-
+      handleAudio(intersectedFloor, audioHandler);
 
       //LIGHTS
-      for (const el of lightsToTurn) {
-
-        el.visible = el.userData.name === lightsToTurnValue;
-
-        /// //gui.destroy()
-        if (el.visible) {
-          gui.show(true);
-
-          gui.add(el, "visible").name("visible" + el.name);
-          gui.add(el, "intensity", 0, 1000, 0.1).name("intensity" + el.name);
-          gui.add(el, "distance", 0, 500, 0.1).name("distance" + el.name);
-          gui.add(el, "decay", 0, 2, 0.01).name("decay" + el.name);
-          gui.add(el.position, "y", -10, 50, 0.01).name("y" + el.name);
-
-        }
-
-      }
+      handleLights(lightsToTurn, lightsToTurnValue);
 
       // VIDEOS
-      scene.traverse(c => {
-        if (c.userData.type === "Video") {
-          // Ensure both c.userData.belongsTo and belongsTo are arrays
-          const belongsToArray = Array.isArray(belongsTo) ? belongsTo : [belongsTo];
-          const cBelongsToArray = Array.isArray(c.userData.belongsTo) ? c.userData.belongsTo : [c.userData.belongsTo];
+      handleVideos(scene, belongsTo);
 
-          // Check if there is any intersection between cBelongsToArray and belongsToArray
-          const belongsToCurrentExhibit = cBelongsToArray.some(exhibit => belongsToArray.includes(exhibit));
+      //SCENE BACKGROUND
+      handleSceneBackground(intersectedFloor);
 
-          if (belongsToCurrentExhibit) {
-            if (c.userData.elementID) {
-              const video = document.getElementById(c.userData.elementID);
-              video.play();
-            } else {
-              const allVideos = document.getElementsByTagName("video");
-              const length = allVideos.length;
-
-              for (let i = 0; i < length; i++) {
-                allVideos[i].pause();
-              }
-            }
-          }
-        }
-      });
-
-
-      //TEXTURES
-      const bgTexture = intersectedFloor.userData.bgTexture || "textures/bg_color.jpg";
-      const bgInt = intersectedFloor.userData.bgInt || 1;
-      const bgBlur = intersectedFloor.userData.bgBlur || 0;
-
-      if (textureCache.has(bgTexture)) {
-
-        setSceneBackgroundWithTransition(scene, textureCache.get(bgTexture), bgBlur, bgInt);
-      } else {
-
-        const textureLoader = new THREE.TextureLoader();
-
-        textureLoader.load(bgTexture, (texture) => {
-
-          texture.mapping = THREE.EquirectangularReflectionMapping;
-          texture.colorSpace = THREE.SRGBColorSpace;
-          setSceneBackgroundWithTransition(scene, texture, bgBlur, bgInt);
-
-        });
-
-      }
-
-      //
-      function setSceneBackgroundWithTransition(scene, newTexture, blurIntensity, intensity) {
-
-        const transitionDuration = 2000; // in milliseconds
-
-        scene.background = newTexture;
-        scene.backgroundIntensity = 0;
-
-        new TWEEN.Tween(scene)
-          .to({ backgroundIntensity: intensity }, transitionDuration)
-          .onUpdate(() => {
-            scene.backgroundBlurriness = blurIntensity;
-          })
-          .onComplete(() => {
-            scene.backgroundIntensity = intensity;
-          })
-          .start();
-      }
-
-
-      // Load textures and dispose of other objects based on the exhibit and belongsTo categories
+      // Load TEXTURES and DISPOSE other objects based on the exhibit and belongsTo categories
       loadTexturesAndDispose(belongsTo);
 
       intersectedFloor0 = intersectedFloor
@@ -1050,6 +897,104 @@ async function updateVisitor(delta) {
 
 }
 //
+function handleAudio(intersectedFloor, audioHandler) {
+  if (intersectedFloor.userData.audioToPlay) {
+    audioHandler.handleAudio(null);
+
+    const audioOn = document.querySelector("#audio-on");
+    audioOn.style.display = "block";
+    audioOn.classList.add("flash");
+
+    const animationEndListener = () => {
+      audioOn.classList.remove("flash");
+      audioOn.removeEventListener("animationend", animationEndListener);
+    };
+
+    audioOn.addEventListener("animationend", animationEndListener);
+
+    for (const el of audioObjects) {
+      if (el.children[0].name === intersectedFloor.userData.audioToPlay) {
+        audioHandler.handleAudio(el.children[0]);
+      }
+    }
+  } else {
+    audioHandler.handleAudio(null);
+  }
+}
+
+function handleLights(lightsToTurn, lightsToTurnValue) {
+  for (const el of lightsToTurn) {
+    el.visible = el.userData.name === lightsToTurnValue;
+
+    if (el.visible) {
+      gui.show(true);
+      gui.add(el, "visible").name("visible" + el.name);
+      gui.add(el, "intensity", 0, 1000, 0.1).name("intensity" + el.name);
+      gui.add(el, "distance", 0, 500, 0.1).name("distance" + el.name);
+      gui.add(el, "decay", 0, 2, 0.01).name("decay" + el.name);
+      gui.add(el.position, "y", -10, 50, 0.01).name("y" + el.name);
+    }
+  }
+}
+
+function handleVideos(scene, belongsTo) {
+  scene.traverse(c => {
+    if (c.userData.type === "Video") {
+      const belongsToArray = Array.isArray(belongsTo) ? belongsTo : [belongsTo];
+      const cBelongsToArray = Array.isArray(c.userData.belongsTo) ? c.userData.belongsTo : [c.userData.belongsTo];
+
+      const belongsToCurrentExhibit = cBelongsToArray.some(exhibit => belongsToArray.includes(exhibit));
+
+      if (belongsToCurrentExhibit) {
+        if (c.userData.elementID) {
+          const video = document.getElementById(c.userData.elementID);
+          video.play();
+        } else {
+          const allVideos = document.getElementsByTagName("video");
+          for (let i = 0; i < allVideos.length; i++) {
+            allVideos[i].pause();
+          }
+        }
+      }
+    }
+  });
+}
+
+function handleSceneBackground(intersectedFloor) {
+  const bgTexture = intersectedFloor.userData.bgTexture || "textures/bg_color.jpg";
+  const bgInt = intersectedFloor.userData.bgInt || 1;
+  const bgBlur = intersectedFloor.userData.bgBlur || 0;
+
+  if (textureCache.has(bgTexture)) {
+    setSceneBackgroundWithTransition(scene, textureCache.get(bgTexture), bgBlur, bgInt);
+  } else {
+    const textureLoader = new THREE.TextureLoader();
+    textureLoader.load(bgTexture, (texture) => {
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      texture.colorSpace = THREE.SRGBColorSpace;
+      setSceneBackgroundWithTransition(scene, texture, bgBlur, bgInt);
+    });
+  }
+}
+
+function setSceneBackgroundWithTransition(scene, newTexture, blurIntensity, intensity) {
+
+  const transitionDuration = 2000; // in milliseconds
+
+  scene.background = newTexture;
+  scene.backgroundIntensity = 0;
+
+  new TWEEN.Tween(scene)
+    .to({ backgroundIntensity: intensity }, transitionDuration)
+    .onUpdate(() => {
+      scene.backgroundBlurriness = blurIntensity;
+    })
+    .onComplete(() => {
+      scene.backgroundIntensity = intensity;
+    })
+    .start();
+}
+
 
 async function loadTexturesAndDispose(belongsTo) {
   const deps = {
@@ -1267,46 +1212,32 @@ function preloadTextures() {
 
 //
 const fadeOutEl = (el) => {
-  //el.style.opacity = 0;
-  // el.style.transition = "opacity 1.5s";
   el.style.animation = "fadeOut 2s forwards";
-  setTimeout(() => {
+  el.addEventListener("animationend", () => {
     el.remove();
-  }, 2000);
+  });
 };
+
 
 //
 class AudioHandler {
   handleAudio(audioToTurn) {
-
-    //const playIconImg = document.querySelector("#play-icon img");
     const audioOn = document.querySelector("#audio-on");
 
     if (!audioToTurn || audioToTurn.type !== "Audio") {
-
       audioOn.src = "/icons/audioMuted.png";
-      audioOn.style.display = "none"
-
-      for (const el of audioObjects) {
-
-        el.children[0].pause();
-
-      }
-      return
+      audioOn.style.display = "none";
+      audioObjects.forEach(el => el.children[0].pause());
+      return;
     }
 
     if (audioToTurn.isPlaying) {
-
-      audioOn.style.display = "block"
-      audioOn.src = "/icons/audioMuted.png";
-
       audioToTurn.stop();
-
-    } else if (!audioToTurn.isPlaying) {
-
+      audioOn.style.display = "block";
+      audioOn.src = "/icons/audioMuted.png";
+    } else {
       audioToTurn.play();
-
-      audioOn.style.display = "block"
+      audioOn.style.display = "block";
       audioOn.src = "/icons/audioButton.png";
     }
   }
@@ -1319,42 +1250,19 @@ class VisitorLocationChecker {
     this.scene = scene;
     this.raycaster = new THREE.Raycaster();
     this.downVector = new THREE.Vector3(0, -1, 0);
+    this.vector = new THREE.Vector3();
+    this.intersectedObjects = [];
   }
   checkVisitorLocation(visitor) {
     this.raycaster.firstHitOnly = true;
     this.raycaster.set(visitor.position, this.downVector);
-    const intersectedObjects = this.raycaster.intersectObjects(this.scene.children, true).find(({ object }) => object.userData.type === "visitorLocation")?.object;
-    return intersectedObjects
+    this.raycaster.intersectObjects(this.scene.children, true, this.intersectedObjects);
+    return this.intersectedObjects.find(({ object }) => object.userData.type === "visitorLocation")?.object;
   }
 }
 
 
-// Function to get objects in camera frustum
-function getObjectsInFrustum(camera, scene) {
-  const frustum = new THREE.Frustum();
-  const cameraViewProjectionMatrix = new THREE.Matrix4();
 
-  // Update the camera matrix
-  camera.updateMatrixWorld();
-  cameraViewProjectionMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
-  frustum.setFromProjectionMatrix(cameraViewProjectionMatrix);
 
-  const objectsInFrustum = [];
-
-  scene.traverse((object) => {
-    if (object.isMesh) {
-      const geometry = object.geometry;
-      geometry.computeBoundingSphere();
-      const sphere = geometry.boundingSphere.clone();
-      sphere.applyMatrix4(object.matrixWorld);
-
-      if (frustum.intersectsSphere(sphere)) {
-        objectsInFrustum.push(object);
-      }
-    }
-  });
-
-  return objectsInFrustum;
-}
 
 

@@ -46,20 +46,29 @@ a {
   top: 0;
 }
 
-@keyframes flash {
-  0% { opacity: 1; }
-  50% { opacity: 0; }
-  100% { opacity: 1; }
+.flash {
+  animation: flash 1s 6;
 }
 
-.flash {
-  animation: flash 0.3s infinite;
+@keyframes flash {
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }
 
 @keyframes fadeOut {
   from {
     opacity: 0.9;
   }
+
   to {
     opacity: 0;
   }
@@ -69,6 +78,7 @@ a {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 0.9;
   }
@@ -78,10 +88,16 @@ a {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
-  
+
+}
+
+.fade-out {
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
 }
 
 #image-view {
@@ -99,16 +115,19 @@ a {
   display: inline-flex;
   clear: both;
 }
+
 .columnLateral {
   float: left;
   width: 15%;
   min-width: 300px;
 }
+
 .columnCetral {
   float: left;
   width: 70%;
   min-width: 300px;
 }
+
 #joy3Div {
   opacity: 0.5;
   width: 6em;
@@ -148,6 +167,7 @@ a {
 #text-info.open {
   display: flex;
 }
+
 /*
 
 
@@ -161,6 +181,7 @@ a {
   box-sizing: border-box;
   letter-spacing: 1px;
 }
+
 .sidebar {
   display: none;
   position: fixed;
@@ -173,25 +194,30 @@ a {
   z-index: 99;
   transition: all 0.5s ease;
 }
+
 .sidebar.open {
   width: 400px;
   max-width: 86%;
 }
+
 .sidebar .logo-details {
   height: 60px;
   display: flex;
   align-items: center;
   position: relative;
 }
+
 @media (max-width: 420px) {
   .sidebar .logo-details {
     height: 1.5em;
   }
 }
+
 .sidebar .logo-details .icon {
   opacity: 0;
   transition: all 0.5s ease;
 }
+
 .sidebar .logo-details .logo_name {
   color: #fff;
   font-size: 1.5em;
@@ -199,6 +225,7 @@ a {
   opacity: 0;
   transition: all 0.5s ease;
 }
+
 @media (max-width: 420px) {
   .sidebar .logo-details .logo_name {
     font-size: 1em;
@@ -209,6 +236,7 @@ a {
 .sidebar.open .logo-details .logo_name {
   opacity: 1;
 }
+
 .sidebar .logo-details #btn {
   position: absolute;
   top: 50%;
@@ -256,6 +284,7 @@ li.text_in_sidebar.open canvas.open {
   position: relative;
   bottom: 50%;
 }
+
 .text_in_sidebar {
   display: flex;
   height: fit-content;
@@ -278,7 +307,9 @@ li.text_in_sidebar.open canvas.open {
   margin: 1.5em 0 0 0px;
   /*padding: 10em 1em 0 0;*/
 }
+
 @media (max-width: 420px) {
+
   .sidebar div.info_text_in_sidebar,
   .sidebar div.books_text_in_sidebar,
   li.text_in_sidebar,
@@ -305,11 +336,13 @@ li.text_in_sidebar.open canvas.open {
   text-align: center;
   line-height: 60px;
 }
+
 @media (max-width: 420px) {
   .sidebar i {
     font-size: 1em;
   }
 }
+
 .sidebar .nav-list {
   padding: 1em 1em;
   /*margin-top: 20px;*/
@@ -338,11 +371,13 @@ li.text_in_sidebar.open canvas.open {
   transition: all 0.4s ease;
   background: #11101d;
 }
+
 .sidebar li a:hover,
 #info-icon.active,
 #books-icon.active {
   background: #2d88e3;
 }
+
 .sidebar li a .links_name {
   color: #c7eaf4;
   font-size: 1em;
@@ -365,11 +400,13 @@ li.text_in_sidebar.open canvas.open {
   display: flex;
   align-items: center;
 }
+
 .sidebar li a:hover .links_name,
 .sidebar li a:hover i {
   transition: all 0.5s ease;
   color: #11101d;
 }
+
 .sidebar li i {
   height: 50px;
   line-height: 50px;
