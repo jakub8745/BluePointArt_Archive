@@ -4,8 +4,6 @@ import { PositionalAudioHelper } from 'three/addons/helpers/PositionalAudioHelpe
 import FadeInMaterial from 'three/addons/libs/FadeInMaterial.js';
 import { TextureLoader, Object3D, MeshLambertMaterial, MeshBasicMaterial, Mesh, Color, PositionalAudio, AudioLoader, VideoTexture, RepeatWrapping, DoubleSide, SRGBColorSpace } from 'three';
 
-
-//import * as THREE from 'three';
 const loader = new TextureLoader();
 
 export const modifyObjects = {
@@ -31,16 +29,6 @@ export const modifyObjects = {
             //mesh.shadow.radius = 1;
             deps.environment.attach(targetObject);
 
-            if (SpotLight.userData.name === "lightsArTour") {
-
-                let gui = deps.gui
-
-                gui.add(SpotLight, "visible").name("visible" + SpotLight.name);
-                gui.add(SpotLight, "intensity", 0, 50, 0.01).name("intensity" + SpotLight.name);
-                gui.add(SpotLight, "distance", 0, 500, 0.1).name("distance" + SpotLight.name);
-                gui.add(SpotLight, "decay", 0, 10, 0.01).name("decay" + SpotLight.name);
-                gui.add(SpotLight.position, "y", -10, 50, 0.01).name("y" + SpotLight.name);
-            }
         }
 
         deps.lightsToTurn.push(SpotLight);
@@ -59,15 +47,6 @@ export const modifyObjects = {
         //mesh.shadow.blurSamples = 15;
         //mesh.shadow.radius = 1;
 
-        if (PointLight.userData.name === "lightsArTour") {
-            let gui = deps.gui
-
-            gui.add(PointLight, "visible").name("visible" + PointLight.name);
-            gui.add(PointLight, "intensity", 0, 50, 0.01).name("intensity" + PointLight.name);
-            gui.add(PointLight, "distance", 0, 500, 0.1).name("distance" + PointLight.name);
-            gui.add(PointLight, "decay", 0, 10, 0.01).name("decay" + PointLight.name);
-            gui.add(PointLight.position, "y", -10, 50, 0.01).name("y" + PointLight.name);
-        }
         deps.lightsToTurn.push(PointLight);
     },
     AmbientLight: () => {
@@ -146,36 +125,6 @@ export const modifyObjects = {
         mesh.receiveShadow = deps.receiveShadow
         mesh.castShadow = deps.castShadow
 
-/*
-        if (
-
-            /Wall/.test(mesh.userData.name) ||
-            /visitorLocation/.test(mesh.userData.type)
-
-        ) {
-
-            const cClone = mesh.clone();
-            cClone.material = new MeshBasicMaterial();
-
-            if (cClone.userData.type === "visitorLocation") {
-
-                cClone.material.color.set(0x1b689f);
-
-            } else {
-
-                cClone.material.color = new Color(0xffffff);
-
-            }
-
-            cClone.material.needsUpdate = true;
-            cClone.position.copy(mesh.position);
-            cClone.scale.copy(mesh.scale);
-
-            if (deps.sceneMap) deps.sceneMap.add(cClone);
-
-        }
-        */
-        //
     },
     photoScreen: (mesh, deps) => {
 

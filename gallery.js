@@ -69,6 +69,9 @@ let fwdPressed = false,
   bkdPressed = false,
   lftPressed = false,
   rgtPressed = false;
+
+const vector3 = new THREE.Vector3();
+  
 let visitorVelocity = new THREE.Vector3();
 let upVector = new THREE.Vector3(0, 1, 0);
 let tempVector = new THREE.Vector3();
@@ -92,7 +95,7 @@ const visitorPos = new THREE.Vector3();
 let Wall,
   result,
   intersects,
-  video
+  video, image
 let intensityTo, intervalId;
 
 let audioHandler, floorChecker;
@@ -311,13 +314,13 @@ function init() {
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Consider other types based on your needs
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap; //;PCFSoftShadowMapVSMShadowMap
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = params.exposure;
-  //renderer.gammaOutput = true;
-  //renderer.gammaFactor = 0.1;
+
   document.body.appendChild(renderer.domElement);
+
   anisotropy = renderer.capabilities.getMaxAnisotropy();
 
 
@@ -415,18 +418,7 @@ function init() {
 
   // events
 
-  /*
-  document
-    .querySelector("#play-icon")
-    .addEventListener("pointerdown", (evt) => {
-      evt.preventDefault();
-      const floorChecker = new VisitorLocationChecker(scene);
-      const audioHandler = new AudioHandler();
-      const el = floorChecker.checkVisitorLocation(visitor);
-      audioHandler.handleAudio(scene.getObjectByName(el.userData.audioToPlay));
 
-    });
-    */
 
   document
     .querySelector("img#audio-on")
@@ -458,7 +450,7 @@ function init() {
     }
 
     // checking if clicked obj needs description
-    const image = intersects.find(({ object }) => object.userData.opis);
+    image = intersects.find(({ object }) => object.userData.opis);
 
 
     if (image && intersects.indexOf(image) < intersects.indexOf(Wall)) {
