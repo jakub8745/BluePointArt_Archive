@@ -10,6 +10,8 @@ import { TransformControls } from "three/addons/controls/TransformControls.js";
 import { modifyObjects } from 'three/addons/libs/modifyObjects.js';
 //import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
+
 
 import Stats from "three/addons/libs/stats.module.js";
 import { GUI } from "three/addons/libs/lil-gui.module.min.js";
@@ -55,7 +57,7 @@ let renderer, camera, scene, clock, tween, stats, anisotropy;
 let rendererMap, cameraMap, circleMap, sceneMap, css2DRenderer;
 const cameraDirection = new THREE.Vector3();
 
-
+const ktx2Loader = new KTX2Loader()
 
 let collider, visitor, controls, control;
 let circle, circleYellow, circleBlue
@@ -71,7 +73,7 @@ let fwdPressed = false,
   rgtPressed = false;
 
 const vector3 = new THREE.Vector3();
-  
+
 let visitorVelocity = new THREE.Vector3();
 let upVector = new THREE.Vector3(0, 1, 0);
 let tempVector = new THREE.Vector3();
@@ -316,6 +318,7 @@ function init() {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Consider other types based on your needs
   renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.gammaFactor = 2.2;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = params.exposure;
 
@@ -414,6 +417,39 @@ function init() {
   // ambientLight
   let ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
   scene.add(ambientLight);
+
+  //proba .ktx2
+
+  // Create a cube geometry
+  const geometry = new THREE.BoxGeometry(1, 1, 1);
+
+  // Load the KTX2 texture
+
+  ktx2Loader.setTranscoderPath('jsm/libs/basis/')
+  ktx2Loader.detectSupport(renderer);
+
+  ktx2Loader.load('textures/equMap_podMostem.ktx2', function (texture) {
+
+    texture.flipY = false;
+
+    const material = new THREE.MeshStandardMaterial();
+
+    material.map = texture;
+
+    // Create the cube mesh with the geometry and material
+    const cube = new THREE.Mesh(geometry, material);
+
+    // Add the cube to the scene
+    scene.add(cube);
+
+  }, function (e) {
+
+    console.error(e);
+
+  });
+
+
+  // });
 
 
   // events
@@ -953,19 +989,28 @@ function handleVideos(scene, belongsTo) {
 }
 
 function handleSceneBackground(intersectedFloor) {
-  const bgTexture = intersectedFloor.userData.bgTexture || "textures/bg_color.jpg";
+  let bgTexture = intersectedFloor.userData.bgTexture || "textures/2d_etc1s.ktx2";
   const bgInt = intersectedFloor.userData.bgInt || 1;
   const bgBlur = intersectedFloor.userData.bgBlur || 0;
+
+  //bgTexture = "textures/equMap_podMostem.ktx2";
+
+  console.log("bgTexture", bgTexture);
+  console.log("textureCache", textureCache);
 
   if (textureCache.has(bgTexture)) {
     setSceneBackgroundWithTransition(scene, textureCache.get(bgTexture), bgBlur, bgInt);
   } else {
-    const textureLoader = new THREE.TextureLoader();
-    textureLoader.load(bgTexture, (texture) => {
+    // Load the KTX2 texture
+    ktx2Loader.setTranscoderPath('jsm/libs/basis/').detectSupport(renderer);
+
+    ktx2Loader.load(bgTexture, (texture) => {
       texture.mapping = THREE.EquirectangularReflectionMapping;
       texture.colorSpace = THREE.SRGBColorSpace;
+      texture.flipY = false;
       setSceneBackgroundWithTransition(scene, texture, bgBlur, bgInt);
     });
+
   }
 }
 
@@ -1005,7 +1050,7 @@ async function loadTexturesAndDispose(belongsTo) {
     anisotropy,
   };
 
-  console.log('TODO:  MODEL: dorobic korytarze, poustawia swiatla');
+  console.log('TODO:  MODEL: poobraca textury');
 
   const objectsToDispose = [];
 
@@ -1189,15 +1234,27 @@ function ileElementow() {
 
 //
 function preloadTextures() {
-  const textureLoader = new THREE.TextureLoader();
-  const textureFiles = ['bg_puent.jpg', 'bg_color.jpg', 'galaktyka.jpg', 'dystopia/bgVermeerViewofDelft.jpg', 'bg_lockdowns.jpg', 'equMap_podMostem.jpg', 'bg_kratka.jpg']; // Add all texture filenames here
+  //const textureLoader = new THREE.TextureLoader();
+
+
+  //const ktx2Loader = new KTX2Loader()
+  ktx2Loader.setTranscoderPath('jsm/libs/basis/')
+  ktx2Loader.detectSupport(renderer)
+  //const textureFiles = ['bg_puent.jpg', 'bg_color.jpg', 'galaktyka.jpg', 'dystopia/bgVermeerViewofDelft.jpg', 'bg_lockdowns.jpg', 'equMap_podMostem.jpg', 'bg_kratka.jpg']; // Add all texture filenames here
+  const textureFiles = ['bg_color.ktx2', 'galaktyka.ktx2', 'equMap_podMostem.ktx2']; // Add all texture filenames here
+
 
   textureFiles.forEach((textureFile) => {
     const textureUrl = textureFolder + textureFile;
-    textureLoader.load(textureUrl, (texture) => {
+
+    ktx2Loader.load(textureUrl, (texture) => {
+
       texture.mapping = THREE.EquirectangularReflectionMapping;
       texture.colorSpace = THREE.SRGBColorSpace;
+      texture.flipY = false;
+
       textureCache.set(textureUrl, texture);
+
     });
   });
 }
