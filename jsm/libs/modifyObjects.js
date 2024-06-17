@@ -107,6 +107,12 @@ export const modifyObjects = {
     },
     element: (mesh, deps) => {
 
+        //console.log("element: ", mesh.name, mesh.material) ;
+
+        if(mesh.material.map){
+            console.log("map: ", mesh.material.map);
+        }
+
         const { userData, material } = mesh;
         const { Map, normalhMap, RoughMap, name, wS, wT } = userData;
 

@@ -419,38 +419,38 @@ function init() {
   scene.add(ambientLight);
 
   //proba .ktx2
-/*
-  // Create a cube geometry
-  const geometry = new THREE.BoxGeometry(1, 1, 1);
-
-  // Load the KTX2 texture
-
-  ktx2Loader.setTranscoderPath('jsm/libs/basis/')
-  ktx2Loader.detectSupport(renderer);
-
-  ktx2Loader.load('textures/equMap_podMostem.ktx2', function (texture) {
-
-    texture.flipY = false;
-
-    const material = new THREE.MeshStandardMaterial();
-
-    material.map = texture;
-
-    // Create the cube mesh with the geometry and material
-    const cube = new THREE.Mesh(geometry, material);
-
-    // Add the cube to the scene
-    scene.add(cube);
-
-  }, function (e) {
-
-    console.error(e);
-
-  });
-
-
-  // });
-*/
+  /*
+    // Create a cube geometry
+    const geometry = new THREE.BoxGeometry(1, 1, 1);
+  
+    // Load the KTX2 texture
+  
+    ktx2Loader.setTranscoderPath('jsm/libs/basis/')
+    ktx2Loader.detectSupport(renderer);
+  
+    ktx2Loader.load('textures/equMap_podMostem.ktx2', function (texture) {
+  
+      texture.flipY = false;
+  
+      const material = new THREE.MeshStandardMaterial();
+  
+      material.map = texture;
+  
+      // Create the cube mesh with the geometry and material
+      const cube = new THREE.Mesh(geometry, material);
+  
+      // Add the cube to the scene
+      scene.add(cube);
+  
+    }, function (e) {
+  
+      console.error(e);
+  
+    });
+  
+  
+    // });
+  */
 
   // events
 
@@ -687,6 +687,9 @@ function init() {
 
 
 }
+//
+
+
 
 
 
