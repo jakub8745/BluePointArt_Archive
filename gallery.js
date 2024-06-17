@@ -415,11 +415,11 @@ function init() {
 
 
   // ambientLight
-  let ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
+  let ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
   scene.add(ambientLight);
 
   //proba .ktx2
-
+/*
   // Create a cube geometry
   const geometry = new THREE.BoxGeometry(1, 1, 1);
 
@@ -450,7 +450,7 @@ function init() {
 
 
   // });
-
+*/
 
   // events
 
@@ -962,6 +962,8 @@ function handleLights(lightsToTurn, lightsToTurnValue) {
       gui.add(el, "decay", 0, 2, 0.01).name("decay" + el.name);
       gui.add(el.position, "y", -10, 50, 0.01).name("y" + el.name);
     }
+    gui.show(false);
+
   }
 }
 
@@ -1007,7 +1009,9 @@ function handleSceneBackground(intersectedFloor) {
     ktx2Loader.load(bgTexture, (texture) => {
       texture.mapping = THREE.EquirectangularReflectionMapping;
       texture.colorSpace = THREE.SRGBColorSpace;
-      texture.flipY = false;
+      //texture.minFilter = THREE.LinearMipmapLinearFilter;
+
+      //texture.flipY = false;
       setSceneBackgroundWithTransition(scene, texture, bgBlur, bgInt);
     });
 
@@ -1251,7 +1255,8 @@ function preloadTextures() {
 
       texture.mapping = THREE.EquirectangularReflectionMapping;
       texture.colorSpace = THREE.SRGBColorSpace;
-      texture.flipY = false;
+      //texture.minFilter = THREE.LinearMipmapLinearFilter;
+      //texture.flipY = false;
 
       textureCache.set(textureUrl, texture);
 
