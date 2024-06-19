@@ -333,7 +333,7 @@ function init() {
 
   // camera setup
   camera = new THREE.PerspectiveCamera(
-    70,
+    50,
     window.innerWidth / window.innerHeight,
     0.1,
     50
@@ -721,6 +721,10 @@ async function loadArchiveModel(modelPath) {
           ileMesh += 1;
 
           if (c.material) {
+
+            if (c.material.map) {
+              console.log("map: ", c.material.map);
+            }
 
             c.material.map = null;
             c.material.dispose();
