@@ -18,7 +18,6 @@
     "start": "parcel index.html --open",
     "build": "parcel build index.html"
   },
-  "dependencies": {},
   "devDependencies": {
     "parcel-bundler": "^1.6.1"
   }

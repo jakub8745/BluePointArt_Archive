@@ -1004,7 +1004,7 @@ function handleSceneBackground(intersectedFloor) {
 
   //bgTexture = "textures/equMap_podMostem.ktx2";
 
-  console.log("bgTexture", bgTexture);
+  console.log("bgTexture", bgTexture, "intersectedFloor.userData", intersectedFloor.userData);
   console.log("textureCache", textureCache);
 
   if (textureCache.has(bgTexture)) {
@@ -1252,7 +1252,7 @@ function preloadTextures() {
   ktx2Loader.setTranscoderPath('jsm/libs/basis/')
   ktx2Loader.detectSupport(renderer)
   //const textureFiles = ['bg_puent.jpg', 'bg_color.jpg', 'galaktyka.jpg', 'dystopia/bgVermeerViewofDelft.jpg', 'bg_lockdowns.jpg', 'equMap_podMostem.jpg', 'bg_kratka.jpg']; // Add all texture filenames here
-  const textureFiles = ['bg_color.ktx2', 'galaktyka.ktx2', 'equMap_podMostem.ktx2']; // Add all texture filenames here
+  const textureFiles = ['bg_color.ktx2', 'galaktyka.ktx2', 'equMap_podMostem.ktx2', 'bg_white.ktx2','bg_lockdowns.ktx2', 'dystopia/bgVermeerViewofDelft.ktx2']; // Add all texture filenames here
 
 
   textureFiles.forEach((textureFile) => {
