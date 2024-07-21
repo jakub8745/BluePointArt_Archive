@@ -1061,7 +1061,7 @@ async function loadTexturesAndDispose(belongsTo) {
     anisotropy,
   };
 
-  console.log('TODO:  MODEL: ŚWIATŁA NA WYSTAWACH, zmieni reszte textur do .KTX2');
+  console.log('TODO:  MODEL: ŚWIATŁA NA WYSTAWACH, zmieni reszte textur do .KTX2, ustawi AUDIO i schowa helpery, poprawi przesówanie do kółeczka');
 
   const objectsToDispose = [];
 
