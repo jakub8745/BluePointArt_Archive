@@ -35,7 +35,7 @@ const params = {
   visitorSpeed: 3,
   physicsSteps: 5,
   reset: reset,
-  exposure: 0.4,
+  exposure: 1,
   gizmoVisible: false,
   canSeeGizmo: false,
   transControlsMode: "rotate",
@@ -318,9 +318,13 @@ function init() {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Consider other types based on your needs
   renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.gammaOutput = true;
+
   renderer.gammaFactor = 2.2;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = params.exposure;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+
 
   document.body.appendChild(renderer.domElement);
 
@@ -404,7 +408,7 @@ function init() {
 
 
   // AmbientLight
-  const light = new THREE.AmbientLight(0x404040, 30); // soft white light
+  const light = new THREE.AmbientLight(0xffffff, 160); // soft white light
   sceneMap.add(light);
 
   //
@@ -415,7 +419,7 @@ function init() {
 
 
   // ambientLight
-  let ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+  let ambientLight = new THREE.AmbientLight(0x404040, 20);
   scene.add(ambientLight);
 
   //proba .ktx2
@@ -723,7 +727,7 @@ async function loadArchiveModel(modelPath) {
           if (c.material) {
 
             if (c.material.map) {
-              console.log("map: ", c.material.map);
+              // console.log("map: ", c.material.map);
             }
 
             c.material.map = null;
@@ -961,7 +965,13 @@ function handleLights(lightsToTurn, lightsToTurnValue) {
   for (const el of lightsToTurn) {
     el.visible = el.userData.name === lightsToTurnValue;
 
+
     if (el.visible) {
+
+      console.log("el.userData.name", el.userData.name, "lightsToTurnValue", lightsToTurnValue, "el.visible", el.visible, el.intensity)
+
+
+
       gui.show(true);
       gui.add(el, "visible").name("visible" + el.name);
       gui.add(el, "intensity", 0, 1000, 0.1).name("intensity" + el.name);
@@ -969,7 +979,7 @@ function handleLights(lightsToTurn, lightsToTurnValue) {
       gui.add(el, "decay", 0, 2, 0.01).name("decay" + el.name);
       gui.add(el.position, "y", -10, 50, 0.01).name("y" + el.name);
     }
-    gui.show(false);
+    gui.show(true);
 
   }
 }
@@ -1004,8 +1014,8 @@ function handleSceneBackground(intersectedFloor) {
 
   //bgTexture = "textures/equMap_podMostem.ktx2";
 
-  console.log("bgTexture", bgTexture, "intersectedFloor.userData", intersectedFloor.userData);
-  console.log("textureCache", textureCache);
+  //console.log("bgTexture", bgTexture, "intersectedFloor.userData", intersectedFloor.userData);
+  //console.log("textureCache", textureCache);
 
   if (textureCache.has(bgTexture)) {
     setSceneBackgroundWithTransition(scene, textureCache.get(bgTexture), bgBlur, bgInt);
@@ -1079,6 +1089,8 @@ async function loadTexturesAndDispose(belongsTo) {
       objectsToDispose.push(c);
 
     } else if (belongsToCurrentExhibit) {
+
+      // console.log(c , deps)
 
       modifyObjects[c.userData.type]?.(c, deps);
       c.userData.isMaterialDisposed = false;
@@ -1252,7 +1264,7 @@ function preloadTextures() {
   ktx2Loader.setTranscoderPath('jsm/libs/basis/')
   ktx2Loader.detectSupport(renderer)
   //const textureFiles = ['bg_puent.jpg', 'bg_color.jpg', 'galaktyka.jpg', 'dystopia/bgVermeerViewofDelft.jpg', 'bg_lockdowns.jpg', 'equMap_podMostem.jpg', 'bg_kratka.jpg']; // Add all texture filenames here
-  const textureFiles = ['bg_color.ktx2', 'galaktyka.ktx2', 'equMap_podMostem.ktx2', 'bg_white.ktx2','bg_lockdowns.ktx2', 'dystopia/bgVermeerViewofDelft.ktx2']; // Add all texture filenames here
+  const textureFiles = ['bg_color.ktx2', 'galaktyka.ktx2', 'equMap_podMostem.ktx2', 'bg_white.ktx2', 'bg_lockdowns.ktx2', 'dystopia/bgVermeerViewofDelft.ktx2']; // Add all texture filenames here
 
 
   textureFiles.forEach((textureFile) => {

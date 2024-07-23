@@ -11,6 +11,9 @@ export const modifyObjects = {
 
         SpotLight.matrixWorldAutoUpdate = true;
         SpotLight.userData.intensity = SpotLight.intensity;
+        //SpotLight.intensity = 10
+
+        //console.log("SpotLight", SpotLight.intensity, SpotLight.userData.intensity);
 
         const targetObject = new Object3D();
         SpotLight.target = targetObject;
@@ -107,18 +110,28 @@ export const modifyObjects = {
     },
     element: (mesh, deps) => {
 
-        //console.log("element: ", mesh.name, mesh.material) ;
 
-        if(mesh.material.map){
-            console.log("map: ", mesh.material.map);
+
+       // console.log("element: ", mesh.name, mesh.material.color);
+
+        if (mesh.material.map) {
+            console.log("map: ", mesh.name, mesh.material.map);
         }
 
         const { userData, material } = mesh;
         const { Map, normalhMap, RoughMap, name, wS, wT } = userData;
 
         if (Map) material.map = loader.load(Map);
+
+        if (mesh.material.map) {
+            console.log("map: ", mesh.name, mesh.material.map);
+        }
+
+        material.color = new Color(0xffffff);
+
+        //console.log("normalhMap: ", Map);
         //if (normalhMap) material.normalMap = loader.load(normalhMap);
-       // if (RoughMap) material.roughnessMap = loader.load(RoughMap);
+        // if (RoughMap) material.roughnessMap = loader.load(RoughMap);
         if (wS) {
             material.map.wrapS = RepeatWrapping;
             material.map.wrapT = RepeatWrapping;
@@ -134,7 +147,7 @@ export const modifyObjects = {
     },
     photoScreen: (mesh, deps) => {
 
-        mesh.material = new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide });
+        mesh.material = new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
         mesh.material.map.wrapT = RepeatWrapping;
         mesh.material.map.wrapS = RepeatWrapping; // Ensure wrapping is enabled
         mesh.material.map.repeat.x = -1;
@@ -151,8 +164,8 @@ export const modifyObjects = {
         mesh.material.color.convertSRGBToLinear();
         mesh.material.needsUpdate = true;
 
-        deps.receiveShadow = false
-        deps.castShadow = false
+        //deps.receiveShadow = false
+        //deps.castShadow = false
 
         modifyObjects.element(mesh, deps);
     },
@@ -185,7 +198,7 @@ export const modifyObjects = {
         mesh.receiveShadow = false;
         mesh.castShadow = false;
         mesh.material.needsUpdate = true;
-        
+
         //
     },
     Audio: (mesh, deps) => {

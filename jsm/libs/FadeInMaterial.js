@@ -1,21 +1,21 @@
 //import * as THREE from 'three';
 
-//import { MeshLambertMaterial } from 'three';
-import { MeshBasicMaterial } from 'three';
+import { MeshLambertMaterial } from 'three';
+//import { MeshBasicMaterial } from 'three';
 
 
 //export default class FadeInMaterial extends MeshLambertMaterial {
-  export default class FadeInMaterial extends MeshBasicMaterial {
+  export default class FadeInMaterial extends MeshLambertMaterial {
+   // export default class FadeInMaterial extends MeshBasicMaterial {
 
   constructor(options) {
 
     super(options);
     this.name = options.name || 'FadeInMaterial';
-    this.fadeDuration = options.fadeDuration || 2000; // Duration of the fade-in animation in milliseconds
+    this.fadeDuration = options.fadeDuration || 10000; // Duration of the fade-in animation in milliseconds
     this.fadeInterval = options.fadeInterval || 40; // Interval between opacity updates
     this.opacity = 0;
     this.isFadingIn = false;
-
     this.onLoad();
 
   }
