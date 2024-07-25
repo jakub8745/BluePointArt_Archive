@@ -60,7 +60,11 @@ export const modifyObjects = {
 
         //
     },
-    ShaderBox: (mesh) => {
+    Room: (mesh) => {
+    
+            console.log("visitorLocation: ", mesh.material.map);
+            console.log("visitorLocation: ", mesh.name);
+
         //
 
     },
@@ -100,11 +104,11 @@ export const modifyObjects = {
     },
     visitorLocation: (mesh, deps) => {
 
+
         mesh.material = new MeshLambertMaterial({ transparent: false });
 
         deps.receiveShadow = true
         deps.castShadow = false
-
         modifyObjects.element(mesh, deps);
 
     },
@@ -112,10 +116,10 @@ export const modifyObjects = {
 
 
 
-       // console.log("element: ", mesh.name, mesh.material.color);
+        // console.log("element: ", mesh.name, mesh.material.color);
 
         if (mesh.material.map) {
-            console.log("map: ", mesh.name, mesh.material.map);
+            // console.log("map: ", mesh.name, mesh.material.map);
         }
 
         const { userData, material } = mesh;
@@ -124,7 +128,7 @@ export const modifyObjects = {
         if (Map) material.map = loader.load(Map);
 
         if (mesh.material.map) {
-            console.log("map: ", mesh.name, mesh.material.map);
+            // console.log("map: ", mesh.name, mesh.material.map);
         }
 
         material.color = new Color(0xffffff);
@@ -231,7 +235,7 @@ export const modifyObjects = {
             mesh.add(sound);
             deps.audioObjects.push(mesh);
 
-            console.log("audioObjects", sound.panner.coneInnerAngle);
+            // console.log("audioObjects", sound.panner.coneInnerAngle);
         });
     },
 };

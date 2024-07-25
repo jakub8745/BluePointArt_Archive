@@ -40,7 +40,7 @@ const params = {
   canSeeGizmo: false,
   transControlsMode: "rotate",
   heightOffset: new THREE.Vector3(0, 0.1, 0),// offset the camera from the visitor
-  archiveModelPath: "../models/galeriaGLTF/BPAarchiveModel.glb",
+  archiveModelPath: "../models/galeriaGLTF/bakedRooms.glb",
 };
 
 let ileE = 2,
@@ -408,7 +408,7 @@ function init() {
 
 
   // AmbientLight
-  const light = new THREE.AmbientLight(0xffffff, 160); // soft white light
+  const light = new THREE.AmbientLight(0xffffff, 200); // soft white light
   sceneMap.add(light);
 
   //
@@ -419,7 +419,7 @@ function init() {
 
 
   // ambientLight
-  let ambientLight = new THREE.AmbientLight(0x404040, 20);
+  let ambientLight = new THREE.AmbientLight(0x404040, 40);
   scene.add(ambientLight);
 
   //proba .ktx2
@@ -730,9 +730,9 @@ async function loadArchiveModel(modelPath) {
               // console.log("map: ", c.material.map);
             }
 
-            c.material.map = null;
-            c.material.dispose();
-            c.material.needsUpdate = true;
+            //c.material.map = null;
+            //c.material.dispose();
+            // c.material.needsUpdate = true;
           }
 
 
@@ -901,6 +901,9 @@ async function updateVisitor(delta) {
   floorChecker = new VisitorLocationChecker(scene);
 
   const intersectedFloor = floorChecker.checkVisitorLocation(visitor);
+
+  console.log("intersectedFloor: ", intersectedFloor);
+
   if (intersectedFloor) {
 
     const belongsTo = intersectedFloor.userData.belongsTo;
@@ -968,7 +971,7 @@ function handleLights(lightsToTurn, lightsToTurnValue) {
 
     if (el.visible) {
 
-      console.log("el.userData.name", el.userData.name, "lightsToTurnValue", lightsToTurnValue, "el.visible", el.visible, el.intensity)
+      //console.log("el.userData.name", el.userData.name, "lightsToTurnValue", lightsToTurnValue, "el.visible", el.visible, el.intensity)
 
 
 
@@ -1071,7 +1074,7 @@ async function loadTexturesAndDispose(belongsTo) {
     anisotropy,
   };
 
-  console.log('TODO:  MODEL: ŚWIATŁA NA WYSTAWACH, zmieni reszte textur do .KTX2, ustawi AUDIO i schowa helpery, poprawi przesówanie do kółeczka');
+  console.log('TODO:  MODEL: ŚWIATŁA NA WYSTAWACH (nowy obiekt: ROOM wczytywany razem z tekstur z modelu archivum), zmieni reszte textur do .KTX2, ustawi AUDIO i schowa helpery, poprawi przesówanie do kółeczka');
 
   const objectsToDispose = [];
 
@@ -1085,7 +1088,7 @@ async function loadTexturesAndDispose(belongsTo) {
     // Check if there is any intersection between cBelongsToArray and belongsToArray
     const belongsToCurrentExhibit = cBelongsToArray.some(exhibit => belongsToArray.includes(exhibit));
 
-    if (!belongsToCurrentExhibit && c.material && !c.userData.isMaterialDisposed) {
+    if (!belongsToCurrentExhibit && c.material && !c.userData.isMaterialDisposed && !c.userData.type === "Room") {
       objectsToDispose.push(c);
 
     } else if (belongsToCurrentExhibit) {
@@ -1330,7 +1333,11 @@ class VisitorLocationChecker {
     this.raycaster.firstHitOnly = true;
     this.raycaster.set(visitor.position, this.downVector);
     this.raycaster.intersectObjects(this.scene.children, true, this.intersectedObjects);
-    return this.intersectedObjects.find(({ object }) => object.userData.type === "visitorLocation")?.object;
+    return this.intersectedObjects.find(({ object }) => {
+      const type = object.userData.type;
+      return type === "visitorLocation" || type === "Room";
+    })?.object;
+
   }
 }
 
