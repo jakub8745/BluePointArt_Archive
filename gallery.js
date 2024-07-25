@@ -902,7 +902,7 @@ async function updateVisitor(delta) {
 
   const intersectedFloor = floorChecker.checkVisitorLocation(visitor);
 
-  console.log("intersectedFloor: ", intersectedFloor);
+  //console.log("intersectedFloor: ", intersectedFloor);
 
   if (intersectedFloor) {
 
