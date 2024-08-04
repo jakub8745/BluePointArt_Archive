@@ -62,8 +62,8 @@ export const modifyObjects = {
     },
     Room: (mesh) => {
     
-            console.log("visitorLocation: ", mesh.material.map);
-            console.log("visitorLocation: ", mesh.name);
+           // console.log("visitorLocation: ", mesh.material.map);
+           // console.log("visitorLocation: ", mesh.name);
 
         //
 
@@ -131,9 +131,9 @@ export const modifyObjects = {
             // console.log("map: ", mesh.name, mesh.material.map);
         }
 
-        material.color = new Color(0xffffff);
+        //material.color = new Color(0xffffff);
 
-        //console.log("normalhMap: ", Map);
+        console.log("hMap: ", Map);
         //if (normalhMap) material.normalMap = loader.load(normalhMap);
         // if (RoughMap) material.roughnessMap = loader.load(RoughMap);
         if (wS) {
@@ -145,8 +145,9 @@ export const modifyObjects = {
         }
 
         if (name === "Wall") { deps.receiveShadow = true; deps.castShadow = true; }
-        mesh.receiveShadow = deps.receiveShadow
-        mesh.castShadow = deps.castShadow
+       // mesh.receiveShadow = deps.receiveShadow
+       // mesh.castShadow = deps.castShadow
+        mesh.material.needsUpdate = true;
 
     },
     photoScreen: (mesh, deps) => {

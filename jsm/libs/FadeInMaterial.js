@@ -12,7 +12,7 @@ export default class FadeInMaterial extends MeshBasicMaterial {
 
     super(options);
     this.name = options.name || 'FadeInMaterial';
-    this.fadeDuration = options.fadeDuration || 10000; // Duration of the fade-in animation in milliseconds
+    this.fadeDuration = options.fadeDuration || 4000; // Duration of the fade-in animation in milliseconds
     this.fadeInterval = options.fadeInterval || 40; // Interval between opacity updates
     this.opacity = 0;
     this.isFadingIn = false;

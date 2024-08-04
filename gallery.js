@@ -337,13 +337,13 @@ function init() {
 
   // camera setup
   camera = new THREE.PerspectiveCamera(
-    50,
+    70,
     window.innerWidth / window.innerHeight,
     0.1,
-    50
+    70
   );
   camera.position.set(10, 6, -10);
-  camera.far = 100;
+  //camera.far = 100;
   camera.updateProjectionMatrix();
   window.camera = camera;
 
@@ -408,7 +408,7 @@ function init() {
 
 
   // AmbientLight
-  const light = new THREE.AmbientLight(0xffffff, 200); // soft white light
+  const light = new THREE.AmbientLight(0xffffff, 0); // soft white light
   sceneMap.add(light);
 
   //
@@ -982,7 +982,7 @@ function handleLights(lightsToTurn, lightsToTurnValue) {
       gui.add(el, "decay", 0, 2, 0.01).name("decay" + el.name);
       gui.add(el.position, "y", -10, 50, 0.01).name("y" + el.name);
     }
-    gui.show(true);
+    gui.show(false);
 
   }
 }
