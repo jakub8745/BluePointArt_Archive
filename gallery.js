@@ -204,7 +204,8 @@ loadArchiveModel(params.archiveModelPath).then(({ exhibits }) => {
     } else if (
 
       /Wall/.test(c.userData.name) ||
-      /visitorLocation/.test(c.userData.type)
+      /visitorLocation/.test(c.userData.type)||
+      /Room/.test(c.userData.type)
 
     ) {
 
@@ -212,7 +213,7 @@ loadArchiveModel(params.archiveModelPath).then(({ exhibits }) => {
 
       cClone.material = new THREE.MeshBasicMaterial();
 
-      if (cClone.userData.type === "visitorLocation") {
+      if (cClone.userData.type === "visitorLocation"|| cClone.userData.type === "Room") {
 
         if (cClone.name === "FloorOut") cClone.visible = false
 
@@ -419,7 +420,7 @@ function init() {
 
 
   // ambientLight
-  let ambientLight = new THREE.AmbientLight(0x404040, 40);
+  let ambientLight = new THREE.AmbientLight(0x404040, 30);
   scene.add(ambientLight);
 
   //proba .ktx2

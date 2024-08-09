@@ -61,9 +61,9 @@ export const modifyObjects = {
         //
     },
     Room: (mesh) => {
-    
-           // console.log("visitorLocation: ", mesh.material.map);
-           // console.log("visitorLocation: ", mesh.name);
+
+        // console.log("visitorLocation: ", mesh.material.map);
+        // console.log("visitorLocation: ", mesh.name);
 
         //
 
@@ -123,7 +123,7 @@ export const modifyObjects = {
         }
 
         const { userData, material } = mesh;
-        const { Map, normalhMap, RoughMap, name, wS, wT } = userData;
+        const { Map, normalMap, RoughMap, name, wS, wT } = userData;
 
         if (Map) material.map = loader.load(Map);
 
@@ -133,20 +133,27 @@ export const modifyObjects = {
 
         //material.color = new Color(0xffffff);
 
-        console.log("hMap: ", Map);
-        //if (normalhMap) material.normalMap = loader.load(normalhMap);
+        // console.log("hMap: ", Map);
+        if (normalMap) material.normalMap = loader.load(normalMap);
         // if (RoughMap) material.roughnessMap = loader.load(RoughMap);
         if (wS) {
             material.map.wrapS = RepeatWrapping;
             material.map.wrapT = RepeatWrapping;
             material.map.repeat.set(wS, wT);
             material.map.rotate = Math.PI / 2;
+            
 
+        }
+         else if (wS && normalMap) {
+            material.normalMap.wrapS = RepeatWrapping;
+            material.normalMap.wrapT = RepeatWrapping;
+            material.normalMap.repeat.set(wS, wT);
+            material.normalMap.rotate = Math.PI / 2;
         }
 
         if (name === "Wall") { deps.receiveShadow = true; deps.castShadow = true; }
-       // mesh.receiveShadow = deps.receiveShadow
-       // mesh.castShadow = deps.castShadow
+        // mesh.receiveShadow = deps.receiveShadow
+        // mesh.castShadow = deps.castShadow
         mesh.material.needsUpdate = true;
 
     },
