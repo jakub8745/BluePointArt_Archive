@@ -420,7 +420,7 @@ function init() {
 
 
   // ambientLight
-  let ambientLight = new THREE.AmbientLight(0x404040, 30);
+  let ambientLight = new THREE.AmbientLight(0x404040, 35);
   scene.add(ambientLight);
 
   //proba .ktx2
