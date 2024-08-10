@@ -204,7 +204,7 @@ loadArchiveModel(params.archiveModelPath).then(({ exhibits }) => {
     } else if (
 
       /Wall/.test(c.userData.name) ||
-      /visitorLocation/.test(c.userData.type)||
+      /visitorLocation/.test(c.userData.type) ||
       /Room/.test(c.userData.type)
 
     ) {
@@ -213,7 +213,7 @@ loadArchiveModel(params.archiveModelPath).then(({ exhibits }) => {
 
       cClone.material = new THREE.MeshBasicMaterial();
 
-      if (cClone.userData.type === "visitorLocation"|| cClone.userData.type === "Room") {
+      if (cClone.userData.type === "visitorLocation" || cClone.userData.type === "Room") {
 
         if (cClone.name === "FloorOut") cClone.visible = false
 
@@ -322,7 +322,11 @@ function init() {
   renderer.gammaOutput = true;
 
   renderer.gammaFactor = 2.2;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+
+  const isAppleDevice = /Mac|iPad|iPhone|iPod/.test(navigator.userAgent);
+  
+  renderer.toneMapping = isAppleDevice ? THREE.AgXToneMapping : THREE.ACESFilmicToneMapping;
+
   renderer.toneMappingExposure = params.exposure;
   renderer.outputEncoding = THREE.sRGBEncoding;
 
@@ -330,6 +334,9 @@ function init() {
   document.body.appendChild(renderer.domElement);
 
   anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+  ktx2Loader.setTranscoderPath('jsm/libs/basis/').detectSupport(renderer);
+
 
 
   // scene setup
@@ -1073,6 +1080,9 @@ async function loadTexturesAndDispose(belongsTo) {
     sphereSize: params.sphereSize,
     visitor,
     anisotropy,
+    ktx2Loader,
+    THREE,
+
   };
 
   console.log('TODO:  MODEL: ŚWIATŁA NA WYSTAWACH (nowy obiekt: ROOM wczytywany razem z tekstur z modelu archivum), zmieni reszte textur do .KTX2, ustawi AUDIO i schowa helpery, poprawi przesówanie do kółeczka');

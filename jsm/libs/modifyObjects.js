@@ -2,9 +2,13 @@ import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { PositionalAudioHelper } from 'three/addons/helpers/PositionalAudioHelper.js';
 import FadeInMaterial from 'three/addons/libs/FadeInMaterial.js';
+
+import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 import { TextureLoader, Object3D, MeshLambertMaterial, MeshBasicMaterial, Mesh, Color, PositionalAudio, AudioLoader, VideoTexture, RepeatWrapping, DoubleSide, SRGBColorSpace } from 'three';
 
 const loader = new TextureLoader();
+
+
 
 export const modifyObjects = {
     SpotLight: (SpotLight, deps) => {
@@ -62,7 +66,7 @@ export const modifyObjects = {
     },
     Room: (mesh) => {
 
-        // console.log("visitorLocation: ", mesh.material.map);
+       // console.log("room: ", mesh.material.map);
         // console.log("visitorLocation: ", mesh.name);
 
         //
@@ -113,27 +117,33 @@ export const modifyObjects = {
 
     },
     element: (mesh, deps) => {
-
-
-
-        // console.log("element: ", mesh.name, mesh.material.color);
-
-        if (mesh.material.map) {
-            // console.log("map: ", mesh.name, mesh.material.map);
-        }
+        const gui = deps.gui
+        const THREE = deps.THREE
 
         const { userData, material } = mesh;
         const { Map, normalMap, RoughMap, name, wS, wT } = userData;
 
-        if (Map) material.map = loader.load(Map);
+        if (Map) {
+            const extension = Map.split('.').pop();
 
-        if (mesh.material.map) {
-            // console.log("map: ", mesh.name, mesh.material.map);
+            if (extension === 'ktx2') {
+
+                deps.ktx2Loader.load(Map, (texture) => {
+
+                    texture.center.set(0.5, 0.5);
+                    texture.repeat.y = -1;
+
+                    mesh.material = new deps.THREE.MeshLambertMaterial({ map: texture, side: deps.THREE.DoubleSide });
+
+                });
+
+            } else {
+
+                const textureLoader = new TextureLoader();
+                material.map = textureLoader.load(Map);
+            }
         }
 
-        //material.color = new Color(0xffffff);
-
-        // console.log("hMap: ", Map);
         if (normalMap) material.normalMap = loader.load(normalMap);
         // if (RoughMap) material.roughnessMap = loader.load(RoughMap);
         if (wS) {
@@ -141,10 +151,10 @@ export const modifyObjects = {
             material.map.wrapT = RepeatWrapping;
             material.map.repeat.set(wS, wT);
             material.map.rotate = Math.PI / 2;
-            
+
 
         }
-         else if (wS && normalMap) {
+        else if (wS && normalMap) {
             material.normalMap.wrapS = RepeatWrapping;
             material.normalMap.wrapT = RepeatWrapping;
             material.normalMap.repeat.set(wS, wT);
@@ -248,3 +258,9 @@ export const modifyObjects = {
     },
 };
 
+/*
+                    gui.show(true);
+                    gui.add(texture.offset, "y", -1, 1, 0.01).name("offset y");
+                    gui.add(texture.offset, "x", -1, 1, 0.01).name("offset x");
+                    gui.add(texture, "rotation", -1, 1, 0.01).name("rotation");
+*/
