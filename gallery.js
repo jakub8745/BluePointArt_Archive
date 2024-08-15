@@ -1,5 +1,7 @@
 
 //
+console.log('TODO:  (nowy obiekt: ROOM wczytywany razem z tekstur z modelu archivum), zmieni reszte textur do .KTX2, ustawi AUDIO i schowa helpery, poprawi przesówanie do kółeczka');
+
 
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
@@ -11,6 +13,14 @@ import { modifyObjects } from 'three/addons/libs/modifyObjects.js';
 //import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
+
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+
+import { LuminosityShader } from 'three/addons/shaders/LuminosityShader.js';
+import { SobelOperatorShader } from 'three/addons/shaders/SobelOperatorShader.js';
+//import { MaskShader } from 'three/addons/shaders/MaskShader.js';
 
 
 import Stats from "three/addons/libs/stats.module.js";
@@ -41,6 +51,7 @@ const params = {
   transControlsMode: "rotate",
   heightOffset: new THREE.Vector3(0, 0.1, 0),// offset the camera from the visitor
   archiveModelPath: "../models/galeriaGLTF/bakedRooms.glb",
+  enablePostProcessing: true,
 };
 
 let ileE = 2,
@@ -54,6 +65,7 @@ const textureFolder = "textures/";
 const textureCache = new Map();
 
 let renderer, camera, scene, clock, tween, stats, anisotropy;
+let effectSobel;
 let rendererMap, cameraMap, circleMap, sceneMap, css2DRenderer;
 const cameraDirection = new THREE.Vector3();
 
@@ -139,6 +151,39 @@ joyIntervalCheck();
 
 
 init();
+
+// postprocessing
+
+const composer = new EffectComposer(renderer);
+const renderPass = new RenderPass(scene, camera);
+composer.addPass(renderPass);
+
+
+// Create a render target for the mask
+const maskRenderTarget = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight);
+const maskPass = new ShaderPass(MaskShader);
+maskPass.renderToScreen = false; // render to the target
+
+
+// color to grayscale conversion
+
+const effectGrayScale = new ShaderPass(LuminosityShader);
+composer.addPass(effectGrayScale);
+
+// you might want to use a gaussian blur filter before
+// the next pass to improve the result of the Sobel operator
+/*
+// Sobel operator
+
+effectSobel = new ShaderPass(SobelOperatorShader);
+effectSobel.uniforms['resolution'].value.x = window.innerWidth * window.devicePixelRatio;
+effectSobel.uniforms['resolution'].value.y = window.innerHeight * window.devicePixelRatio;
+composer.addPass(effectSobel);
+*/
+////gui.add(params, 'enablePostProcessing');
+//gui.open();
+
+// end of postprocessing
 
 
 loadArchiveModel(params.archiveModelPath).then(({ exhibits }) => {
@@ -266,7 +311,7 @@ loadArchiveModel(params.archiveModelPath).then(({ exhibits }) => {
   });
 
 
-  gui.show(false);
+  //gui.show(false);
 
 
 
@@ -306,6 +351,10 @@ function init() {
   sidebar.style.animation = "fadeIn 2s forwards";
   //
 
+  //renderer webGPU
+
+  //renderer = new THREE.WebGPURenderer({ antialias: true });
+
 
   // renderer setup
   renderer = new THREE.WebGLRenderer({
@@ -313,6 +362,7 @@ function init() {
     powerPreference: "high-performance",
     preserveDrawingBuffer: false,
   });
+
 
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -324,7 +374,7 @@ function init() {
   renderer.gammaFactor = 2.2;
 
   const isAppleDevice = /Mac|iPad|iPhone|iPod/.test(navigator.userAgent);
-  
+
   renderer.toneMapping = isAppleDevice ? THREE.AgXToneMapping : THREE.ACESFilmicToneMapping;
 
   renderer.toneMappingExposure = params.exposure;
@@ -333,9 +383,17 @@ function init() {
 
   document.body.appendChild(renderer.domElement);
 
+
+
+
+
+
+
   anisotropy = renderer.capabilities.getMaxAnisotropy();
 
   ktx2Loader.setTranscoderPath('jsm/libs/basis/').detectSupport(renderer);
+
+
 
 
 
@@ -398,6 +456,7 @@ function init() {
   cameraMap.position.set(0, -50, 0);
   cameraMap.lookAt(new THREE.Vector3(0, 0, 0));
 
+  //rendererMap = new THREE.WebGLRenderer();
   rendererMap = new THREE.WebGLRenderer();
   rendererMap.setClearColor(0x142236);
   document
@@ -427,46 +486,10 @@ function init() {
 
 
   // ambientLight
-  let ambientLight = new THREE.AmbientLight(0x404040, 35);
+  let ambientLight = new THREE.AmbientLight(0x404040, 85);
   scene.add(ambientLight);
 
-  //proba .ktx2
-  /*
-    // Create a cube geometry
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-  
-    // Load the KTX2 texture
-  
-    ktx2Loader.setTranscoderPath('jsm/libs/basis/')
-    ktx2Loader.detectSupport(renderer);
-  
-    ktx2Loader.load('textures/equMap_podMostem.ktx2', function (texture) {
-  
-      texture.flipY = false;
-  
-      const material = new THREE.MeshStandardMaterial();
-  
-      material.map = texture;
-  
-      // Create the cube mesh with the geometry and material
-      const cube = new THREE.Mesh(geometry, material);
-  
-      // Add the cube to the scene
-      scene.add(cube);
-  
-    }, function (e) {
-  
-      console.error(e);
-  
-    });
-  
-  
-    // });
-  */
-
   // events
-
-
 
   document
     .querySelector("img#audio-on")
@@ -910,9 +933,9 @@ async function updateVisitor(delta) {
 
   const intersectedFloor = floorChecker.checkVisitorLocation(visitor);
 
-  //console.log("intersectedFloor: ", intersectedFloor);
-
   if (intersectedFloor) {
+
+    params.enablePostProcessing = intersectedFloor.name === "FloorOut";
 
     const belongsTo = intersectedFloor.userData.belongsTo;
     const lightsToTurnValue = intersectedFloor.userData.lightsToTurn;
@@ -920,7 +943,6 @@ async function updateVisitor(delta) {
     if (lightsToTurn && intersectedFloor.userData.name && intersectedFloor0.userData.name !== intersectedFloor.userData.name) {
 
       params.canSeeGizmo = (lightsToTurnValue === "lightsDystopia") ? true : false;
-
 
       //AUDIO
       audioHandler = new AudioHandler();
@@ -976,22 +998,22 @@ function handleLights(lightsToTurn, lightsToTurnValue) {
   for (const el of lightsToTurn) {
     el.visible = el.userData.name === lightsToTurnValue;
 
-
-    if (el.visible) {
-
-      //console.log("el.userData.name", el.userData.name, "lightsToTurnValue", lightsToTurnValue, "el.visible", el.visible, el.intensity)
-
-
-
-      gui.show(true);
-      gui.add(el, "visible").name("visible" + el.name);
-      gui.add(el, "intensity", 0, 1000, 0.1).name("intensity" + el.name);
-      gui.add(el, "distance", 0, 500, 0.1).name("distance" + el.name);
-      gui.add(el, "decay", 0, 2, 0.01).name("decay" + el.name);
-      gui.add(el.position, "y", -10, 50, 0.01).name("y" + el.name);
-    }
-    gui.show(false);
-
+    /*
+        if (el.visible) {
+    
+          //console.log("el.userData.name", el.userData.name, "lightsToTurnValue", lightsToTurnValue, "el.visible", el.visible, el.intensity)
+    
+    
+    
+          gui.show(true);
+          gui.add(el, "visible").name("visible" + el.name);
+          gui.add(el, "intensity", 0, 1000, 0.1).name("intensity" + el.name);
+          gui.add(el, "distance", 0, 500, 0.1).name("distance" + el.name);
+          gui.add(el, "decay", 0, 2, 0.01).name("decay" + el.name);
+          gui.add(el.position, "y", -10, 50, 0.01).name("y" + el.name);
+        }
+        //gui.show(false);
+    */
   }
 }
 
@@ -1085,7 +1107,6 @@ async function loadTexturesAndDispose(belongsTo) {
 
   };
 
-  console.log('TODO:  MODEL: ŚWIATŁA NA WYSTAWACH (nowy obiekt: ROOM wczytywany razem z tekstur z modelu archivum), zmieni reszte textur do .KTX2, ustawi AUDIO i schowa helpery, poprawi przesówanie do kółeczka');
 
   const objectsToDispose = [];
 
@@ -1169,9 +1190,18 @@ function animate() {
 
 
   requestAnimationFrame(animate);
-  renderer.render(scene, camera);
 
+  if (params.enablePostProcessing === true) {
 
+    
+
+    composer.render();
+
+  } else {
+
+    renderer.render(scene, camera);
+
+  }
 
   controls.update();
 }

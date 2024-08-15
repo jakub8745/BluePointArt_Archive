@@ -144,7 +144,27 @@ export const modifyObjects = {
             }
         }
 
-        if (normalMap) material.normalMap = loader.load(normalMap);
+        if (normalMap) {
+            const extension = normalMap.split('.').pop();
+
+            if (extension === 'ktx2') {
+
+                deps.ktx2Loader.load(normalMap, (texture) => {
+
+                    texture.center.set(0.5, 0.5);
+                    texture.repeat.y = -1;
+
+                    mesh.material = new deps.THREE.MeshLambertMaterial({ normalMap: texture, side: deps.THREE.Front });
+
+                });
+
+            } else {
+
+                const textureLoader = new TextureLoader();
+                material.normalMap = textureLoader.load(normalMap);
+            }
+        }
+
         // if (RoughMap) material.roughnessMap = loader.load(RoughMap);
         if (wS) {
             material.map.wrapS = RepeatWrapping;
@@ -238,6 +258,7 @@ export const modifyObjects = {
             sound.setVolume(mesh.userData.audioVolume);
             sound.setDirectionalCone(10, 23, 0.1)
 
+            /*
             let gui = deps.gui
             gui.add(sound.panner, "coneInnerAngle", 0, 500, 0.01).name("Inner")// + mesh.name);refDistance
             gui.add(sound.panner, "coneOuterAngle", 0, 500, 0.01).name("Outer")
@@ -247,7 +268,7 @@ export const modifyObjects = {
 
             gui.add(mesh.rotation, "y", 0, 10, 0.01).name("Rotate")
 
-            // */
+         */
             const helper = new PositionalAudioHelper(sound, 20);
             sound.add(helper);
             mesh.add(sound);
