@@ -159,11 +159,6 @@ const renderPass = new RenderPass(scene, camera);
 composer.addPass(renderPass);
 
 
-// Create a render target for the mask
-const maskRenderTarget = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight);
-const maskPass = new ShaderPass(MaskShader);
-maskPass.renderToScreen = false; // render to the target
-
 
 // color to grayscale conversion
 
