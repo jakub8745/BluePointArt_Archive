@@ -1,6 +1,8 @@
 /**
  * Luminosity
  * http://en.wikipedia.org/wiki/Luminosity
+ * 
+ * added:  New uniform for exposure control
  */
 
 const LuminosityShader = {
@@ -9,7 +11,8 @@ const LuminosityShader = {
 
 	uniforms: {
 
-		'tDiffuse': { value: null }
+		'tDiffuse': { value: null },
+		'exposure': { value: 1.0 }  //
 
 	},
 
@@ -30,14 +33,14 @@ const LuminosityShader = {
 		#include <common>
 
 		uniform sampler2D tDiffuse;
-
+		uniform float exposure;  // New uniform for exposure control
 		varying vec2 vUv;
 
 		void main() {
 
 			vec4 texel = texture2D( tDiffuse, vUv );
 
-			float l = luminance( texel.rgb );
+			float l = luminance( texel.rgb ) * exposure;  // Apply exposure to the luminance
 
 			gl_FragColor = vec4( l, l, l, texel.w );
 

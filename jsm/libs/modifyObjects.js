@@ -1,10 +1,11 @@
-import { FontLoader } from "three/addons/loaders/FontLoader.js";
+import { Font, FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { PositionalAudioHelper } from 'three/addons/helpers/PositionalAudioHelper.js';
 import FadeInMaterial from 'three/addons/libs/FadeInMaterial.js';
 
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
-import { TextureLoader, Object3D, MeshLambertMaterial, MeshBasicMaterial, Mesh, Color, PositionalAudio, AudioLoader, VideoTexture, RepeatWrapping, DoubleSide, SRGBColorSpace } from 'three';
+import { UniformsUtils, TextureLoader, Object3D, ShaderMaterial, MeshLambertMaterial, MeshBasicMaterial, Mesh, Color, PositionalAudio, AudioLoader, VideoTexture, RepeatWrapping, DoubleSide, SRGBColorSpace } from 'three';
+import { LuminosityShader } from 'three/addons/shaders/LuminosityShader.js';
 
 const loader = new TextureLoader();
 
@@ -66,7 +67,7 @@ export const modifyObjects = {
     },
     Room: (mesh) => {
 
-       // console.log("room: ", mesh.material.map);
+        // console.log("room: ", mesh.material.map);
         // console.log("visitorLocation: ", mesh.name);
 
         //
@@ -108,17 +109,27 @@ export const modifyObjects = {
     },
     visitorLocation: (mesh, deps) => {
 
+        const { userData, material } = mesh;
+        const { Map, normalMap, RoughMap, name, wS, wT } = userData;
 
-        mesh.material = new MeshLambertMaterial({ transparent: false });
+        loader.load(Map, (texture) => {
 
-        deps.receiveShadow = true
-        deps.castShadow = false
-        modifyObjects.element(mesh, deps);
+            mesh.material = new ShaderMaterial({
+                uniforms: UniformsUtils.clone(LuminosityShader.uniforms),
+                vertexShader: LuminosityShader.vertexShader,
+                fragmentShader: LuminosityShader.fragmentShader
+            });
+
+            mesh.material.uniforms.tDiffuse.value = texture;
+            mesh.material.uniforms.exposure.value = 1.5;
+
+            mesh.material.needsUpdate = true;
+        });
 
     },
     element: (mesh, deps) => {
-        const gui = deps.gui
-        const THREE = deps.THREE
+
+        //const gui = deps.gui
 
         const { userData, material } = mesh;
         const { Map, normalMap, RoughMap, name, wS, wT } = userData;
@@ -130,17 +141,16 @@ export const modifyObjects = {
 
                 deps.ktx2Loader.load(Map, (texture) => {
 
-                    texture.center.set(0.5, 0.5);
-                    texture.repeat.y = -1;
-
-                    mesh.material = new deps.THREE.MeshLambertMaterial({ map: texture, side: deps.THREE.DoubleSide });
+                    mesh.material = new MeshLambertMaterial({ map: texture });
 
                 });
 
             } else {
 
-                const textureLoader = new TextureLoader();
-                material.map = textureLoader.load(Map);
+                loader.load(Map, (texture) => {
+                    mesh.material.map = texture;
+                });
+
             }
         }
 
@@ -153,6 +163,7 @@ export const modifyObjects = {
 
                     texture.center.set(0.5, 0.5);
                     texture.repeat.y = -1;
+
 
                     mesh.material = new deps.THREE.MeshLambertMaterial({ normalMap: texture, side: deps.THREE.Front });
 

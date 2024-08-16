@@ -163,6 +163,10 @@ composer.addPass(renderPass);
 // color to grayscale conversion
 
 const effectGrayScale = new ShaderPass(LuminosityShader);
+
+//effectGrayScale.uniforms.exposure.value =2;  // Adjust the value as needed
+
+
 composer.addPass(effectGrayScale);
 
 // you might want to use a gaussian blur filter before
@@ -1066,6 +1070,7 @@ function handleSceneBackground(intersectedFloor) {
 function setSceneBackgroundWithTransition(scene, newTexture, blurIntensity, intensity) {
 
   const transitionDuration = 2000; // in milliseconds
+  
 
   scene.background = newTexture;
   scene.backgroundIntensity = 0;
@@ -1120,7 +1125,7 @@ async function loadTexturesAndDispose(belongsTo) {
 
     } else if (belongsToCurrentExhibit) {
 
-      // console.log(c , deps)
+     //console.log(c.userData.type )
 
       modifyObjects[c.userData.type]?.(c, deps);
       c.userData.isMaterialDisposed = false;
