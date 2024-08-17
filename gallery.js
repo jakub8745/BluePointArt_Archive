@@ -1,6 +1,6 @@
 
 //
-console.log('TODO:  (nowy obiekt: ROOM wczytywany razem z tekstur z modelu archivum), zmieni reszte textur do .KTX2, ustawi AUDIO i schowa helpery, poprawi przesówanie do kółeczka');
+console.log('TODO: NORWID + strzalki (nowy obiekt: ROOM wczytywany razem z tekstur z modelu archivum), zmieni reszte textur do .KTX2, ustawi AUDIO i schowa helpery, poprawi przesówanie do kółeczka');
 
 
 import * as THREE from "three";
@@ -164,7 +164,7 @@ composer.addPass(renderPass);
 
 const effectGrayScale = new ShaderPass(LuminosityShader);
 
-//effectGrayScale.uniforms.exposure.value =2;  // Adjust the value as needed
+effectGrayScale.uniforms.exposure.value =1.2;  // Adjust the value as needed
 
 
 composer.addPass(effectGrayScale);
