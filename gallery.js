@@ -485,7 +485,7 @@ function init() {
 
 
   // ambientLight
-  let ambientLight = new THREE.AmbientLight(0x404040, 85);
+  let ambientLight = new THREE.AmbientLight(0x404040, 25);
   scene.add(ambientLight);
 
   // events
