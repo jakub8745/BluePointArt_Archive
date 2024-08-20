@@ -5,7 +5,20 @@ import FadeInMaterial from 'three/addons/libs/FadeInMaterial.js';
 
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 import { UniformsUtils, TextureLoader, Object3D, ShaderMaterial, MeshLambertMaterial, MeshBasicMaterial, Mesh, Color, PositionalAudio, AudioLoader, VideoTexture, RepeatWrapping, DoubleSide, SRGBColorSpace } from 'three';
-import { LuminosityShader } from 'three/addons/shaders/LuminosityShader.js';
+//import { LuminosityShader } from 'three/addons/shaders/LuminosityShader.js';
+
+
+//import{DotScreenShader} from 'three/addons/shaders/DotScreenShader.js'
+
+//import{TechnicolorShader} from 'three/addons/shaders/TechnicolorShader.js'
+
+//import{BrightnessContrastShader} from 'three/addons/shaders/BrightnessContrastShader.js'
+
+import { BrightnessContrastShader } from 'three/addons/shaders/BrightnessContrastShader.js'
+
+
+
+
 
 const loader = new TextureLoader();
 
@@ -115,13 +128,13 @@ export const modifyObjects = {
         loader.load(Map, (texture) => {
 
             mesh.material = new ShaderMaterial({
-                uniforms: UniformsUtils.clone(LuminosityShader.uniforms),
-                vertexShader: LuminosityShader.vertexShader,
-                fragmentShader: LuminosityShader.fragmentShader
+                uniforms: UniformsUtils.clone(BrightnessContrastShader.uniforms),
+                vertexShader: BrightnessContrastShader.vertexShader,
+                fragmentShader: BrightnessContrastShader.fragmentShader
             });
 
             mesh.material.uniforms.tDiffuse.value = texture;
-            mesh.material.uniforms.exposure.value = 1.5;
+            //mesh.material.uniforms.exposure.value = 1.5;
 
             mesh.material.needsUpdate = true;
         });
@@ -147,74 +160,90 @@ export const modifyObjects = {
 
             } else {
 
+                if (mesh.material instanceof ShaderMaterial) {
+                    loader.load(Map, (texture) => {
+                        mesh.material = new ShaderMaterial({
+                            uniforms: UniformsUtils.clone(BrightnessContrastShader.uniforms),
+                            vertexShader: BrightnessContrastShader.vertexShader,
+                            fragmentShader: BrightnessContrastShader.fragmentShader
+                        });
+
+                        mesh.material.uniforms.tDiffuse.value = texture;
+                        //mesh.material.uniforms.exposure.value = 1.5;
+
+                        mesh.material.needsUpdate = true;
+                    });
+                } else { 
+
+
                 loader.load(Map, (texture) => {
                     mesh.material.map = texture;
                 });
-
             }
         }
+    }
 
-        if (normalMap) {
-            const extension = normalMap.split('.').pop();
+        if(normalMap) {
+        const extension = normalMap.split('.').pop();
 
-            if (extension === 'ktx2') {
+        if (extension === 'ktx2') {
 
-                deps.ktx2Loader.load(normalMap, (texture) => {
+            deps.ktx2Loader.load(normalMap, (texture) => {
 
-                    texture.center.set(0.5, 0.5);
-                    texture.repeat.y = -1;
+                texture.center.set(0.5, 0.5);
+                texture.repeat.y = -1;
 
 
-                    mesh.material = new deps.THREE.MeshLambertMaterial({ normalMap: texture, side: deps.THREE.Front });
+                mesh.material = new deps.THREE.MeshLambertMaterial({ normalMap: texture, side: deps.THREE.Front });
 
-                });
+            });
 
-            } else {
+        } else {
 
-                const textureLoader = new TextureLoader();
-                material.normalMap = textureLoader.load(normalMap);
-            }
+            const textureLoader = new TextureLoader();
+            material.normalMap = textureLoader.load(normalMap);
         }
+    }
 
         // if (RoughMap) material.roughnessMap = loader.load(RoughMap);
-        if (wS) {
-            material.map.wrapS = RepeatWrapping;
-            material.map.wrapT = RepeatWrapping;
-            material.map.repeat.set(wS, wT);
-            material.map.rotate = Math.PI / 2;
+        if(wS) {
+        material.map.wrapS = RepeatWrapping;
+        material.map.wrapT = RepeatWrapping;
+        material.map.repeat.set(wS, wT);
+        material.map.rotate = Math.PI / 2;
 
 
+    }
+        else if(wS && normalMap) {
+        material.normalMap.wrapS = RepeatWrapping;
+material.normalMap.wrapT = RepeatWrapping;
+material.normalMap.repeat.set(wS, wT);
+material.normalMap.rotate = Math.PI / 2;
         }
-        else if (wS && normalMap) {
-            material.normalMap.wrapS = RepeatWrapping;
-            material.normalMap.wrapT = RepeatWrapping;
-            material.normalMap.repeat.set(wS, wT);
-            material.normalMap.rotate = Math.PI / 2;
-        }
 
-        if (name === "Wall") { deps.receiveShadow = true; deps.castShadow = true; }
-        // mesh.receiveShadow = deps.receiveShadow
-        // mesh.castShadow = deps.castShadow
-        mesh.material.needsUpdate = true;
+if (name === "Wall") { deps.receiveShadow = true; deps.castShadow = true; }
+// mesh.receiveShadow = deps.receiveShadow
+// mesh.castShadow = deps.castShadow
+mesh.material.needsUpdate = true;
 
     },
-    photoScreen: (mesh, deps) => {
+photoScreen: (mesh, deps) => {
 
-        mesh.material = new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
-        mesh.material.map.wrapT = RepeatWrapping;
-        mesh.material.map.wrapS = RepeatWrapping; // Ensure wrapping is enabled
-        mesh.material.map.repeat.x = -1;
+    mesh.material = new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
+    mesh.material.map.wrapT = RepeatWrapping;
+    mesh.material.map.wrapS = RepeatWrapping; // Ensure wrapping is enabled
+    mesh.material.map.repeat.x = -1;
 
-        deps.receiveShadow = false
-        deps.castShadow = true
+    deps.receiveShadow = false
+    deps.castShadow = true
 
-        modifyObjects.element(mesh, deps);
+    modifyObjects.element(mesh, deps);
 
-    },
+},
     Image: (mesh, deps) => {
 
         mesh.material = new FadeInMaterial({ transparent: true, side: DoubleSide, color: 0xffffff });
-        mesh.material.color.convertSRGBToLinear();
+        //mesh.material.color.convertSRGBToLinear();
         mesh.material.needsUpdate = true;
 
         //deps.receiveShadow = false
@@ -222,72 +251,72 @@ export const modifyObjects = {
 
         modifyObjects.element(mesh, deps);
     },
-    Sculpture: (mesh, deps) => {
+        Sculpture: (mesh, deps) => {
 
-        if (mesh.userData.name === "dzbanDystopia") {
+            if (mesh.userData.name === "dzbanDystopia") {
 
-            deps.control._gizmo.visible = deps.params.gizmoVisible;
-            deps.control.setMode(deps.params.transControlsMode);
-            deps.control.attach(mesh);
-            deps.scene.add(deps.control);
+                deps.control._gizmo.visible = deps.params.gizmoVisible;
+                deps.control.setMode(deps.params.transControlsMode);
+                deps.control.attach(mesh);
+                deps.scene.add(deps.control);
 
-        }
+            }
 
-        deps.receiveShadow = true
-        deps.castShadow = true
+            deps.receiveShadow = true
+            deps.castShadow = true
 
-        modifyObjects.element(mesh, deps);
-    },
-    Video: (mesh, deps) => {
-        const video = document.getElementById(mesh.userData.elementID);
+            modifyObjects.element(mesh, deps);
+        },
+            Video: (mesh, deps) => {
+                const video = document.getElementById(mesh.userData.elementID);
 
-        let texture = new VideoTexture(video);
-        texture.colorSpace = SRGBColorSpace;
-        mesh.material = new MeshBasicMaterial({
-            map: texture,
-            side: DoubleSide,
-            color: 0xffffff,
-        });
-        mesh.receiveShadow = false;
-        mesh.castShadow = false;
-        mesh.material.needsUpdate = true;
+                let texture = new VideoTexture(video);
+                texture.colorSpace = SRGBColorSpace;
+                mesh.material = new MeshBasicMaterial({
+                    map: texture,
+                    side: DoubleSide,
+                    color: 0xffffff,
+                });
+                mesh.receiveShadow = false;
+                mesh.castShadow = false;
+                mesh.material.needsUpdate = true;
 
-        //
-    },
-    Audio: (mesh, deps) => {
-        mesh.scale.setScalar(0.1)
+                //
+            },
+                Audio: (mesh, deps) => {
+                    mesh.scale.setScalar(0.1)
 
-        const sound = new PositionalAudio(deps.listener);
-        const audioLoader = new AudioLoader();
-        audioLoader.load(mesh.userData.audio, (buffer) => {
-            sound.name = mesh.userData.name;
-            sound.setBuffer(buffer);
-            sound.setLoop(true);
-            sound.setRefDistance(mesh.userData.audioRefDistance);
-            sound.setRolloffFactor(mesh.userData.audioRolloffFactor);
-            //sound.setMaxDistance(mesh.userData.audioMaxDistance);
-            sound.setVolume(mesh.userData.audioVolume);
-            sound.setDirectionalCone(10, 23, 0.1)
+                    const sound = new PositionalAudio(deps.listener);
+                    const audioLoader = new AudioLoader();
+                    audioLoader.load(mesh.userData.audio, (buffer) => {
+                        sound.name = mesh.userData.name;
+                        sound.setBuffer(buffer);
+                        sound.setLoop(true);
+                        sound.setRefDistance(mesh.userData.audioRefDistance);
+                        sound.setRolloffFactor(mesh.userData.audioRolloffFactor);
+                        //sound.setMaxDistance(mesh.userData.audioMaxDistance);
+                        sound.setVolume(mesh.userData.audioVolume);
+                        sound.setDirectionalCone(10, 23, 0.1)
 
-            /*
-            let gui = deps.gui
-            gui.add(sound.panner, "coneInnerAngle", 0, 500, 0.01).name("Inner")// + mesh.name);refDistance
-            gui.add(sound.panner, "coneOuterAngle", 0, 500, 0.01).name("Outer")
-            gui.add(sound.panner, "coneOuterGain", 0, 1, 0.01).name("Outer")
-            gui.add(sound.panner, "refDistance", 0, 10, 0.01).name("refDistance")
-            gui.add(sound.panner, "rolloffFactor", 0, 100, 0.01).name("rolloffFactor")
+                        /*
+                        let gui = deps.gui
+                        gui.add(sound.panner, "coneInnerAngle", 0, 500, 0.01).name("Inner")// + mesh.name);refDistance
+                        gui.add(sound.panner, "coneOuterAngle", 0, 500, 0.01).name("Outer")
+                        gui.add(sound.panner, "coneOuterGain", 0, 1, 0.01).name("Outer")
+                        gui.add(sound.panner, "refDistance", 0, 10, 0.01).name("refDistance")
+                        gui.add(sound.panner, "rolloffFactor", 0, 100, 0.01).name("rolloffFactor")
+            
+                        gui.add(mesh.rotation, "y", 0, 10, 0.01).name("Rotate")
+            
+                     */
+                        const helper = new PositionalAudioHelper(sound, 20);
+                        sound.add(helper);
+                        mesh.add(sound);
+                        deps.audioObjects.push(mesh);
 
-            gui.add(mesh.rotation, "y", 0, 10, 0.01).name("Rotate")
-
-         */
-            const helper = new PositionalAudioHelper(sound, 20);
-            sound.add(helper);
-            mesh.add(sound);
-            deps.audioObjects.push(mesh);
-
-            // console.log("audioObjects", sound.panner.coneInnerAngle);
-        });
-    },
+                        // console.log("audioObjects", sound.panner.coneInnerAngle);
+                    });
+                },
 };
 
 /*

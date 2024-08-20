@@ -18,7 +18,15 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
-import { LuminosityShader } from 'three/addons/shaders/LuminosityShader.js';
+import{DotScreenShader} from 'three/addons/shaders/DotScreenShader.js'
+
+import{TechnicolorShader} from 'three/addons/shaders/TechnicolorShader.js'
+
+import{SepiaShader} from 'three/addons/shaders/SepiaShader.js'
+
+import{BrightnessContrastShader} from 'three/addons/shaders/BrightnessContrastShader.js'
+
+//import { LuminosityShader } from 'three/addons/shaders/LuminosityShader.js';
 import { SobelOperatorShader } from 'three/addons/shaders/SobelOperatorShader.js';
 //import { MaskShader } from 'three/addons/shaders/MaskShader.js';
 
@@ -162,9 +170,17 @@ composer.addPass(renderPass);
 
 // color to grayscale conversion
 
-const effectGrayScale = new ShaderPass(LuminosityShader);
+//const effectGrayScale = new ShaderPass(BrightnessContrastShader);
 
-effectGrayScale.uniforms.exposure.value =1.2;  // Adjust the value as needed
+
+//const effectGrayScale = new ShaderPass(SepiaShader);
+
+
+const effectGrayScale = new ShaderPass(TechnicolorShader);
+
+//const effectGrayScale = new ShaderPass(DotScreenShader);
+
+//effectGrayScale.uniforms.exposure.value =1.2;  // Adjust the value as needed
 
 
 composer.addPass(effectGrayScale);
@@ -485,7 +501,7 @@ function init() {
 
 
   // ambientLight
-  let ambientLight = new THREE.AmbientLight(0x404040, 25);
+  let ambientLight = new THREE.AmbientLight(0x404040, 75);
   scene.add(ambientLight);
 
   // events
