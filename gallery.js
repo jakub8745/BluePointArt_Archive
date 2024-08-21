@@ -10,7 +10,6 @@ import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
 import { modifyObjects } from 'three/addons/libs/modifyObjects.js';
-//import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 
@@ -18,28 +17,27 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
-import{DotScreenShader} from 'three/addons/shaders/DotScreenShader.js'
+import { TechnicolorShader } from 'three/addons/shaders/TechnicolorShader.js'
 
-import{TechnicolorShader} from 'three/addons/shaders/TechnicolorShader.js'
-
-import{SepiaShader} from 'three/addons/shaders/SepiaShader.js'
-
-import{BrightnessContrastShader} from 'three/addons/shaders/BrightnessContrastShader.js'
-
+//import{SepiaShader} from 'three/addons/shaders/SepiaShader.js'
+//import{BrightnessContrastShader} from 'three/addons/shaders/BrightnessContrastShader.js'
 //import { LuminosityShader } from 'three/addons/shaders/LuminosityShader.js';
-import { SobelOperatorShader } from 'three/addons/shaders/SobelOperatorShader.js';
+//import { SobelOperatorShader } from 'three/addons/shaders/SobelOperatorShader.js';
 //import { MaskShader } from 'three/addons/shaders/MaskShader.js';
-
+//import{DotScreenShader} from 'three/addons/shaders/DotScreenShader.js'
 
 import Stats from "three/addons/libs/stats.module.js";
-import { GUI } from "three/addons/libs/lil-gui.module.min.js";
+
+import { GUI } from 'https://cdn.skypack.dev/dat.gui';
+
+
 import {
   MeshBVH,
   acceleratedRaycast,
   disposeBoundsTree,
   computeBoundsTree,
   StaticGeometryGenerator,
-} from "https://unpkg.com/three-mesh-bvh@0.6.8/build/index.module.js";
+} from "https://unpkg.com/three-mesh-bvh@0.7.6/build/index.module.js";
 import { JoyStick } from "three/addons/controls/joy.js";
 import * as TWEEN from "three/addons/tween/tween.esm.js";
 
@@ -57,7 +55,7 @@ const params = {
   gizmoVisible: false,
   canSeeGizmo: false,
   transControlsMode: "rotate",
-  heightOffset: new THREE.Vector3(0, 0.1, 0),// offset the camera from the visitor
+  heightOffset: new THREE.Vector3(0, 0.33, 0),// offset the camera from the visitor
   archiveModelPath: "../models/galeriaGLTF/bakedRooms.glb",
   enablePostProcessing: true,
 };
@@ -199,6 +197,9 @@ composer.addPass(effectSobel);
 //gui.open();
 
 // end of postprocessing
+// Setup GUI for controlling global contrast
+
+
 
 
 loadArchiveModel(params.archiveModelPath).then(({ exhibits }) => {
@@ -326,7 +327,6 @@ loadArchiveModel(params.archiveModelPath).then(({ exhibits }) => {
   });
 
 
-  //gui.show(false);
 
 
 
@@ -395,22 +395,11 @@ function init() {
   renderer.toneMappingExposure = params.exposure;
   renderer.outputEncoding = THREE.sRGBEncoding;
 
-
   document.body.appendChild(renderer.domElement);
-
-
-
-
-
-
 
   anisotropy = renderer.capabilities.getMaxAnisotropy();
 
   ktx2Loader.setTranscoderPath('jsm/libs/basis/').detectSupport(renderer);
-
-
-
-
 
   // scene setup
   scene = new THREE.Scene();
@@ -490,7 +479,7 @@ function init() {
 
 
   // AmbientLight
-  const light = new THREE.AmbientLight(0xffffff, 0); // soft white light
+  const light = new THREE.AmbientLight(0xffffff, 20); // soft white light
   sceneMap.add(light);
 
   //
@@ -501,7 +490,7 @@ function init() {
 
 
   // ambientLight
-  let ambientLight = new THREE.AmbientLight(0x404040, 75);
+  let ambientLight = new THREE.AmbientLight(0x404040, 55);
   scene.add(ambientLight);
 
   // events
@@ -748,7 +737,7 @@ function init() {
 async function loadArchiveModel(modelPath) {
   const gltfLoader = new GLTFLoader();
   const dracoLoader = new DRACOLoader();
-  dracoLoader.setDecoderPath("three/draco");
+  dracoLoader.setDecoderPath("./jsm/libs/draco/");
   gltfLoader.setDRACOLoader(dracoLoader);
 
   try {
@@ -1086,7 +1075,7 @@ function handleSceneBackground(intersectedFloor) {
 function setSceneBackgroundWithTransition(scene, newTexture, blurIntensity, intensity) {
 
   const transitionDuration = 2000; // in milliseconds
-  
+
 
   scene.background = newTexture;
   scene.backgroundIntensity = 0;
@@ -1141,7 +1130,7 @@ async function loadTexturesAndDispose(belongsTo) {
 
     } else if (belongsToCurrentExhibit) {
 
-     //console.log(c.userData.type )
+      //console.log(c.userData.type )
 
       modifyObjects[c.userData.type]?.(c, deps);
       c.userData.isMaterialDisposed = false;
@@ -1209,7 +1198,7 @@ function animate() {
 
   if (params.enablePostProcessing === true) {
 
-    
+
 
     composer.render();
 
@@ -1236,7 +1225,7 @@ function addVisitorMapCircle() {
   //visitor.scale.setScalar(0.01);
   visitor.name = "visitor";
   visitor.capsuleInfo = {
-    radius: 0.45,
+    radius: 0.2,
     segment: new THREE.Line3(
       new THREE.Vector3(),
       new THREE.Vector3(0, 0.1, 0.0)

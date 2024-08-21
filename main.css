@@ -7,11 +7,26 @@ a {
   color: #576569;
 }
 
+
+
 #experimental {
   display: flex;
-  justify-content: center;
   font-size: 0.5em;
 
+  position: relative;
+  animation: float-left 45s infinite linear;
+}
+
+@keyframes float-left {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+  0%, 100% {
+    animation-timing-function: ease-in-out;
+  }
 }
 
 #text-on-screen {

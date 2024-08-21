@@ -3,25 +3,16 @@ import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { PositionalAudioHelper } from 'three/addons/helpers/PositionalAudioHelper.js';
 import FadeInMaterial from 'three/addons/libs/FadeInMaterial.js';
 
-import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
-import { UniformsUtils, TextureLoader, Object3D, ShaderMaterial, MeshLambertMaterial, MeshBasicMaterial, Mesh, Color, PositionalAudio, AudioLoader, VideoTexture, RepeatWrapping, DoubleSide, SRGBColorSpace } from 'three';
-//import { LuminosityShader } from 'three/addons/shaders/LuminosityShader.js';
-
-
-//import{DotScreenShader} from 'three/addons/shaders/DotScreenShader.js'
-
-//import{TechnicolorShader} from 'three/addons/shaders/TechnicolorShader.js'
-
-//import{BrightnessContrastShader} from 'three/addons/shaders/BrightnessContrastShader.js'
-
+//import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
+import { UniformsUtils, TextureLoader, Object3D, ShaderMaterial, MeshLambertMaterial, MeshBasicMaterial, Mesh, Color, PositionalAudio, AudioLoader, VideoTexture, RepeatWrapping, DoubleSide, FrontSide, SRGBColorSpace } from 'three';
 import { BrightnessContrastShader } from 'three/addons/shaders/BrightnessContrastShader.js'
 
-
-
-
+//import { LuminosityShader } from 'three/addons/shaders/LuminosityShader.js';
+//import{DotScreenShader} from 'three/addons/shaders/DotScreenShader.js'
+//import{TechnicolorShader} from 'three/addons/shaders/TechnicolorShader.js'
+//import{BrightnessContrastShader} from 'three/addons/shaders/BrightnessContrastShader.js'
 
 const loader = new TextureLoader();
-
 
 
 export const modifyObjects = {
@@ -159,7 +150,7 @@ export const modifyObjects = {
                 });
 
             } else {
-
+                /*
                 if (mesh.material instanceof ShaderMaterial) {
                     loader.load(Map, (texture) => {
                         mesh.material = new ShaderMaterial({
@@ -174,72 +165,71 @@ export const modifyObjects = {
                         mesh.material.needsUpdate = true;
                     });
                 } else { 
-
-
+*/
                 loader.load(Map, (texture) => {
                     mesh.material.map = texture;
                 });
+                //}
             }
         }
-    }
 
-        if(normalMap) {
-        const extension = normalMap.split('.').pop();
+        if (normalMap) {
+            const extension = normalMap.split('.').pop();
 
-        if (extension === 'ktx2') {
+            if (extension === 'ktx2') {
 
-            deps.ktx2Loader.load(normalMap, (texture) => {
+                deps.ktx2Loader.load(normalMap, (texture) => {
 
-                texture.center.set(0.5, 0.5);
-                texture.repeat.y = -1;
+                    texture.center.set(0.5, 0.5);
+                    texture.repeat.y = -1;
 
 
-                mesh.material = new deps.THREE.MeshLambertMaterial({ normalMap: texture, side: deps.THREE.Front });
+                    mesh.material = new MeshLambertMaterial({ normalMap: texture, side: FrontSide });
 
-            });
+                });
 
-        } else {
+            } else {
 
-            const textureLoader = new TextureLoader();
-            material.normalMap = textureLoader.load(normalMap);
+                const textureLoader = new TextureLoader();
+                material.normalMap = textureLoader.load(normalMap);
+            }
         }
-    }
 
         // if (RoughMap) material.roughnessMap = loader.load(RoughMap);
-        if(wS) {
-        material.map.wrapS = RepeatWrapping;
-        material.map.wrapT = RepeatWrapping;
-        material.map.repeat.set(wS, wT);
-        material.map.rotate = Math.PI / 2;
+        if (wS) {
+            material.map.wrapS = RepeatWrapping;
+            material.map.wrapT = RepeatWrapping;
+            material.map.repeat.set(wS, wT);
+            material.map.rotate = Math.PI / 2;
 
 
-    }
-        else if(wS && normalMap) {
-        material.normalMap.wrapS = RepeatWrapping;
-material.normalMap.wrapT = RepeatWrapping;
-material.normalMap.repeat.set(wS, wT);
-material.normalMap.rotate = Math.PI / 2;
+        }
+        else if (wS && normalMap) {
+            material.normalMap.wrapS = RepeatWrapping;
+            material.normalMap.wrapT = RepeatWrapping;
+            material.normalMap.repeat.set(wS, wT);
+            material.normalMap.rotate = Math.PI / 2;
         }
 
-if (name === "Wall") { deps.receiveShadow = true; deps.castShadow = true; }
-// mesh.receiveShadow = deps.receiveShadow
-// mesh.castShadow = deps.castShadow
-mesh.material.needsUpdate = true;
+        if (name === "Wall") { deps.receiveShadow = true; deps.castShadow = true; }
+        // mesh.receiveShadow = deps.receiveShadow
+        // mesh.castShadow = deps.castShadow
+        mesh.material.needsUpdate = true;
 
     },
-photoScreen: (mesh, deps) => {
+    photoScreen: (mesh, deps) => {
 
-    mesh.material = new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
-    mesh.material.map.wrapT = RepeatWrapping;
-    mesh.material.map.wrapS = RepeatWrapping; // Ensure wrapping is enabled
-    mesh.material.map.repeat.x = -1;
+        mesh.material = new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
+        mesh.material.map.wrapT = RepeatWrapping;
+        mesh.material.map.wrapS = RepeatWrapping; // Ensure wrapping is enabled
+        mesh.material.map.repeat.x = -1;
 
-    deps.receiveShadow = false
-    deps.castShadow = true
+        deps.receiveShadow = false
+        deps.castShadow = true
 
-    modifyObjects.element(mesh, deps);
+        modifyObjects.element(mesh, deps);
 
-},
+    },
     Image: (mesh, deps) => {
 
         mesh.material = new FadeInMaterial({ transparent: true, side: DoubleSide, color: 0xffffff });
@@ -251,72 +241,118 @@ photoScreen: (mesh, deps) => {
 
         modifyObjects.element(mesh, deps);
     },
-        Sculpture: (mesh, deps) => {
+    Sculpture: (mesh, deps) => {
 
-            if (mesh.userData.name === "dzbanDystopia") {
+        if (mesh.userData.name === "dzbanDystopia") {
 
-                deps.control._gizmo.visible = deps.params.gizmoVisible;
-                deps.control.setMode(deps.params.transControlsMode);
-                deps.control.attach(mesh);
-                deps.scene.add(deps.control);
+            deps.control._gizmo.visible = deps.params.gizmoVisible;
+            deps.control.setMode(deps.params.transControlsMode);
+            deps.control.attach(mesh);
+            deps.scene.add(deps.control);
 
-            }
+        }
 
-            deps.receiveShadow = true
-            deps.castShadow = true
+        deps.receiveShadow = true
+        deps.castShadow = true
 
-            modifyObjects.element(mesh, deps);
-        },
-            Video: (mesh, deps) => {
-                const video = document.getElementById(mesh.userData.elementID);
+        modifyObjects.element(mesh, deps);
+    },
+    Video: (mesh, deps) => {
+        const gui = deps.gui;
 
-                let texture = new VideoTexture(video);
-                texture.colorSpace = SRGBColorSpace;
-                mesh.material = new MeshBasicMaterial({
-                    map: texture,
-                    side: DoubleSide,
-                    color: 0xffffff,
-                });
-                mesh.receiveShadow = false;
-                mesh.castShadow = false;
-                mesh.material.needsUpdate = true;
+        const video = document.getElementById(mesh.userData.elementID);
 
-                //
-            },
-                Audio: (mesh, deps) => {
-                    mesh.scale.setScalar(0.1)
+        const texture = new VideoTexture(video);
+        texture.colorSpace = SRGBColorSpace;
 
-                    const sound = new PositionalAudio(deps.listener);
-                    const audioLoader = new AudioLoader();
-                    audioLoader.load(mesh.userData.audio, (buffer) => {
-                        sound.name = mesh.userData.name;
-                        sound.setBuffer(buffer);
-                        sound.setLoop(true);
-                        sound.setRefDistance(mesh.userData.audioRefDistance);
-                        sound.setRolloffFactor(mesh.userData.audioRolloffFactor);
-                        //sound.setMaxDistance(mesh.userData.audioMaxDistance);
-                        sound.setVolume(mesh.userData.audioVolume);
-                        sound.setDirectionalCone(10, 23, 0.1)
+        // Create the material
+        const material = new MeshBasicMaterial({
+            map: texture,
+            side: DoubleSide,
+            color: 0xffffff,
+        });
 
-                        /*
-                        let gui = deps.gui
-                        gui.add(sound.panner, "coneInnerAngle", 0, 500, 0.01).name("Inner")// + mesh.name);refDistance
-                        gui.add(sound.panner, "coneOuterAngle", 0, 500, 0.01).name("Outer")
-                        gui.add(sound.panner, "coneOuterGain", 0, 1, 0.01).name("Outer")
-                        gui.add(sound.panner, "refDistance", 0, 10, 0.01).name("refDistance")
-                        gui.add(sound.panner, "rolloffFactor", 0, 100, 0.01).name("rolloffFactor")
-            
-                        gui.add(mesh.rotation, "y", 0, 10, 0.01).name("Rotate")
-            
-                     */
-                        const helper = new PositionalAudioHelper(sound, 20);
-                        sound.add(helper);
-                        mesh.add(sound);
-                        deps.audioObjects.push(mesh);
+        // Modify the shader to include brightness and contrast controls
+        material.onBeforeCompile = (shader) => {
+            // Inject uniforms for brightness and contrast
+            shader.uniforms.uBrightness = { value: 1.0 };
+            shader.uniforms.uContrast = { value: 1.0 };
 
-                        // console.log("audioObjects", sound.panner.coneInnerAngle);
-                    });
-                },
+            // Inject the brightness and contrast functions and update the fragment shader
+            shader.fragmentShader = `
+                uniform float uBrightness;
+                uniform float uContrast;
+    
+                vec3 applyContrast(vec3 color, float contrast) {
+                    return (color - 0.5) * contrast + 0.5;
+                }
+    
+                vec3 applyBrightness(vec3 color, float brightness) {
+                    return color * brightness;
+                }
+            ` + shader.fragmentShader;
+
+            // Replace the gl_FragColor assignment to apply brightness and contrast
+            shader.fragmentShader = shader.fragmentShader.replace(
+                `#include <color_fragment>`,
+                `
+                // Apply brightness
+                diffuseColor.rgb = applyBrightness(diffuseColor.rgb, uBrightness);
+    
+                // Apply contrast
+                diffuseColor.rgb = applyContrast(diffuseColor.rgb, uContrast);
+                `
+            );
+
+            // Save the shader reference for later use if needed
+            material.userData.shader = shader;
+
+            // Now that the shader is available, add the GUI controls
+            gui.add(shader.uniforms.uBrightness, 'value', 0.0, 3.0).name('Brightness');
+            gui.add(shader.uniforms.uContrast, 'value', 0.0, 3.0).name('Contrast');
+        };
+
+        // Apply the material to the mesh
+        mesh.material = material;
+        mesh.receiveShadow = false;
+        mesh.castShadow = false;
+        mesh.material.needsUpdate = true;
+    },
+
+    Audio: (mesh, deps) => {
+        mesh.scale.setScalar(0.1)
+
+        const sound = new PositionalAudio(deps.listener);
+        const audioLoader = new AudioLoader();
+        audioLoader.load(mesh.userData.audio, (buffer) => {
+            sound.name = mesh.userData.name;
+            sound.setBuffer(buffer);
+            sound.setLoop(true);
+            sound.setRefDistance(mesh.userData.audioRefDistance);
+            sound.setRolloffFactor(mesh.userData.audioRolloffFactor);
+            //sound.setMaxDistance(mesh.userData.audioMaxDistance);
+            sound.setVolume(mesh.userData.audioVolume);
+            sound.setDirectionalCone(10, 23, 0.1)
+
+            /*
+            let gui = deps.gui
+            gui.add(sound.panner, "coneInnerAngle", 0, 500, 0.01).name("Inner")// + mesh.name);refDistance
+            gui.add(sound.panner, "coneOuterAngle", 0, 500, 0.01).name("Outer")
+            gui.add(sound.panner, "coneOuterGain", 0, 1, 0.01).name("Outer")
+            gui.add(sound.panner, "refDistance", 0, 10, 0.01).name("refDistance")
+            gui.add(sound.panner, "rolloffFactor", 0, 100, 0.01).name("rolloffFactor")
+ 
+            gui.add(mesh.rotation, "y", 0, 10, 0.01).name("Rotate")
+ 
+         */
+            const helper = new PositionalAudioHelper(sound, 20);
+            sound.add(helper);
+            mesh.add(sound);
+            deps.audioObjects.push(mesh);
+
+            // console.log("audioObjects", sound.panner.coneInnerAngle);
+        });
+    },
 };
 
 /*
