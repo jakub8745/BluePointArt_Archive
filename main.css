@@ -15,6 +15,8 @@ a {
 
   position: relative;
   animation: float-left 45s infinite linear;
+  white-space: nowrap;
+
 }
 
 @keyframes float-left {
