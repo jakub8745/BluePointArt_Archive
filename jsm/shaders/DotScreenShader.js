@@ -18,7 +18,7 @@ const DotScreenShader = {
 		'tSize': { value: new Vector2( 256, 256 ) },
 		'center': { value: new Vector2( 0.5, 0.5 ) },
 		'angle': { value: 1.57 },
-		'scale': { value: 10.1}
+		'scale': { value:4.1}
 
 	},
 

@@ -24,7 +24,7 @@ import { TechnicolorShader } from 'three/addons/shaders/TechnicolorShader.js'
 //import { LuminosityShader } from 'three/addons/shaders/LuminosityShader.js';
 //import { SobelOperatorShader } from 'three/addons/shaders/SobelOperatorShader.js';
 //import { MaskShader } from 'three/addons/shaders/MaskShader.js';
-//import{DotScreenShader} from 'three/addons/shaders/DotScreenShader.js'
+import { DotScreenShader } from 'three/addons/shaders/DotScreenShader.js'
 
 import Stats from "three/addons/libs/stats.module.js";
 
@@ -56,7 +56,7 @@ const params = {
   canSeeGizmo: false,
   transControlsMode: "rotate",
   heightOffset: new THREE.Vector3(0, 0.33, 0),// offset the camera from the visitor
-  archiveModelPath: "../models/galeriaGLTF/bakedRooms.glb",
+  archiveModelPath: "../models/bakedRooms.glb",
   enablePostProcessing: true,
 };
 
@@ -168,20 +168,20 @@ composer.addPass(renderPass);
 
 // color to grayscale conversion
 
-//const effectGrayScale = new ShaderPass(BrightnessContrastShader);
+//const effectDotScreen = new ShaderPass(BrightnessContrastShader);
 
 
-//const effectGrayScale = new ShaderPass(SepiaShader);
+//const effectDotScreen = new ShaderPass(SepiaShader);
 
 
-const effectGrayScale = new ShaderPass(TechnicolorShader);
+const effectDotScreen = new ShaderPass(DotScreenShader);
 
-//const effectGrayScale = new ShaderPass(DotScreenShader);
+//const effectDotScreen = new ShaderPass(DotScreenShader);
 
-//effectGrayScale.uniforms.exposure.value =1.2;  // Adjust the value as needed
+//effectDotScreen.uniforms.exposure.value =1.2;  // Adjust the value as needed
 
 
-composer.addPass(effectGrayScale);
+composer.addPass(effectDotScreen);
 
 // you might want to use a gaussian blur filter before
 // the next pass to improve the result of the Sobel operator
