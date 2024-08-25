@@ -3,14 +3,8 @@ import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { PositionalAudioHelper } from 'three/addons/helpers/PositionalAudioHelper.js';
 import FadeInMaterial from 'three/addons/libs/FadeInMaterial.js';
 
-//import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 import { UniformsUtils, TextureLoader, Object3D, ShaderMaterial, MeshLambertMaterial, MeshBasicMaterial, Mesh, Color, PositionalAudio, AudioLoader, VideoTexture, RepeatWrapping, DoubleSide, FrontSide, SRGBColorSpace } from 'three';
 import { BrightnessContrastShader } from 'three/addons/shaders/BrightnessContrastShader.js'
-
-//import { LuminosityShader } from 'three/addons/shaders/LuminosityShader.js';
-//import{DotScreenShader} from 'three/addons/shaders/DotScreenShader.js'
-//import{TechnicolorShader} from 'three/addons/shaders/TechnicolorShader.js'
-//import{BrightnessContrastShader} from 'three/addons/shaders/BrightnessContrastShader.js'
 
 const loader = new TextureLoader();
 
@@ -78,11 +72,11 @@ export const modifyObjects = {
 
     },
     VisitorEnter: (mesh, deps) => {
-        //mesh.getWorldPosition(visitorEnter);
+
         mesh.visible = false;
         mesh.removeFromParent();
         //
-        //
+
     },
     Text: (mesh, deps) => {
         new FontLoader().load("txt/Lato_Regular.json", function (font) {
@@ -150,26 +144,11 @@ export const modifyObjects = {
                 });
 
             } else {
-                /*
-                if (mesh.material instanceof ShaderMaterial) {
-                    loader.load(Map, (texture) => {
-                        mesh.material = new ShaderMaterial({
-                            uniforms: UniformsUtils.clone(BrightnessContrastShader.uniforms),
-                            vertexShader: BrightnessContrastShader.vertexShader,
-                            fragmentShader: BrightnessContrastShader.fragmentShader
-                        });
-
-                        mesh.material.uniforms.tDiffuse.value = texture;
-                        //mesh.material.uniforms.exposure.value = 1.5;
-
-                        mesh.material.needsUpdate = true;
-                    });
-                } else { 
-*/
+               
                 loader.load(Map, (texture) => {
                     mesh.material.map = texture;
                 });
-                //}
+                
             }
         }
 

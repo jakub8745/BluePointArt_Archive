@@ -2,7 +2,6 @@
 //
 console.log('TODO: NORWID + strzalki (nowy obiekt: ROOM wczytywany razem z tekstur z modelu archivum), zmieni reszte textur do .KTX2, ustawi AUDIO i schowa helpery, poprawi przesówanie do kółeczka');
 
-
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
@@ -17,19 +16,12 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
-import { TechnicolorShader } from 'three/addons/shaders/TechnicolorShader.js'
 
-//import{SepiaShader} from 'three/addons/shaders/SepiaShader.js'
-//import{BrightnessContrastShader} from 'three/addons/shaders/BrightnessContrastShader.js'
-//import { LuminosityShader } from 'three/addons/shaders/LuminosityShader.js';
-//import { SobelOperatorShader } from 'three/addons/shaders/SobelOperatorShader.js';
-//import { MaskShader } from 'three/addons/shaders/MaskShader.js';
 import { DotScreenShader } from 'three/addons/shaders/DotScreenShader.js'
 
 import Stats from "three/addons/libs/stats.module.js";
 
 import { GUI } from 'https://cdn.skypack.dev/dat.gui';
-
 
 import {
   MeshBVH,
@@ -165,42 +157,11 @@ const renderPass = new RenderPass(scene, camera);
 composer.addPass(renderPass);
 
 
-
-// color to grayscale conversion
-
-//const effectDotScreen = new ShaderPass(BrightnessContrastShader);
-
-
-//const effectDotScreen = new ShaderPass(SepiaShader);
-
-
 const effectDotScreen = new ShaderPass(DotScreenShader);
-
-//const effectDotScreen = new ShaderPass(DotScreenShader);
-
-//effectDotScreen.uniforms.exposure.value =1.2;  // Adjust the value as needed
-
 
 composer.addPass(effectDotScreen);
 
-// you might want to use a gaussian blur filter before
-// the next pass to improve the result of the Sobel operator
-/*
-// Sobel operator
-
-effectSobel = new ShaderPass(SobelOperatorShader);
-effectSobel.uniforms['resolution'].value.x = window.innerWidth * window.devicePixelRatio;
-effectSobel.uniforms['resolution'].value.y = window.innerHeight * window.devicePixelRatio;
-composer.addPass(effectSobel);
-*/
-////gui.add(params, 'enablePostProcessing');
-//gui.open();
-
-// end of postprocessing
-// Setup GUI for controlling global contrast
-
-
-
+// load model
 
 loadArchiveModel(params.archiveModelPath).then(({ exhibits }) => {
 
@@ -326,9 +287,7 @@ loadArchiveModel(params.archiveModelPath).then(({ exhibits }) => {
 
   });
 
-
-
-
+  //
 
   const staticGenerator = new StaticGeometryGenerator(environment);
   staticGenerator.attributes = ["position"];
@@ -355,7 +314,7 @@ loadArchiveModel(params.archiveModelPath).then(({ exhibits }) => {
   console.error("Failed to load models:", error);
 });
 
-///////////////////////////
+// INIT
 
 
 function init() {
@@ -1002,22 +961,6 @@ function handleLights(lightsToTurn, lightsToTurnValue) {
   for (const el of lightsToTurn) {
     el.visible = el.userData.name === lightsToTurnValue;
 
-    /*
-        if (el.visible) {
-    
-          //console.log("el.userData.name", el.userData.name, "lightsToTurnValue", lightsToTurnValue, "el.visible", el.visible, el.intensity)
-    
-    
-    
-          gui.show(true);
-          gui.add(el, "visible").name("visible" + el.name);
-          gui.add(el, "intensity", 0, 1000, 0.1).name("intensity" + el.name);
-          gui.add(el, "distance", 0, 500, 0.1).name("distance" + el.name);
-          gui.add(el, "decay", 0, 2, 0.01).name("decay" + el.name);
-          gui.add(el.position, "y", -10, 50, 0.01).name("y" + el.name);
-        }
-        //gui.show(false);
-    */
   }
 }
 
@@ -1045,14 +988,10 @@ function handleVideos(scene, belongsTo) {
 }
 
 function handleSceneBackground(intersectedFloor) {
+  
   let bgTexture = intersectedFloor.userData.bgTexture || "textures/2d_etc1s.ktx2";
   const bgInt = intersectedFloor.userData.bgInt || 1;
   const bgBlur = intersectedFloor.userData.bgBlur || 0;
-
-  //bgTexture = "textures/equMap_podMostem.ktx2";
-
-  //console.log("bgTexture", bgTexture, "intersectedFloor.userData", intersectedFloor.userData);
-  //console.log("textureCache", textureCache);
 
   if (textureCache.has(bgTexture)) {
     setSceneBackgroundWithTransition(scene, textureCache.get(bgTexture), bgBlur, bgInt);
@@ -1063,9 +1002,7 @@ function handleSceneBackground(intersectedFloor) {
     ktx2Loader.load(bgTexture, (texture) => {
       texture.mapping = THREE.EquirectangularReflectionMapping;
       texture.colorSpace = THREE.SRGBColorSpace;
-      //texture.minFilter = THREE.LinearMipmapLinearFilter;
 
-      //texture.flipY = false;
       setSceneBackgroundWithTransition(scene, texture, bgBlur, bgInt);
     });
 
@@ -1075,7 +1012,6 @@ function handleSceneBackground(intersectedFloor) {
 function setSceneBackgroundWithTransition(scene, newTexture, blurIntensity, intensity) {
 
   const transitionDuration = 2000; // in milliseconds
-
 
   scene.background = newTexture;
   scene.backgroundIntensity = 0;
@@ -1145,8 +1081,6 @@ async function loadTexturesAndDispose(belongsTo) {
     c.userData.isMaterialDisposed = true;
   }));
 }
-
-
 
 
 //
@@ -1306,25 +1240,21 @@ function ileElementow() {
 
 //
 function preloadTextures() {
-  //const textureLoader = new THREE.TextureLoader();
 
-
-  //const ktx2Loader = new KTX2Loader()
   ktx2Loader.setTranscoderPath('jsm/libs/basis/')
   ktx2Loader.detectSupport(renderer)
-  //const textureFiles = ['bg_puent.jpg', 'bg_color.jpg', 'galaktyka.jpg', 'dystopia/bgVermeerViewofDelft.jpg', 'bg_lockdowns.jpg', 'equMap_podMostem.jpg', 'bg_kratka.jpg']; // Add all texture filenames here
+
   const textureFiles = ['bg_color.ktx2', 'galaktyka.ktx2', 'equMap_podMostem.ktx2', 'bg_white.ktx2', 'bg_lockdowns.ktx2', 'dystopia/bgVermeerViewofDelft.ktx2']; // Add all texture filenames here
 
 
   textureFiles.forEach((textureFile) => {
+
     const textureUrl = textureFolder + textureFile;
 
     ktx2Loader.load(textureUrl, (texture) => {
 
       texture.mapping = THREE.EquirectangularReflectionMapping;
       texture.colorSpace = THREE.SRGBColorSpace;
-      //texture.minFilter = THREE.LinearMipmapLinearFilter;
-      //texture.flipY = false;
 
       textureCache.set(textureUrl, texture);
 
@@ -1387,6 +1317,22 @@ class VisitorLocationChecker {
   }
 }
 
+  /*
+        if (el.visible) {
+    
+          //console.log("el.userData.name", el.userData.name, "lightsToTurnValue", lightsToTurnValue, "el.visible", el.visible, el.intensity)
+    
+    
+    
+          gui.show(true);
+          gui.add(el, "visible").name("visible" + el.name);
+          gui.add(el, "intensity", 0, 1000, 0.1).name("intensity" + el.name);
+          gui.add(el, "distance", 0, 500, 0.1).name("distance" + el.name);
+          gui.add(el, "decay", 0, 2, 0.01).name("decay" + el.name);
+          gui.add(el.position, "y", -10, 50, 0.01).name("y" + el.name);
+        }
+        //gui.show(false);
+    */
 
 
 
