@@ -21,7 +21,7 @@ import { DotScreenShader } from 'three/addons/shaders/DotScreenShader.js'
 
 import Stats from "three/addons/libs/stats.module.js";
 
-import { GUI } from 'https://cdn.skypack.dev/dat.gui';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 import {
   MeshBVH,
@@ -120,6 +120,7 @@ let target = null;
 let timeout = null;
 
 const gui = new GUI();
+gui.show(false);
 const joy3Param = { title: "joystick3" };
 const Joy3 = new JoyStick("joy3Div", joy3Param);
 

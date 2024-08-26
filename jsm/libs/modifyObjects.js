@@ -237,7 +237,7 @@ export const modifyObjects = {
         modifyObjects.element(mesh, deps);
     },
     Video: (mesh, deps) => {
-        const gui = deps.gui;
+        //const gui = deps.gui;
 
         const video = document.getElementById(mesh.userData.elementID);
 
@@ -287,8 +287,9 @@ export const modifyObjects = {
             material.userData.shader = shader;
 
             // Now that the shader is available, add the GUI controls
-            gui.add(shader.uniforms.uBrightness, 'value', 0.0, 3.0).name('Brightness');
-            gui.add(shader.uniforms.uContrast, 'value', 0.0, 3.0).name('Contrast');
+           // gui.add(shader.uniforms.uBrightness, 'value', 0.0, 3.0).name('Brightness');
+           // gui.add(shader.uniforms.uContrast, 'value', 0.0, 3.0).name('Contrast');
+            //gui.show(false);
         };
 
         // Apply the material to the mesh

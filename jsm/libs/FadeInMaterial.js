@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GUI } from 'https://cdn.skypack.dev/dat.gui';
+//import { GUI } from 'https://cdn.skypack.dev/dat.gui';
 
 export default class FadeInMaterial extends THREE.MeshLambertMaterial {
   static globalContrast = 2.7;
@@ -24,7 +24,7 @@ export default class FadeInMaterial extends THREE.MeshLambertMaterial {
 
     // Initialize GUI for contrast and brightness control if not already done
     if (!FadeInMaterial.guiInitialized) {
-      this.setupGUI();
+      //this.setupGUI();
       FadeInMaterial.guiInitialized = true;
     }
   }
@@ -119,6 +119,7 @@ export default class FadeInMaterial extends THREE.MeshLambertMaterial {
   }
 
   setupGUI() {
+    
     const gui = new GUI();
     const contrastController = gui.add(FadeInMaterial, 'globalContrast', 0.0, 3.0).name('Contrast');
     contrastController.onChange((value) => {
@@ -129,5 +130,7 @@ export default class FadeInMaterial extends THREE.MeshLambertMaterial {
     brightnessController.onChange((value) => {
       FadeInMaterial.updateGlobalBrightness(value); // Update the global brightness
     });
+
+    gui.show(false);
   }
 }
