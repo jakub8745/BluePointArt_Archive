@@ -350,6 +350,8 @@ function init() {
 
   const isAppleDevice = /Mac|iPad|iPhone|iPod/.test(navigator.userAgent);
 
+  alert("Device: " + navigator.userAgent);
+
   renderer.toneMapping = isAppleDevice ? THREE.AgXToneMapping : THREE.ACESFilmicToneMapping;
 
   renderer.toneMappingExposure = params.exposure;
