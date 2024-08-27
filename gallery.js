@@ -153,14 +153,21 @@ init();
 
 // postprocessing
 
+
 const composer = new EffectComposer(renderer);
 const renderPass = new RenderPass(scene, camera);
 composer.addPass(renderPass);
 
+const isIphone = /iPhone/.test(navigator.userAgent);
 
-const effectDotScreen = new ShaderPass(DotScreenShader);
+if (!isIphone) {
 
-composer.addPass(effectDotScreen);
+  const effectDotScreen = new ShaderPass(DotScreenShader);
+
+  composer.addPass(effectDotScreen);
+
+}
+
 
 // load model
 
@@ -349,6 +356,7 @@ function init() {
   renderer.gammaFactor = 2.2;
 
   const isAppleDevice = /Mac|iPad|iPhone|iPod/.test(navigator.userAgent);
+  
 
   alert("Device: " + navigator.userAgent);
 
@@ -991,7 +999,7 @@ function handleVideos(scene, belongsTo) {
 }
 
 function handleSceneBackground(intersectedFloor) {
-  
+
   let bgTexture = intersectedFloor.userData.bgTexture || "textures/2d_etc1s.ktx2";
   const bgInt = intersectedFloor.userData.bgInt || 1;
   const bgBlur = intersectedFloor.userData.bgBlur || 0;
@@ -1320,22 +1328,22 @@ class VisitorLocationChecker {
   }
 }
 
-  /*
-        if (el.visible) {
-    
-          //console.log("el.userData.name", el.userData.name, "lightsToTurnValue", lightsToTurnValue, "el.visible", el.visible, el.intensity)
-    
-    
-    
-          gui.show(true);
-          gui.add(el, "visible").name("visible" + el.name);
-          gui.add(el, "intensity", 0, 1000, 0.1).name("intensity" + el.name);
-          gui.add(el, "distance", 0, 500, 0.1).name("distance" + el.name);
-          gui.add(el, "decay", 0, 2, 0.01).name("decay" + el.name);
-          gui.add(el.position, "y", -10, 50, 0.01).name("y" + el.name);
-        }
-        //gui.show(false);
-    */
+/*
+      if (el.visible) {
+  
+        //console.log("el.userData.name", el.userData.name, "lightsToTurnValue", lightsToTurnValue, "el.visible", el.visible, el.intensity)
+  
+  
+  
+        gui.show(true);
+        gui.add(el, "visible").name("visible" + el.name);
+        gui.add(el, "intensity", 0, 1000, 0.1).name("intensity" + el.name);
+        gui.add(el, "distance", 0, 500, 0.1).name("distance" + el.name);
+        gui.add(el, "decay", 0, 2, 0.01).name("decay" + el.name);
+        gui.add(el.position, "y", -10, 50, 0.01).name("y" + el.name);
+      }
+      //gui.show(false);
+  */
 
 
 
