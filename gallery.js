@@ -48,7 +48,7 @@ const params = {
   canSeeGizmo: false,
   transControlsMode: "rotate",
   heightOffset: new THREE.Vector3(0, 0.33, 0),// offset the camera from the visitor
-  archiveModelPath: "../models/bakedRooms.glb",
+  archiveModelPath: "../models/exterior.glb",
   enablePostProcessing: true,
 };
 
