@@ -4,17 +4,17 @@ console.log('TODO: NORWID + strzalki (nowy obiekt: ROOM wczytywany razem z tekst
 
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
 import { modifyObjects } from 'three/addons/libs/modifyObjects.js';
-import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+
+import ModelLoader from 'three/addons/libs/ModelLoader.js'
 
 
 import { DotScreenShader } from 'three/addons/shaders/DotScreenShader.js'
@@ -24,11 +24,9 @@ import Stats from "three/addons/libs/stats.module.js";
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 import {
-  MeshBVH,
   acceleratedRaycast,
   disposeBoundsTree,
   computeBoundsTree,
-  StaticGeometryGenerator,
 } from "https://unpkg.com/three-mesh-bvh@0.7.6/build/index.module.js";
 import { JoyStick } from "three/addons/controls/joy.js";
 import * as TWEEN from "three/addons/tween/tween.esm.js";
@@ -58,12 +56,13 @@ let ileE = 2,
 
 //
 const listener = new THREE.AudioListener();
+
 // Preload textures from the "textures" folder
 const textureFolder = "textures/";
 const textureCache = new Map();
 
 let renderer, camera, scene, clock, tween, stats, anisotropy;
-let effectSobel;
+let composer, renderPass;
 let rendererMap, cameraMap, circleMap, sceneMap, css2DRenderer;
 const cameraDirection = new THREE.Vector3();
 
@@ -72,8 +71,7 @@ const ktx2Loader = new KTX2Loader()
 let collider, visitor, controls, control;
 let circle, circleYellow, circleBlue
 let environment = new THREE.Group();
-const exhibits = {};
-//const objectsToAdd = [];
+
 let animationId = null; // defined in outer scope
 
 let visitorIsOnGround = false;
@@ -81,8 +79,6 @@ let fwdPressed = false,
   bkdPressed = false,
   lftPressed = false,
   rgtPressed = false;
-
-const vector3 = new THREE.Vector3();
 
 let visitorVelocity = new THREE.Vector3();
 let upVector = new THREE.Vector3(0, 1, 0);
@@ -108,7 +104,7 @@ let Wall,
   result,
   intersects,
   video, image
-let intensityTo, intervalId;
+let intervalId;
 
 let audioHandler, floorChecker;
 
@@ -146,184 +142,21 @@ const waitForMe = async (millisec) => {
 };
 
 //
+const fadeOutEl = (el) => {
+  el.style.animation = "fadeOut 2s forwards";
+  el.addEventListener("animationend", () => {
+    el.remove();
+  });
+};
+
+//
 joyIntervalCheck();
 
 
 init();
 
-// postprocessing
 
-
-const composer = new EffectComposer(renderer);
-const renderPass = new RenderPass(scene, camera);
-composer.addPass(renderPass);
-
-const isIphone = /iPhone/.test(navigator.userAgent);
-
-if (!isIphone) {
-
-  const effectDotScreen = new ShaderPass(DotScreenShader);
-
-  composer.addPass(effectDotScreen);
-
-}
-
-
-// load model
-
-loadArchiveModel(params.archiveModelPath).then(({ exhibits }) => {
-
-
-  addVisitorMapCircle();
-
-
-  const deps = {
-    params,
-    control,
-    environment,
-    gui,
-    lightsToTurn,
-    scene,
-    sceneMap,
-    loader,
-    listener,
-    audioObjects,
-    sphereSize: params.sphereSize,
-    visitor,
-    anisotropy,
-  };
-
-  for (const typeOfmesh in exhibits) {
-
-    const arr = exhibits[typeOfmesh];
-
-    arr.forEach((mesh) => {
-
-      if (mesh.userData.name !== "VisitorEnter") {
-        environment.attach(mesh);
-      } else {
-        const visitorQuaternion = new THREE.Quaternion();
-        mesh.getWorldPosition(visitor.position);
-        mesh.getWorldQuaternion(visitorQuaternion);
-        visitorEnter.copy(visitor.position)
-
-        mesh.needsUpdate = true;
-
-      }
-
-
-    });
-  }
-
-  environment.traverse((c) => {
-
-    if (c.isLight) {
-
-      modifyObjects[c.userData.type]?.(c, deps);
-
-    } else {
-
-      ileElementow()
-    }
-
-
-    //
-    if (c.userData.type === "Text") {
-      modifyObjects[c.userData.type]?.(c, deps);
-
-    } else if (
-
-      /Wall/.test(c.userData.name) ||
-      /visitorLocation/.test(c.userData.type) ||
-      /Room/.test(c.userData.type)
-
-    ) {
-
-      const cClone = c.clone();
-
-      cClone.material = new THREE.MeshBasicMaterial();
-
-      if (cClone.userData.type === "visitorLocation" || cClone.userData.type === "Room") {
-
-        if (cClone.name === "FloorOut") cClone.visible = false
-
-        cClone.material.color.set(0x1b689f);
-        cClone.material.transparent = true;
-        cClone.material.opacity = 0.8;
-
-        if (cClone.userData.label) {
-
-          const labelDiv = document.createElement('div');
-          labelDiv.className = 'label';
-          labelDiv.textContent = cClone.userData.label;
-          labelDiv.style.marginTop = '1em'; // Adjust for correct centering
-          labelDiv.style.pointerEvents = 'auto'; // Ensure label can handle pointer events
-
-
-          // Add click event to label to move the visitor
-          labelDiv.addEventListener('click', () => {
-
-
-            const targetPosition = cClone.position.clone();
-
-            visitorEnter.set(targetPosition.x, targetPosition.y, targetPosition.z);
-
-            reset();
-          });
-
-          const labelObject = new CSS2DObject(labelDiv);
-          labelObject.position.set(0, 0, 0);
-          cClone.add(labelObject);
-
-
-        }
-
-      } else {
-
-        cClone.material.color = new THREE.Color(0xffffff);
-
-      }
-
-      cClone.material.needsUpdate = true;
-
-      cClone.position.copy(c.position);
-      cClone.scale.copy(c.scale);
-
-      if (deps.sceneMap) deps.sceneMap.add(cClone);
-
-    }
-
-  });
-
-  //
-
-  const staticGenerator = new StaticGeometryGenerator(environment);
-  staticGenerator.attributes = ["position"];
-
-  const mergedGeometry = staticGenerator.generate();
-  mergedGeometry.boundsTree = new MeshBVH(mergedGeometry, {
-    lazyGeneration: false,
-  });
-
-  collider = new THREE.Mesh(mergedGeometry);
-  collider.material.wireframe = true;
-  collider.material.opacity = 0;
-  collider.material.transparent = true;
-
-  scene.add(collider);
-
-  preloadTextures();
-
-  reset();
-
-  animate();
-
-}).catch(error => {
-  console.error("Failed to load models:", error);
-});
-
-// INIT
-
+// init
 
 function init() {
 
@@ -332,11 +165,7 @@ function init() {
   sidebar.style.display = "block";
   sidebar.style.animation = "fadeIn 2s forwards";
   //
-
-  //renderer webGPU
-
-  //renderer = new THREE.WebGPURenderer({ antialias: true });
-
+  fadeOutEl(document.getElementById("overlay"));
 
   // renderer setup
   renderer = new THREE.WebGLRenderer({
@@ -356,13 +185,9 @@ function init() {
   renderer.gammaFactor = 2.2;
 
   const isAppleDevice = /Mac|iPad|iPhone|iPod/.test(navigator.userAgent);
-  
 
-  //a//lert("Device: " + navigator.userAgent);
+  renderer.toneMapping = isAppleDevice ? THREE.AgXToneMapping : THREE.ACESFilmicToneMapping;
 
-  //renderer.toneMapping = isAppleDevice ? THREE.AgXToneMapping : THREE.ACESFilmicToneMapping;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  
   renderer.toneMappingExposure = params.exposure;
   renderer.outputEncoding = THREE.sRGBEncoding;
 
@@ -463,6 +288,68 @@ function init() {
   // ambientLight
   let ambientLight = new THREE.AmbientLight(0x404040, 55);
   scene.add(ambientLight);
+
+  //
+  addVisitorMapCircle();
+
+  // composer
+
+  composer = new EffectComposer(renderer);
+  renderPass = new RenderPass(scene, camera);
+  composer.addPass(renderPass);
+
+  const isIphone = /iPhone/.test(navigator.userAgent);
+
+  if (!isIphone) {
+
+    const effectDotScreen = new ShaderPass(DotScreenShader);
+
+    composer.addPass(effectDotScreen);
+
+  }
+
+  // console.log("collider deps", collider)
+
+  //
+  const deps = {
+    params,
+    control,
+    controls,
+    environment,
+    gui,
+    lightsToTurn,
+    scene,
+    sceneMap,
+    loader,
+    listener,
+    audioObjects,
+    sphereSize: params.sphereSize,
+    visitor,
+    visitorEnter,
+    TWEEN,
+    anisotropy,
+    composer,
+  };
+
+
+
+  // LOAD MODEL (environment, collider)
+  const modelLoader = new ModelLoader(deps);
+
+  async function loadAndPassCollider() {
+
+    const collider = await modelLoader.loadModel(params.archiveModelPath);
+   
+    animate(collider);
+  }
+
+  loadAndPassCollider();
+
+  preloadTextures();
+
+  reset();
+
+
 
   // events
 
@@ -584,7 +471,6 @@ function init() {
   }
 
   document.addEventListener("onload", (e) => {
-    //html body div.sidebar.open ul.nav-list li.text_in_sidebar div#map_in_sidebar.info_sidebar.open
   });
 
   // open/close sb
@@ -701,67 +587,10 @@ function init() {
 
 
 
-
-
-//
-// load environment
-async function loadArchiveModel(modelPath) {
-  const gltfLoader = new GLTFLoader();
-  const dracoLoader = new DRACOLoader();
-  dracoLoader.setDecoderPath("./jsm/libs/draco/");
-  gltfLoader.setDRACOLoader(dracoLoader);
-
-  try {
-    const { scene: gltfScene } = await gltfLoader.loadAsync(modelPath);
-
-    const exhibits = [];
-
-    gltfScene.scale.setScalar(1);
-
-    const box = new THREE.Box3().setFromObject(gltfScene);
-    box.getCenter(gltfScene.position).negate();
-
-    gltfScene.updateMatrixWorld(true);
-
-    gltfScene.traverse(c => {
-      if (c.isMesh || c.isLight) {
-        if (c.isLight) {
-          c.visible = false;
-        } else {
-          ileMesh += 1;
-
-          if (c.material) {
-
-            if (c.material.map) {
-              // console.log("map: ", c.material.map);
-            }
-
-            //c.material.map = null;
-            //c.material.dispose();
-            // c.material.needsUpdate = true;
-          }
-
-
-        }
-
-        const typeOfmesh = c.userData.belongsTo;
-        exhibits[typeOfmesh] = exhibits[typeOfmesh] || [];
-        exhibits[typeOfmesh].push(c);
-        //
-
-      }
-    });
-
-    // Now you have the segregated objects in the 'exhibits' object
-    return { exhibits }
-  } catch (error) {
-    console.error('Error loading model:', error);
-    throw error;
-  }
-}
-
 // reset visitor
 function reset() {
+
+  console.log("reset");
   bgTexture0 = "/textures/xxxbg_puent.jpg";
   visitorVelocity.set(0, 0, 0);
 
@@ -783,7 +612,9 @@ function reset() {
 }
 
 // update visitor
-async function updateVisitor(delta) {
+async function updateVisitor(collider, delta) {
+
+  //console.log("collider updateviz", collider, delta);
   if (visitorIsOnGround) {
     visitorVelocity.y = delta * params.gravity;
   } else {
@@ -856,6 +687,8 @@ async function updateVisitor(delta) {
     },
   });
 
+  //console.log("collider updateviz 2", collider, delta);
+
   // get the adjusted position of the capsule collider in world space after checking
   // triangle collisions and moving it. capsuleInfo.segment.start is assumed to be
   // the origin of the visitor model.
@@ -902,6 +735,7 @@ async function updateVisitor(delta) {
   if (visitor.position.y < -10) {
     reset();
   }
+
 
   // checkin where the visitor is => tutning on/off  video/animations & audio & gizmo
   floorChecker = new VisitorLocationChecker(scene);
@@ -1111,10 +945,8 @@ function animateMap() {
 }
 
 //
-function animate() {
+function animate(collider) {
 
-  //time *= 0.001;
-  stats.update();
   TWEEN.update();
 
   const delta = Math.min(clock.getDelta(), 0.1);
@@ -1130,21 +962,22 @@ function animate() {
   }
 
   if (collider) {
-    collider.visible = params.displayCollider;
+
+    //collider.visible = params.displayCollider;
 
     const physicsSteps = params.physicsSteps;
 
     for (let i = 0; i < physicsSteps; i++) {
-      updateVisitor(delta / physicsSteps);
+      updateVisitor(collider, delta / physicsSteps);
     }
   }
 
 
-  requestAnimationFrame(animate);
+  requestAnimationFrame(() => animate(collider));
 
-  if (params.enablePostProcessing === true) {
+  if (composer && params.enablePostProcessing === true) {
 
-
+    //
 
     composer.render();
 
@@ -1274,13 +1107,7 @@ function preloadTextures() {
   });
 }
 
-//
-const fadeOutEl = (el) => {
-  el.style.animation = "fadeOut 2s forwards";
-  el.addEventListener("animationend", () => {
-    el.remove();
-  });
-};
+
 
 
 //
@@ -1328,25 +1155,3 @@ class VisitorLocationChecker {
 
   }
 }
-
-/*
-      if (el.visible) {
-  
-        //console.log("el.userData.name", el.userData.name, "lightsToTurnValue", lightsToTurnValue, "el.visible", el.visible, el.intensity)
-  
-  
-  
-        gui.show(true);
-        gui.add(el, "visible").name("visible" + el.name);
-        gui.add(el, "intensity", 0, 1000, 0.1).name("intensity" + el.name);
-        gui.add(el, "distance", 0, 500, 0.1).name("distance" + el.name);
-        gui.add(el, "decay", 0, 2, 0.01).name("decay" + el.name);
-        gui.add(el.position, "y", -10, 50, 0.01).name("y" + el.name);
-      }
-      //gui.show(false);
-  */
-
-
-
-
-
