@@ -3,7 +3,7 @@
 console.log('TODO: NORWID + strzalki (nowy obiekt: ROOM wczytywany razem z tekstur z modelu archivum), zmieni reszte textur do .KTX2, ustawi AUDIO i schowa helpery, poprawi przesówanie do kółeczka');
 
 import * as THREE from "three";
-import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
+//import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
 import { modifyObjects } from 'three/addons/libs/modifyObjects.js';
@@ -15,6 +15,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
 import ModelLoader from 'three/addons/libs/ModelLoader.js'
+import Visitor from 'three/addons/libs/Visitor.js'
 
 
 import { DotScreenShader } from 'three/addons/shaders/DotScreenShader.js'
@@ -34,6 +35,7 @@ import * as TWEEN from "three/addons/tween/tween.esm.js";
 const loader = new THREE.TextureLoader();
 
 const params = {
+  exhibitCollider: null,
   firstPerson: true,
   displayCollider: false, //true,
   visualizeDepth: 10,
@@ -72,7 +74,8 @@ let collider, visitor, controls, control;
 let circle, circleYellow, circleBlue
 let environment = new THREE.Group();
 
-let animationId = null; // defined in outer scope
+let MapAnimationId = null; // defined in outer scope
+let animationId = null;
 
 let visitorIsOnGround = false;
 let fwdPressed = false,
@@ -106,7 +109,9 @@ let Wall,
   video, image
 let intervalId;
 
-let audioHandler, floorChecker;
+let audioHandler, exhibitModelPath, exhibitModelPath0;
+
+let deps = {};
 
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -199,6 +204,7 @@ function init() {
 
   // scene setup
   scene = new THREE.Scene();
+  scene.name = "mainScene";
   scene.fog = new THREE.Fog(0x2b0a07, 3.1, 18);
 
   // camera setup
@@ -308,17 +314,18 @@ function init() {
 
   }
 
-  // console.log("collider deps", collider)
+
 
   //
-  const deps = {
+  deps = {
     params,
     control,
     controls,
     environment,
     gui,
     lightsToTurn,
-    scene,
+    currentScene: scene,
+    lastScene: scene,
     sceneMap,
     loader,
     listener,
@@ -329,6 +336,10 @@ function init() {
     TWEEN,
     anisotropy,
     composer,
+    reset: reset,
+    exhibitModelPath0: "FloorOut",
+    exhibitModelPath: "FloorOut",
+    animationId,
   };
 
 
@@ -336,16 +347,18 @@ function init() {
   // LOAD MODEL (environment, collider)
   const modelLoader = new ModelLoader(deps);
 
-  async function loadAndPassCollider() {
-
-    const collider = await modelLoader.loadModel(params.archiveModelPath);
-   
-    animate(collider);
+  // Function to load the main scene
+  async function loadMainScene() {
+    const mainCollider = await modelLoader.loadModel(params.archiveModelPath);
+    deps.params.exhibitCollider = mainCollider;
+    animate();
   }
 
-  loadAndPassCollider();
+  loadMainScene();
+
 
   preloadTextures();
+
 
   reset();
 
@@ -503,9 +516,9 @@ function init() {
     ) {
       animateMap();
     } else {
-      if (animationId) {
-        cancelAnimationFrame(animationId);
-        animationId = null; // reset the id
+      if (MapAnimationId) {
+        cancelAnimationFrame(MapAnimationId);
+        MapAnimationId = null; // reset the id
       }
     }
   });
@@ -569,6 +582,9 @@ function init() {
     if (event.key === "g" && params.canSeeGizmo) control._gizmo.visible = !control._gizmo.visible;
     if (event.key === "m") control.setMode("translate");
     if (event.key === "r") control.setMode("rotate");
+    if (event.key === "t") {
+//
+    }
     if (event.key === "Escape") control.reset();
     clearInterval(intervalId);
   });
@@ -590,7 +606,6 @@ function init() {
 // reset visitor
 function reset() {
 
-  console.log("reset");
   bgTexture0 = "/textures/xxxbg_puent.jpg";
   visitorVelocity.set(0, 0, 0);
 
@@ -614,7 +629,6 @@ function reset() {
 // update visitor
 async function updateVisitor(collider, delta) {
 
-  //console.log("collider updateviz", collider, delta);
   if (visitorIsOnGround) {
     visitorVelocity.y = delta * params.gravity;
   } else {
@@ -687,8 +701,6 @@ async function updateVisitor(collider, delta) {
     },
   });
 
-  //console.log("collider updateviz 2", collider, delta);
-
   // get the adjusted position of the capsule collider in world space after checking
   // triangle collisions and moving it. capsuleInfo.segment.start is assumed to be
   // the origin of the visitor model.
@@ -736,11 +748,9 @@ async function updateVisitor(collider, delta) {
     reset();
   }
 
+  // check if the visitor is on a floor
+  const intersectedFloor = visitor.checkLocation();
 
-  // checkin where the visitor is => tutning on/off  video/animations & audio & gizmo
-  floorChecker = new VisitorLocationChecker(scene);
-
-  const intersectedFloor = floorChecker.checkVisitorLocation(visitor);
 
   if (intersectedFloor) {
 
@@ -749,9 +759,18 @@ async function updateVisitor(collider, delta) {
     const belongsTo = intersectedFloor.userData.belongsTo;
     const lightsToTurnValue = intersectedFloor.userData.lightsToTurn;
 
+    //if (intersectedFloor.name !== "FloorOut") {
+
+    exhibitModelPath = intersectedFloor.userData.exhibitModelPath;
+
+    //}
+
+
     if (lightsToTurn && intersectedFloor.userData.name && intersectedFloor0.userData.name !== intersectedFloor.userData.name) {
 
       params.canSeeGizmo = (lightsToTurnValue === "lightsDystopia") ? true : false;
+
+      intersectedFloor0 = intersectedFloor;
 
       //AUDIO
       audioHandler = new AudioHandler();
@@ -768,9 +787,18 @@ async function updateVisitor(collider, delta) {
       handleSceneBackground(intersectedFloor);
 
       // Load TEXTURES and DISPOSE other objects based on the exhibit and belongsTo categories
-      loadTexturesAndDispose(belongsTo);
+      //loadTexturesAndDispose(belongsTo);
 
-      intersectedFloor0 = intersectedFloor
+      // Load the exhibit room
+      if (exhibitModelPath && exhibitModelPath !== "FloorOut") {
+
+        cancelAnimationFrame(deps.animationId);
+
+        loadExhibitRoom(exhibitModelPath, deps);
+
+        deps.exhibitModelPath0 = deps.exhibitModelPath = exhibitModelPath;
+
+      }
 
     }
 
@@ -874,65 +902,110 @@ function setSceneBackgroundWithTransition(scene, newTexture, blurIntensity, inte
 }
 
 
-async function loadTexturesAndDispose(belongsTo) {
-  const deps = {
-    params,
-    control,
-    environment,
-    gui,
-    lightsToTurn,
-    scene,
-    sceneMap,
-    loader,
-    listener,
-    audioObjects,
-    sphereSize: params.sphereSize,
-    visitor,
-    anisotropy,
-    ktx2Loader,
-    THREE,
 
-  };
+async function loadExhibitRoom(exhibitModelPath, deps) {
 
+  if (!deps || !deps.animationId || !deps.currentScene || !deps.visitor || !deps.lastScene) {
+    console.error('Error: loadExhibitRoom() - Found null or undefined dependency');
+    return;
+  }
 
-  const objectsToDispose = [];
+  cancelAnimationFrame(deps.animationId);
 
-  scene.traverse(c => {
-    if (!c.userData.belongsTo) return;
+  const exhibitScene = new THREE.Scene();
+  exhibitScene.name = "exhibitScene";
 
-    // Ensure both c.userData.belongsTo and belongsTo are arrays
-    const belongsToArray = Array.isArray(belongsTo) ? belongsTo : [belongsTo];
-    const cBelongsToArray = Array.isArray(c.userData.belongsTo) ? c.userData.belongsTo : [c.userData.belongsTo];
+  // Add ambient light to the exhibit scene
+  exhibitScene.add(new THREE.AmbientLight(0x404040, 55));
 
-    // Check if there is any intersection between cBelongsToArray and belongsToArray
-    const belongsToCurrentExhibit = cBelongsToArray.some(exhibit => belongsToArray.includes(exhibit));
+  // Switch the scene reference to the new scene BEFORE loading the model
+  deps.currentScene = exhibitScene;
 
-    if (!belongsToCurrentExhibit && c.material && !c.userData.isMaterialDisposed && !c.userData.type === "Room") {
-      objectsToDispose.push(c);
+  // Move the visitor to the new scene
+  try {
+    deps.visitor.moveToScene(exhibitScene);
+  } catch (error) {
+    console.error('Error: loadExhibitRoom() - Unable to move visitor to new scene', error);
+    return;
+  }
 
-    } else if (belongsToCurrentExhibit) {
+  const modelLoader = new ModelLoader(deps);
 
-      //console.log(c.userData.type )
+  // Load the exhibit model into the new scene
+  try {
+    deps.params.exhibitCollider = await modelLoader.loadModel(exhibitModelPath);
+  } catch (error) {
+    console.error('Error: loadExhibitRoom() - Unable to load exhibit model', error);
+    return;
+  }
 
-      modifyObjects[c.userData.type]?.(c, deps);
-      c.userData.isMaterialDisposed = false;
+  if (deps.lastScene) {
+    // Dispose of the old main scene if needed
+    try {
+      disposeScene(deps.lastScene);
+    } catch (error) {
+      console.error('Error: loadExhibitRoom() - Unable to dispose old main scene', error);
     }
-  });
+  } else {
+    console.warn('Warning: lastScene is undefined. Nothing to dispose.');
+  }
 
-  await Promise.all(objectsToDispose.map(async (c) => {
+  // Update the lastScene reference to the current scene
+  deps.lastScene = exhibitScene;
 
-    c.material.map = null;
-    c.material.dispose();
-    c.material.needsUpdate = true;
-    c.userData.isMaterialDisposed = true;
-  }));
 }
+
+function disposeScene(scene) {
+  if (!scene) {
+    console.warn('Warning: disposeScene() - Scene is undefined or null.');
+    return;
+  }
+
+  try {
+    scene.children.forEach(child => {
+      if (child === null) {
+        console.warn('Warning: disposeScene() - Child is null.');
+        return;
+      }
+
+      scene.remove(child);
+
+      if (child.isMesh) {
+        if (child.geometry === null) {
+          console.warn('Warning: disposeScene() - Geometry is null.');
+        } else {
+          child.geometry.dispose();
+        }
+
+        if (child.material === null) {
+          console.warn('Warning: disposeScene() - Material is null.');
+        } else if (Array.isArray(child.material)) {
+          child.material.forEach(mat => {
+            if (mat === null) {
+              console.warn('Warning: disposeScene() - Material in array is null.');
+            } else {
+              mat.dispose();
+            }
+          });
+        } else {
+          child.material.dispose();
+        }
+      }
+    });
+
+    scene.children = [];
+  } catch (error) {
+    console.error('Error: disposeScene() - Unable to dispose scene', error);
+  }
+}
+
+
 
 
 //
 
 function animateMap() {
-  animationId = requestAnimationFrame(animateMap);
+  MapAnimationId = requestAnimationFrame(animateMap);
 
   camera.getWorldDirection(cameraDirection);
   const angle = Math.atan2(cameraDirection.x, cameraDirection.z);
@@ -945,7 +1018,13 @@ function animateMap() {
 }
 
 //
-function animate(collider) {
+function animate() {
+
+  if(!deps.params.exhibitCollider) return;
+
+  const collider = deps.params.exhibitCollider;
+
+  stats.update();
 
   TWEEN.update();
 
@@ -961,29 +1040,24 @@ function animate(collider) {
     controls.maxDistance = 20;
   }
 
-  if (collider) {
-
-    //collider.visible = params.displayCollider;
+  if (collider && collider.geometry && collider.material) {
 
     const physicsSteps = params.physicsSteps;
 
     for (let i = 0; i < physicsSteps; i++) {
       updateVisitor(collider, delta / physicsSteps);
     }
+      deps.animationId = requestAnimationFrame(animate);
+
   }
 
-
-  requestAnimationFrame(() => animate(collider));
-
   if (composer && params.enablePostProcessing === true) {
-
-    //
 
     composer.render();
 
   } else {
 
-    renderer.render(scene, camera);
+    renderer.render(deps.currentScene, camera);
 
   }
 
@@ -995,25 +1069,7 @@ function animate(collider) {
 
 function addVisitorMapCircle() {
 
-
-  // visitor
-  visitor = new THREE.Mesh(
-    new RoundedBoxGeometry(0.2, 0.2, 0.2, 10, 0.5),
-    new THREE.MeshStandardMaterial()
-  );
-  //visitor.scale.setScalar(0.01);
-  visitor.name = "visitor";
-  visitor.capsuleInfo = {
-    radius: 0.2,
-    segment: new THREE.Line3(
-      new THREE.Vector3(),
-      new THREE.Vector3(0, 0.1, 0.0)
-    ),
-  };
-  visitor.castShadow = false;
-  visitor.material.wireframe = true;
-  visitor.visible = false;
-  scene.add(visitor);
+  visitor = new Visitor(scene);
 
   // visitor Map
   circleMap = new THREE.Mesh(
@@ -1107,9 +1163,6 @@ function preloadTextures() {
   });
 }
 
-
-
-
 //
 class AudioHandler {
   handleAudio(audioToTurn) {
@@ -1134,7 +1187,6 @@ class AudioHandler {
   }
 }
 
-
 //
 class VisitorLocationChecker {
   constructor(scene) {
@@ -1147,7 +1199,7 @@ class VisitorLocationChecker {
   checkVisitorLocation(visitor) {
     this.raycaster.firstHitOnly = true;
     this.raycaster.set(visitor.position, this.downVector);
-    this.raycaster.intersectObjects(this.scene.children, true, this.intersectedObjects);
+
     return this.intersectedObjects.find(({ object }) => {
       const type = object.userData.type;
       return type === "visitorLocation" || type === "Room";

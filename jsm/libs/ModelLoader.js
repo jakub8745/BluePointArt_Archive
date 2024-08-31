@@ -6,17 +6,23 @@ import { MeshBVH, StaticGeometryGenerator } from "https://unpkg.com/three-mesh-b
 import { modifyObjects } from 'three/addons/libs/modifyObjects.js';
 
 class ModelLoader {
+    /**
+     * @param {Object} deps - dependencies
+     * @throws {Error} when deps is null or undefined
+     */
     constructor(deps) {
+        if (!deps) {
+            throw new Error("ModelLoader: deps is null or undefined");
+        }
+
         this.deps = deps;
-        this.collider = null; 
+        this.collider = null;
         this.environment = new THREE.Group();
         this.toMerge = {};
         this.typeOfmesh = "";
 
         this.gltfLoader = new GLTFLoader();
-        const dracoLoader = new DRACOLoader();
-        dracoLoader.setDecoderPath('./jsm/libs/draco/');
-        this.gltfLoader.setDRACOLoader(dracoLoader);
+        this.gltfLoader.setDRACOLoader(new DRACOLoader('./jsm/libs/draco/'));
 
         this.exhibits = [];
     }
@@ -47,6 +53,7 @@ class ModelLoader {
                 arr.forEach((mesh) => {
                     if (mesh.userData.name !== "VisitorEnter") {
                         this.environment.attach(mesh);
+
                     } else {
                         const visitorQuaternion = new THREE.Quaternion();
                         mesh.getWorldPosition(this.deps.visitor.position);
@@ -60,41 +67,43 @@ class ModelLoader {
             // Generate the collider using the populated environment
             const staticGenerator = new StaticGeometryGenerator(this.environment);
             staticGenerator.attributes = ["position"];
-          
+
             const mergedGeometry = staticGenerator.generate();
             mergedGeometry.boundsTree = new MeshBVH(mergedGeometry, {
-              lazyGeneration: false,
+                lazyGeneration: false,
             });
-        
-          this.collider = new THREE.Mesh(mergedGeometry);
-          this.collider.material.wireframe = true;
-          this.collider.material.opacity = 0;
-          this.collider.material.transparent = true;
 
-          this.collider.name = "collider";
-          this.collider.visible = false;
+            this.collider = new THREE.Mesh(mergedGeometry);
+            this.collider.material.wireframe = true;
+            this.collider.material.opacity = 0;
+            this.collider.material.transparent = true;
 
-          console.log('this.collider,', this.collider, this.environment);
-        
-          this.deps.scene.add(this.collider);
-          this.deps.collider = this.collider;
-
-          this.environment.name = "environment";
-          this.deps.scene.add(this.environment);
+            this.collider.name = "collider";
+            this.collider.visible = true;
 
 
-          this.environment.traverse((c) => {
-            if (c.isLight || c.isMesh) {
-                modifyObjects[c.userData.type]?.(c, this.deps);
-            }
+            this.deps.currentScene.add(this.collider);
+            this.deps.collider = this.collider;
 
-            if (/Wall|visitorLocation|Room/.test(c.userData.name)) {
-                this.processInteractiveElements(c);
-            }
-        });
-      
+            this.environment.name = "environment";
+            this.deps.currentScene.add(this.environment);
 
-            return  this.collider;
+            this.environment.traverse((c) => {
+                if (c.isLight || c.isMesh) {
+                    modifyObjects[c.userData.type]?.(c, this.deps);
+                }
+
+                if (
+
+                    /Wall|visitorLocation|Room/.test(c.userData.name) ||
+                    /visitorLocation|Room/.test(c.userData.type)
+
+                ) {
+                    this.addToSceneMap(c);
+                }
+            });
+
+            return this.collider;
         } catch (error) {
             console.error('Error loading model:', error);
             throw error;
@@ -103,7 +112,8 @@ class ModelLoader {
 
 
 
-    processInteractiveElements(mesh) {
+    addToSceneMap(mesh) {
+
         const { sceneMap } = this.deps;
 
         const cClone = mesh.clone();
@@ -122,6 +132,17 @@ class ModelLoader {
                 labelDiv.textContent = cClone.userData.label;
                 labelDiv.style.marginTop = '1em';
                 labelDiv.style.pointerEvents = 'auto';
+
+                // Add click event to label to move the visitor
+                labelDiv.addEventListener('click', () => {
+
+                    const targetPosition = cClone.position.clone();
+
+                    this.deps.visitorEnter.set(targetPosition.x, targetPosition.y, targetPosition.z);
+
+                    this.deps.reset();
+                });
+
 
                 const labelObject = new CSS2DObject(labelDiv);
                 labelObject.position.set(0, 0, 0);

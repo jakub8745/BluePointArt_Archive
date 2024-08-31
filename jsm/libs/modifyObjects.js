@@ -99,7 +99,8 @@ export const modifyObjects = {
             object.visible = true;
             object.position.copy(mesh.position);
             object.rotation.copy(mesh.rotation);
-            deps.scene.add(object);
+            object.name = mesh.name;
+            deps.currentScene.add(object);
             mesh.removeFromParent();
         });
         //
@@ -227,7 +228,7 @@ export const modifyObjects = {
             deps.control._gizmo.visible = deps.params.gizmoVisible;
             deps.control.setMode(deps.params.transControlsMode);
             deps.control.attach(mesh);
-            deps.scene.add(deps.control);
+            deps.currentScene.add(deps.control);
 
         }
 
