@@ -53,13 +53,6 @@ class ModelLoader {
                 arr.forEach((mesh) => {
                     if (mesh.userData.name !== "VisitorEnter") {
                         this.environment.attach(mesh);
-
-                    } else {
-                        const visitorQuaternion = new THREE.Quaternion();
-                        mesh.getWorldPosition(this.deps.visitor.position);
-                        mesh.getWorldQuaternion(visitorQuaternion);
-                        mesh.needsUpdate = true;
-
                     }
                 });
             }
@@ -79,8 +72,9 @@ class ModelLoader {
             this.collider.material.transparent = true;
 
             this.collider.name = "collider";
-            this.collider.visible = true;
+            this.collider.visible = false;
 
+            console.log("model loader: ", this.collider.position, this.environment.position)
 
             this.deps.currentScene.add(this.collider);
             this.deps.collider = this.collider;
@@ -111,7 +105,6 @@ class ModelLoader {
     }
 
 
-
     addToSceneMap(mesh) {
 
         const { sceneMap } = this.deps;
@@ -140,7 +133,7 @@ class ModelLoader {
 
                     this.deps.visitorEnter.set(targetPosition.x, targetPosition.y, targetPosition.z);
 
-                    this.deps.reset();
+                    this.deps.resetVisitor();
                 });
 
 

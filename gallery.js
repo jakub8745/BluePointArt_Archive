@@ -42,7 +42,6 @@ const params = {
   gravity: -30,
   visitorSpeed: 3,
   physicsSteps: 5,
-  reset: reset,
   exposure: 1,
   gizmoVisible: false,
   canSeeGizmo: false,
@@ -59,13 +58,19 @@ let ileE = 2,
 //
 const listener = new THREE.AudioListener();
 
+const sceneRegistry = {
+  mainScene: new THREE.Scene(),
+  exhibitScene: new THREE.Scene(),
+  sceneMap: new THREE.Scene(),
+};
+
 // Preload textures from the "textures" folder
 const textureFolder = "textures/";
 const textureCache = new Map();
 
 let renderer, camera, scene, clock, tween, stats, anisotropy;
 let composer, renderPass;
-let rendererMap, cameraMap, circleMap, sceneMap, css2DRenderer;
+let rendererMap, cameraMap, circleMap, sceneMap, css2DRenderer, lastScene;
 const cameraDirection = new THREE.Vector3();
 
 const ktx2Loader = new KTX2Loader()
@@ -86,10 +91,7 @@ let fwdPressed = false,
 let visitorVelocity = new THREE.Vector3();
 let upVector = new THREE.Vector3(0, 1, 0);
 let tempVector = new THREE.Vector3();
-let tempVector2 = new THREE.Vector3();
-let tempBox = new THREE.Box3();
-let tempMat = new THREE.Matrix4();
-let tempSegment = new THREE.Line3();
+
 
 let newPosition = new THREE.Vector3();
 let deltaVector = new THREE.Vector3();
@@ -203,9 +205,12 @@ function init() {
   ktx2Loader.setTranscoderPath('jsm/libs/basis/').detectSupport(renderer);
 
   // scene setup
-  scene = new THREE.Scene();
+  scene = sceneRegistry["mainScene"]
   scene.name = "mainScene";
   scene.fog = new THREE.Fog(0x2b0a07, 3.1, 18);
+
+  lastScene = sceneRegistry['exhibitScene'];
+  scene.name = "lastScene";
 
   // camera setup
   camera = new THREE.PerspectiveCamera(
@@ -240,7 +245,7 @@ function init() {
     innerHeight = 800;
   // sceneMap
 
-  sceneMap = new THREE.Scene();
+  sceneMap = sceneRegistry["sceneMap"];
 
   sceneMap.scale.setScalar(25);
   sceneMap.rotation.x = Math.PI;
@@ -278,25 +283,17 @@ function init() {
   css2DRenderer.domElement.style.pointerEvents = 'none'; // Make sure it doesn't block interactions
   document.querySelector("div#map_in_sidebar.info_sidebar").appendChild(css2DRenderer.domElement);
 
-
-
-  // AmbientLight
+  // AmbientLight MAP
   const light = new THREE.AmbientLight(0xffffff, 20); // soft white light
   sceneMap.add(light);
-
-  //
-  // stats setup
-  stats = new Stats();
-  document.body.appendChild(stats.dom);
-
-
 
   // ambientLight
   let ambientLight = new THREE.AmbientLight(0x404040, 55);
   scene.add(ambientLight);
 
-  //
-  addVisitorMapCircle();
+  // stats setup
+  stats = new Stats();
+  document.body.appendChild(stats.dom);
 
   // composer
 
@@ -314,18 +311,38 @@ function init() {
 
   }
 
+  console.log("camera: przed addVisitorMapCircle", camera);
+  const resetVisitor = () => {
 
+    visitor.visitorVelocity.set(0, 0, 0)
+    const targetV = visitor.target.clone()
+  
+    const circleMap = sceneMap.getObjectByName("circleMap");
+    if (circleMap) {
+      circleMap.position.copy(targetV);
+    }
+  
+    targetV.y = 10;
+    camera.position.sub(controls.target);
+    controls.target.copy(targetV);
+    camera.position.add(targetV);
+    controls.update();
+  
+    visitor.position.copy(targetV);
+  
+  }
 
   //
   deps = {
     params,
+    camera,
     control,
     controls,
     environment,
     gui,
     lightsToTurn,
     currentScene: scene,
-    lastScene: scene,
+    lastScene: lastScene,
     sceneMap,
     loader,
     listener,
@@ -336,12 +353,12 @@ function init() {
     TWEEN,
     anisotropy,
     composer,
-    reset: reset,
-    exhibitModelPath0: "FloorOut",
-    exhibitModelPath: "FloorOut",
     animationId,
+    resetVisitor: resetVisitor,
   };
 
+  //
+  addVisitorMapCircle();
 
 
   // LOAD MODEL (environment, collider)
@@ -360,8 +377,12 @@ function init() {
   preloadTextures();
 
 
-  reset();
+  // reset visitor
+  
 
+
+
+  bgTexture0 = "/textures/xxxbg_puent.jpg";
 
 
   // events
@@ -570,187 +591,91 @@ function init() {
     false
   );
 
-  // key controls
+
+  // Key controls
   const keysPressed = {};
-  window.addEventListener("keydown", (event) => {
+
+  const keyDownHandler = (event) => {
     keysPressed[event.key] = true;
-    if (event.key === "ArrowDown" || event.key === "s") bkdPressed = true;
-    if (event.key === "ArrowUp" || event.key === "w") fwdPressed = true;
-    if (event.key === "ArrowRight" || event.key === "d") rgtPressed = true;
-    if (event.key === "ArrowLeft" || event.key === "a") lftPressed = true;
-    if (event.key === " ") visitorVelocity.y = visitorIsOnGround ? 20.0 : 0;
-    if (event.key === "g" && params.canSeeGizmo) control._gizmo.visible = !control._gizmo.visible;
-    if (event.key === "m") control.setMode("translate");
-    if (event.key === "r") control.setMode("rotate");
-    if (event.key === "t") {
-//
+
+    switch (event.key) {
+      case "ArrowDown":
+      case "s":
+        visitor.bkdPressed = true;
+        break;
+      case "ArrowUp":
+      case "w":
+        visitor.fwdPressed = true;
+        break;
+      case "ArrowRight":
+      case "d":
+        visitor.rgtPressed = true;
+        break;
+      case "ArrowLeft":
+      case "a":
+        visitor.lftPressed = true;
+        break;
+      case " ":
+        if (visitor.visitorIsOnGround) {
+          visitor.visitorVelocity.y = 20.0;
+        }
+        break;
+      case "g":
+        if (params.canSeeGizmo) {
+          control._gizmo.visible = !control._gizmo.visible;
+        }
+        break;
+      case "m":
+        control.setMode("translate");
+        break;
+      case "r":
+        control.setMode("rotate");
+        break;
+      case "t":
+        // Additional functionality for 't' key
+        break;
+      case "Escape":
+        control.reset();
+        break;
     }
-    if (event.key === "Escape") control.reset();
-    clearInterval(intervalId);
-  });
+  };
 
-  window.addEventListener("keyup", (event) => {
+  const keyUpHandler = (event) => {
     delete keysPressed[event.key];
-    if (event.key === "ArrowDown" || event.key === "s") bkdPressed = false;
-    if (event.key === "ArrowUp" || event.key === "w") fwdPressed = false;
-    if (event.key === "ArrowRight" || event.key === "d") rgtPressed = false;
-    if (event.key === "ArrowLeft" || event.key === "a") lftPressed = false;
-  });
 
+    switch (event.key) {
+      case "ArrowDown":
+      case "s":
+        visitor.bkdPressed = false;
+        break;
+      case "ArrowUp":
+      case "w":
+        visitor.fwdPressed = false;
+        break;
+      case "ArrowRight":
+      case "d":
+        visitor.rgtPressed = false;
+        break;
+      case "ArrowLeft":
+      case "a":
+        visitor.lftPressed = false;
+        break;
+    }
+  };
+
+  window.addEventListener("keydown", keyDownHandler);
+  window.addEventListener("keyup", keyUpHandler);
 
 }
 //
 
-
-
-// reset visitor
-function reset() {
-
-  bgTexture0 = "/textures/xxxbg_puent.jpg";
-  visitorVelocity.set(0, 0, 0);
-
-  const target = visitorEnter.clone();
-
-  const circleMap = sceneMap.getObjectByName("circleMap");
-  if (circleMap) {
-    circleMap.position.copy(target);
-  }
-
-  target.y = 10;
-  camera.position.sub(controls.target);
-  controls.target.copy(target);
-  camera.position.add(target);
-  controls.update();
-
-  visitor.position.copy(target);
-
-}
 
 // update visitor
 async function updateVisitor(collider, delta) {
 
-  if (visitorIsOnGround) {
-    visitorVelocity.y = delta * params.gravity;
-  } else {
-    visitorVelocity.y += delta * params.gravity;
-  }
+  visitor.update(delta, collider);
 
-  visitor.position.addScaledVector(visitorVelocity, delta);
-
-  // move the visitor
-  const angle = controls.getAzimuthalAngle();
-  if (fwdPressed) {
-    tempVector.set(0, 0, -1).applyAxisAngle(upVector, angle);
-    visitor.position.addScaledVector(tempVector, params.visitorSpeed * delta);
-  }
-
-  if (bkdPressed) {
-    tempVector.set(0, 0, 1).applyAxisAngle(upVector, angle);
-    visitor.position.addScaledVector(tempVector, params.visitorSpeed * delta);
-  }
-  if (lftPressed) {
-    tempVector.set(-1, 0, 0).applyAxisAngle(upVector, angle);
-    visitor.position.addScaledVector(tempVector, params.visitorSpeed * delta);
-  }
-
-  if (rgtPressed) {
-    tempVector.set(1, 0, 0).applyAxisAngle(upVector, angle);
-    visitor.position.addScaledVector(tempVector, params.visitorSpeed * delta);
-  }
-
-  visitor.updateMatrixWorld();
-
-  // adjust visitor position based on collisions
-  const capsuleInfo = visitor.capsuleInfo;
-  tempBox.makeEmpty();
-  tempMat.copy(collider.matrixWorld).invert();
-  tempSegment.copy(capsuleInfo.segment);
-
-  // get the position of the capsule in the local space of the collider
-  tempSegment.start.applyMatrix4(visitor.matrixWorld).applyMatrix4(tempMat);
-  tempSegment.end.applyMatrix4(visitor.matrixWorld).applyMatrix4(tempMat);
-
-  // get the axis aligned bounding box of the capsule
-  tempBox.expandByPoint(tempSegment.start);
-  tempBox.expandByPoint(tempSegment.end);
-
-  tempBox.min.addScalar(-capsuleInfo.radius);
-  tempBox.max.addScalar(capsuleInfo.radius);
-
-  collider.geometry.boundsTree.shapecast({
-    intersectsBounds: (box) => box.intersectsBox(tempBox),
-
-    intersectsTriangle: (tri) => {
-      // check if the triangle is intersecting the capsule and adjust the
-      // capsule position if it is.
-      const triPoint = tempVector;
-      const capsulePoint = tempVector2;
-
-      const distance = tri.closestPointToSegment(
-        tempSegment,
-        triPoint,
-        capsulePoint
-      );
-      if (distance < capsuleInfo.radius) {
-        const depth = capsuleInfo.radius - distance;
-        const direction = capsulePoint.sub(triPoint).normalize();
-
-        tempSegment.start.addScaledVector(direction, depth);
-        tempSegment.end.addScaledVector(direction, depth);
-      }
-    },
-  });
-
-  // get the adjusted position of the capsule collider in world space after checking
-  // triangle collisions and moving it. capsuleInfo.segment.start is assumed to be
-  // the origin of the visitor model.
-  newPosition = tempVector;
-  newPosition.copy(tempSegment.start).applyMatrix4(collider.matrixWorld);
-
-  // check how much the collider was moved
-  deltaVector = tempVector2;
-  deltaVector.subVectors(newPosition, visitor.position);
-
-  // if the visitor was primarily adjusted vertically we assume it's on something we should consider ground
-  visitorIsOnGround =
-    deltaVector.y > Math.abs(delta * visitorVelocity.y * 0.25); ///
-
-  const offset = Math.max(0.0, deltaVector.length() - 1e-5);
-  deltaVector.normalize().multiplyScalar(offset);
-
-  // adjust the visitor model
-  visitor.position.add(deltaVector);
-
-  if (!visitorIsOnGround) {
-    deltaVector.normalize();
-    visitorVelocity.addScaledVector(
-      deltaVector,
-      -deltaVector.dot(visitorVelocity)
-    );
-  } else {
-    visitorVelocity.set(0, 0, 0);
-  }
-
-  // offset the camera - this is a bit hacky
-  tempVector.copy(visitor.position).add(params.heightOffset);
-
-  camera.position.sub(controls.target);
-  controls.target.copy(tempVector);
-  camera.position.add(tempVector);
-
-  //
-  const target = visitor.position.clone();
-  target.add(new THREE.Vector3(0, 0, 0));
-  sceneMap.getObjectByName("circleMap").position.copy(target);
-
-  // if the visitor has fallen too far below the level reset their position to the start
-  if (visitor.position.y < -10) {
-    reset();
-  }
-
-  // check if the visitor is on a floor
   const intersectedFloor = visitor.checkLocation();
-
 
   if (intersectedFloor) {
 
@@ -759,12 +684,7 @@ async function updateVisitor(collider, delta) {
     const belongsTo = intersectedFloor.userData.belongsTo;
     const lightsToTurnValue = intersectedFloor.userData.lightsToTurn;
 
-    //if (intersectedFloor.name !== "FloorOut") {
-
     exhibitModelPath = intersectedFloor.userData.exhibitModelPath;
-
-    //}
-
 
     if (lightsToTurn && intersectedFloor.userData.name && intersectedFloor0.userData.name !== intersectedFloor.userData.name) {
 
@@ -773,9 +693,8 @@ async function updateVisitor(collider, delta) {
       intersectedFloor0 = intersectedFloor;
 
       //AUDIO
-      audioHandler = new AudioHandler();
-
-      handleAudio(intersectedFloor, audioHandler);
+      // audioHandler = new AudioHandler();
+      // handleAudio(intersectedFloor, audioHandler);
 
       //LIGHTS
       handleLights(lightsToTurn, lightsToTurnValue);
@@ -786,17 +705,10 @@ async function updateVisitor(collider, delta) {
       //SCENE BACKGROUND
       handleSceneBackground(intersectedFloor);
 
-      // Load TEXTURES and DISPOSE other objects based on the exhibit and belongsTo categories
-      //loadTexturesAndDispose(belongsTo);
-
-      // Load the exhibit room
-      if (exhibitModelPath && exhibitModelPath !== "FloorOut") {
+      if (exhibitModelPath) {
 
         cancelAnimationFrame(deps.animationId);
-
         loadExhibitRoom(exhibitModelPath, deps);
-
-        deps.exhibitModelPath0 = deps.exhibitModelPath = exhibitModelPath;
 
       }
 
@@ -907,7 +819,7 @@ async function loadExhibitRoom(exhibitModelPath, deps) {
 
   if (!deps || !deps.animationId || !deps.currentScene || !deps.visitor || !deps.lastScene) {
     console.error('Error: loadExhibitRoom() - Found null or undefined dependency');
-    return;
+    //return;
   }
 
   cancelAnimationFrame(deps.animationId);
@@ -1020,7 +932,7 @@ function animateMap() {
 //
 function animate() {
 
-  if(!deps.params.exhibitCollider) return;
+  if (!deps.params.exhibitCollider) return;
 
   const collider = deps.params.exhibitCollider;
 
@@ -1047,7 +959,7 @@ function animate() {
     for (let i = 0; i < physicsSteps; i++) {
       updateVisitor(collider, delta / physicsSteps);
     }
-      deps.animationId = requestAnimationFrame(animate);
+    deps.animationId = requestAnimationFrame(animate);
 
   }
 
@@ -1067,9 +979,16 @@ function animate() {
 
 ////
 
+
 function addVisitorMapCircle() {
 
-  visitor = new Visitor(scene);
+  console.log("deps przed visitor: ", deps);
+
+  visitor = new Visitor(deps);
+
+
+
+  console.log("visitor position: ", visitor.position);
 
   // visitor Map
   circleMap = new THREE.Mesh(
