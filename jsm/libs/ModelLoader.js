@@ -17,6 +17,10 @@ class ModelLoader {
 
         this.deps = deps;
         this.collider = null;
+
+        this.scene = deps.isVisitorOnMainScene ? deps.mainScene : deps.exhibitScene;
+
+
         this.environment = new THREE.Group();
         this.toMerge = {};
         this.typeOfmesh = "";
@@ -74,13 +78,15 @@ class ModelLoader {
             this.collider.name = "collider";
             this.collider.visible = false;
 
-            console.log("model loader: ", this.collider.position, this.environment.position)
 
-            this.deps.currentScene.add(this.collider);
+            this.scene.add(this.collider);
             this.deps.collider = this.collider;
 
             this.environment.name = "environment";
-            this.deps.currentScene.add(this.environment);
+            this.scene.add(this.environment);
+
+            console.log("scene :",this.scene.name, this.scene, this.scene.uuid)
+
 
             this.environment.traverse((c) => {
                 if (c.isLight || c.isMesh) {

@@ -8,9 +8,7 @@ export default class Visitor extends Mesh {
 
     const geometry = new RoundedBoxGeometry(0.2, 0.2, 0.2, 10, 0.5);
     const material = new MeshStandardMaterial();
-    const { currentScene, params, camera, controls ,sceneMap, visitorEnter} = deps;
-
-    console.log("canera: visitor", camera);
+    const { params, camera, controls, sceneMap, visitorEnter, isVisitorOnMainScene } = deps;
 
     super(geometry, material);
 
@@ -27,9 +25,9 @@ export default class Visitor extends Mesh {
     this.material.wireframe = true;
     this.visible = false;
 
-    this.scene = currentScene;
+    this.scene = isVisitorOnMainScene ? deps.mainScene : deps.exhibitScene;
+
     this.scene.add(this);
-    deps.visitor = this;
 
     this.sceneMap = sceneMap;
 
@@ -61,39 +59,42 @@ export default class Visitor extends Mesh {
     this.upVector = new Vector3(0, 1, 0); // Default up vector
 
     this.target = visitorEnter
+
+    deps.visitor = this;
+
   }
 
   update(delta, collider) {
 
-     // Update vertical velocity based on whether the visitor is on the ground
-     if (this.visitorIsOnGround) {
+    // Update vertical velocity based on whether the visitor is on the ground
+    if (this.visitorIsOnGround) {
       this.visitorVelocity.y = delta * this.params.gravity;
     } else {
       this.visitorVelocity.y += delta * this.params.gravity;
     }
 
-     // Move the visitor based on controls
-     const angle = this.controls.getAzimuthalAngle();
+    // Move the visitor based on controls
+    const angle = this.controls.getAzimuthalAngle();
 
-     if (this.fwdPressed) {
-       this.tempVector.set(0, 0, -1).applyAxisAngle(this.upVector, angle);
-       this.position.addScaledVector(this.tempVector, this.params.visitorSpeed * delta);
-     }
- 
-     if (this.bkdPressed) {
-       this.tempVector.set(0, 0, 1).applyAxisAngle(this.upVector, angle);
-       this.position.addScaledVector(this.tempVector, this.params.visitorSpeed * delta);
-     }
- 
-     if (this.lftPressed) {
-       this.tempVector.set(-1, 0, 0).applyAxisAngle(this.upVector, angle);
-       this.position.addScaledVector(this.tempVector, this.params.visitorSpeed * delta);
-     }
- 
-     if (this.rgtPressed) {
-       this.tempVector.set(1, 0, 0).applyAxisAngle(this.upVector, angle);
-       this.position.addScaledVector(this.tempVector, this.params.visitorSpeed * delta);
-     }
+    if (this.fwdPressed) {
+      this.tempVector.set(0, 0, -1).applyAxisAngle(this.upVector, angle);
+      this.position.addScaledVector(this.tempVector, this.params.visitorSpeed * delta);
+    }
+
+    if (this.bkdPressed) {
+      this.tempVector.set(0, 0, 1).applyAxisAngle(this.upVector, angle);
+      this.position.addScaledVector(this.tempVector, this.params.visitorSpeed * delta);
+    }
+
+    if (this.lftPressed) {
+      this.tempVector.set(-1, 0, 0).applyAxisAngle(this.upVector, angle);
+      this.position.addScaledVector(this.tempVector, this.params.visitorSpeed * delta);
+    }
+
+    if (this.rgtPressed) {
+      this.tempVector.set(1, 0, 0).applyAxisAngle(this.upVector, angle);
+      this.position.addScaledVector(this.tempVector, this.params.visitorSpeed * delta);
+    }
     // update visitor position
     this.position.addScaledVector(this.visitorVelocity, delta);
 
@@ -200,7 +201,7 @@ export default class Visitor extends Mesh {
 
     console.log("reset");
 
-  
+
 
   }
 
@@ -217,10 +218,13 @@ export default class Visitor extends Mesh {
 
   moveToScene(newScene) {
     if (this.scene) {
+      console.log("remove from scene", this.scene.name);
       this.scene.remove(this);
     }
 
     this.scene = newScene;
     this.scene.add(this);
+
+    console.log("move to scene", this.scene.name, this.scene.uuid);
   }
 }

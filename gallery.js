@@ -1,12 +1,10 @@
 
 //
-console.log('TODO: NORWID + strzalki (nowy obiekt: ROOM wczytywany razem z tekstur z modelu archivum), zmieni reszte textur do .KTX2, ustawi AUDIO i schowa helpery, poprawi przesówanie do kółeczka');
+console.log('TODO: effekt przejścia pomiędzy scenami');
 
 import * as THREE from "three";
-//import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
-import { modifyObjects } from 'three/addons/libs/modifyObjects.js';
 import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 
@@ -70,7 +68,7 @@ const textureCache = new Map();
 
 let renderer, camera, scene, clock, tween, stats, anisotropy;
 let composer, renderPass;
-let rendererMap, cameraMap, circleMap, sceneMap, css2DRenderer, lastScene;
+let rendererMap, cameraMap, circleMap, sceneMap, css2DRenderer, exhibitScene;
 const cameraDirection = new THREE.Vector3();
 
 const ktx2Loader = new KTX2Loader()
@@ -82,22 +80,22 @@ let environment = new THREE.Group();
 let MapAnimationId = null; // defined in outer scope
 let animationId = null;
 
-let visitorIsOnGround = false;
+//let visitorIsOnGround = false;
 let fwdPressed = false,
   bkdPressed = false,
   lftPressed = false,
   rgtPressed = false;
 
-let visitorVelocity = new THREE.Vector3();
-let upVector = new THREE.Vector3(0, 1, 0);
-let tempVector = new THREE.Vector3();
+//let visitorVelocity = new THREE.Vector3();
+//let upVector = new THREE.Vector3(0, 1, 0);
+//let tempVector = new THREE.Vector3();
 
 
-let newPosition = new THREE.Vector3();
-let deltaVector = new THREE.Vector3();
+//let newPosition = new THREE.Vector3();
+//let deltaVector = new THREE.Vector3();
 const raycaster = new THREE.Raycaster();
 let intersectedFloor0 = new THREE.Object3D();
-let bgTexture0 = "textures/xxxbg_puent.jpg";
+let bgTexture0
 const lightsToTurn = [];
 const audioObjects = [];
 const visitorEnter = new THREE.Vector3();
@@ -124,6 +122,7 @@ let timeout = null;
 
 const gui = new GUI();
 gui.show(false);
+
 const joy3Param = { title: "joystick3" };
 const Joy3 = new JoyStick("joy3Div", joy3Param);
 
@@ -141,6 +140,11 @@ const joyIntervalCheck = () => {
     bkdPressed = joyEvt.includes('S') || joyEvt.includes('SE') || joyEvt.includes('SW');
   }, 50);
 };
+//
+
+const isLowEndDevice = navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2;
+
+console.log("isLowEndDevice: ", isLowEndDevice);
 
 
 //
@@ -182,21 +186,21 @@ function init() {
   });
 
 
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Consider other types based on your needs
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.gammaOutput = true;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-  renderer.gammaFactor = 2.2;
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  renderer.shadowMap.enabled = !isLowEndDevice;
+  renderer.shadowMap.type = isLowEndDevice ? THREE.BasicShadowMap : THREE.PCFSoftShadowMap;
+
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+  renderer.outputEncoding = THREE.sRGBEncoding;
 
   const isAppleDevice = /Mac|iPad|iPhone|iPod/.test(navigator.userAgent);
 
-  renderer.toneMapping = isAppleDevice ? THREE.AgXToneMapping : THREE.ACESFilmicToneMapping;
-
+  renderer.toneMapping = isLowEndDevice ? THREE.LinearToneMapping : (isAppleDevice ? THREE.AgXToneMapping : THREE.ACESFilmicToneMapping);
   renderer.toneMappingExposure = params.exposure;
-  renderer.outputEncoding = THREE.sRGBEncoding;
 
   document.body.appendChild(renderer.domElement);
 
@@ -206,12 +210,12 @@ function init() {
 
   // scene setup
   scene = sceneRegistry["mainScene"]
+
   scene.name = "mainScene";
   scene.fog = new THREE.Fog(0x2b0a07, 3.1, 18);
 
-  lastScene = sceneRegistry['exhibitScene'];
-  scene.name = "lastScene";
 
+  sceneRegistry['exhibitScene'].name = 'exhibitScene';
   // camera setup
   camera = new THREE.PerspectiveCamera(
     70,
@@ -311,26 +315,29 @@ function init() {
 
   }
 
-  console.log("camera: przed addVisitorMapCircle", camera);
   const resetVisitor = () => {
 
     visitor.visitorVelocity.set(0, 0, 0)
     const targetV = visitor.target.clone()
-  
+
     const circleMap = sceneMap.getObjectByName("circleMap");
     if (circleMap) {
       circleMap.position.copy(targetV);
     }
-  
+
     targetV.y = 10;
     camera.position.sub(controls.target);
     controls.target.copy(targetV);
     camera.position.add(targetV);
     controls.update();
-  
+
     visitor.position.copy(targetV);
-  
+
   }
+
+
+  sceneRegistry["mainScene"] = scene;
+
 
   //
   deps = {
@@ -341,8 +348,9 @@ function init() {
     environment,
     gui,
     lightsToTurn,
-    currentScene: scene,
-    lastScene: lastScene,
+    mainScene: sceneRegistry.mainScene,
+    exhibitScene: sceneRegistry.exhibitScene,
+    isVisitorOnMainScene: true,
     sceneMap,
     loader,
     listener,
@@ -378,7 +386,7 @@ function init() {
 
 
   // reset visitor
-  
+
 
 
 
@@ -617,7 +625,7 @@ function init() {
         break;
       case " ":
         if (visitor.visitorIsOnGround) {
-          visitor.visitorVelocity.y = 20.0;
+          deps.visitor.visitorVelocity.y = 20.0;
         }
         break;
       case "g":
@@ -633,6 +641,7 @@ function init() {
         break;
       case "t":
         // Additional functionality for 't' key
+        console.log("visitior: ", deps.visitor.parent);
         break;
       case "Escape":
         control.reset();
@@ -702,8 +711,7 @@ async function updateVisitor(collider, delta) {
       // VIDEOS
       handleVideos(scene, belongsTo);
 
-      //SCENE BACKGROUND
-      handleSceneBackground(intersectedFloor);
+
 
       if (exhibitModelPath) {
 
@@ -711,6 +719,9 @@ async function updateVisitor(collider, delta) {
         loadExhibitRoom(exhibitModelPath, deps);
 
       }
+
+      //SCENE BACKGROUND
+      handleSceneBackground(intersectedFloor);
 
     }
 
@@ -779,6 +790,32 @@ function handleSceneBackground(intersectedFloor) {
   const bgInt = intersectedFloor.userData.bgInt || 1;
   const bgBlur = intersectedFloor.userData.bgBlur || 0;
 
+
+
+  //if (Map) {
+  const extension = bgTexture.split('.').pop();
+
+  if (extension === 'ktx2') {
+
+    ktx2Loader.load(bgTexture, (texture) => {
+
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      texture.colorSpace = THREE.SRGBColorSpace;
+
+      deps.mainScene.background = new THREE.MeshBasicMaterial({ map: texture });
+
+    });
+
+  } else {
+
+    loader.load(bgTexture, (texture) => {
+      scene.mainScene.background = new THREE.MeshBasicMaterial({ map: texture });
+    });
+
+  }
+  //}
+
+  /*
   if (textureCache.has(bgTexture)) {
     setSceneBackgroundWithTransition(scene, textureCache.get(bgTexture), bgBlur, bgInt);
   } else {
@@ -793,6 +830,7 @@ function handleSceneBackground(intersectedFloor) {
     });
 
   }
+  */
 }
 
 function setSceneBackgroundWithTransition(scene, newTexture, blurIntensity, intensity) {
@@ -817,21 +855,23 @@ function setSceneBackgroundWithTransition(scene, newTexture, blurIntensity, inte
 
 async function loadExhibitRoom(exhibitModelPath, deps) {
 
-  if (!deps || !deps.animationId || !deps.currentScene || !deps.visitor || !deps.lastScene) {
-    console.error('Error: loadExhibitRoom() - Found null or undefined dependency');
-    //return;
-  }
-
   cancelAnimationFrame(deps.animationId);
 
-  const exhibitScene = new THREE.Scene();
+  if (deps.exhibitScene) {
+    disposeScene(deps.exhibitScene);
+  }
+
+  if (exhibitModelPath.includes('exterior.glb')) {
+    deps.visitor.scene = deps.mainScene;
+    deps.isVisitorOnMainScene = true;
+    return;
+  }
+
+  const exhibitScene = deps.exhibitScene;
   exhibitScene.name = "exhibitScene";
 
   // Add ambient light to the exhibit scene
   exhibitScene.add(new THREE.AmbientLight(0x404040, 55));
-
-  // Switch the scene reference to the new scene BEFORE loading the model
-  deps.currentScene = exhibitScene;
 
   // Move the visitor to the new scene
   try {
@@ -840,6 +880,8 @@ async function loadExhibitRoom(exhibitModelPath, deps) {
     console.error('Error: loadExhibitRoom() - Unable to move visitor to new scene', error);
     return;
   }
+
+  deps.isVisitorOnMainScene = false;
 
   const modelLoader = new ModelLoader(deps);
 
@@ -851,19 +893,8 @@ async function loadExhibitRoom(exhibitModelPath, deps) {
     return;
   }
 
-  if (deps.lastScene) {
-    // Dispose of the old main scene if needed
-    try {
-      disposeScene(deps.lastScene);
-    } catch (error) {
-      console.error('Error: loadExhibitRoom() - Unable to dispose old main scene', error);
-    }
-  } else {
-    console.warn('Warning: lastScene is undefined. Nothing to dispose.');
-  }
-
-  // Update the lastScene reference to the current scene
-  deps.lastScene = exhibitScene;
+  // Update the exhibitScene reference to the current scene
+  deps.exhibitScene = exhibitScene;
 
 }
 
@@ -969,7 +1000,8 @@ function animate() {
 
   } else {
 
-    renderer.render(deps.currentScene, camera);
+    const scene = deps.isVisitorOnMainScene ? deps.mainScene : deps.exhibitScene;
+    renderer.render(scene, camera);
 
   }
 
@@ -982,13 +1014,8 @@ function animate() {
 
 function addVisitorMapCircle() {
 
-  console.log("deps przed visitor: ", deps);
-
   visitor = new Visitor(deps);
 
-
-
-  console.log("visitor position: ", visitor.position);
 
   // visitor Map
   circleMap = new THREE.Mesh(
