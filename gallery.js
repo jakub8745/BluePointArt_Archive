@@ -709,6 +709,8 @@ async function updateVisitor(collider, delta) {
 
       intersectedFloor0 = intersectedFloor;
 
+      deps.bgTexture = intersectedFloor.userData.bgTexture || "textures/2d_etc1s.ktx2";
+
       //AUDIO
       // audioHandler = new AudioHandler();
       // handleAudio(intersectedFloor, audioHandler);
@@ -721,13 +723,13 @@ async function updateVisitor(collider, delta) {
 
       if (exhibitModelPath) {
 
-        cancelAnimationFrame(deps.animationId);
+       // cancelAnimationFrame(deps.animationId);
         loadExhibitRoom(exhibitModelPath, deps);
 
       }
 
       //SCENE BACKGROUND
-      handleSceneBackground(intersectedFloor);
+     // handleSceneBackground(intersectedFloor);
 
     }
 
@@ -789,37 +791,51 @@ function handleVideos(scene, belongsTo) {
     }
   });
 }
-
+/*
 function handleSceneBackground(intersectedFloor) {
 
   let bgTexture = intersectedFloor.userData.bgTexture || "textures/2d_etc1s.ktx2";
   const bgInt = intersectedFloor.userData.bgInt || 1;
   const bgBlur = intersectedFloor.userData.bgBlur || 0;
 
+  bgTexture = "textures/floorArch.jpg"
 
-
-  //if (Map) {
+  let scene = deps.isVisitorOnMainScene ? deps.mainScene : deps.exhibitScene;
   const extension = bgTexture.split('.').pop();
 
   if (extension === 'ktx2') {
+
+    console.log("bgTexture: ", bgTexture, scene);
+
 
     ktx2Loader.load(bgTexture, (texture) => {
 
       texture.mapping = THREE.EquirectangularReflectionMapping;
       texture.colorSpace = THREE.SRGBColorSpace;
 
-      deps.mainScene.background = new THREE.MeshBasicMaterial({ map: texture });
+      scene.background = new THREE.MeshBasicMaterial({ map: texture });
+      scene.backgroundIntensity = bgInt;
+    }, undefined, (error) => {
+      console.error('Error loading texture:', error);
+
 
     });
 
   } else {
 
     loader.load(bgTexture, (texture) => {
-      scene.mainScene.background = new THREE.MeshBasicMaterial({ map: texture });
+
+      console.log("bgTexture: ", bgTexture, scene);
+
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      texture.colorSpace = THREE.SRGBColorSpace;
+
+      scene.background = new THREE.MeshBasicMaterial({ map: texture });
+      scene.backgroundIntensity = bgInt;
+
     });
 
   }
-  //}
 
   /*
   if (textureCache.has(bgTexture)) {
@@ -837,7 +853,7 @@ function handleSceneBackground(intersectedFloor) {
 
   }
   */
-}
+//}
 
 function setSceneBackgroundWithTransition(scene, newTexture, blurIntensity, intensity) {
 
@@ -864,15 +880,16 @@ async function loadExhibitRoom(exhibitModelPath, deps) {
   cancelAnimationFrame(deps.animationId);
 
   if (exhibitModelPath.includes('exterior.glb')) {
-
-
     const modelLoader = new ModelLoader(deps);
     deps.params.exhibitCollider = await modelLoader.loadModel(exhibitModelPath);
 
-    deps.visitor.moveToScene(deps.mainScene)
+    deps.visitor.moveToScene(deps.mainScene);
     deps.isVisitorOnMainScene = true;
 
     disposeSceneObjects(deps.exhibitScene);
+
+    handleSceneBackground(deps.bgtexture, deps);
+
 
     return;
   }
@@ -887,6 +904,42 @@ async function loadExhibitRoom(exhibitModelPath, deps) {
   const modelLoader = new ModelLoader(deps);
   deps.params.exhibitCollider = await modelLoader.loadModel(exhibitModelPath);
 
+  // Now we handle setting the scene background using the background texture
+  handleSceneBackground(deps.bgtexture, deps);
+}
+
+function handleSceneBackground(bgTexturePath, deps) {
+  // Set a default background texture if none is provided
+  let bgTexture = bgTexturePath || "textures/floorArch.jpg";
+  const bgInt = 1;  // Intensity value, you can modify this based on your requirements
+  const bgBlur = 0;  // Blur value for the background, modify as needed
+
+  let scene = deps.isVisitorOnMainScene ? deps.mainScene : deps.exhibitScene;
+  const extension = bgTexture.split('.').pop();
+
+  if (extension === 'ktx2') {
+    // Handle loading KTX2 texture
+    ktx2Loader.load(bgTexture, (texture) => {
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      texture.colorSpace = THREE.SRGBColorSpace;
+
+      scene.background = texture;  // Set the background texture
+      scene.backgroundIntensity = bgInt;  // Set the background intensity if applicable
+    }, undefined, (error) => {
+      console.error('Error loading KTX2 texture:', error);
+    });
+  } else {
+    // Handle loading standard texture formats like jpg or png
+    loader.load(bgTexture, (texture) => {
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      texture.colorSpace = THREE.SRGBColorSpace;
+
+      scene.background = texture;  // Set the background texture
+      scene.backgroundIntensity = bgInt;  // Set the background intensity if applicable
+    }, undefined, (error) => {
+      console.error('Error loading texture:', error);
+    });
+  }
 }
 
 function disposeSceneObjects(scene) {
