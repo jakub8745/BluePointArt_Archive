@@ -14,10 +14,7 @@ export const modifyObjects = {
 
         SpotLight.matrixWorldAutoUpdate = true;
         SpotLight.userData.intensity = SpotLight.intensity;
-        //SpotLight.intensity = 10
-
-        //console.log("SpotLight", SpotLight.intensity, SpotLight.userData.intensity);
-
+       
         const targetObject = new Object3D();
         SpotLight.target = targetObject;
         const target = deps.environment.getObjectByName(SpotLight.userData.whichTarget);
@@ -64,10 +61,6 @@ export const modifyObjects = {
         //
     },
     Room: (mesh) => {
-
-        // console.log("room: ", mesh.material.map);
-        // console.log("visitorLocation: ", mesh.name);
-
         //
 
     },
@@ -331,7 +324,6 @@ export const modifyObjects = {
             mesh.add(sound);
             deps.audioObjects.push(mesh);
 
-            // console.log("audioObjects", sound.panner.coneInnerAngle);
         });
     },
 };

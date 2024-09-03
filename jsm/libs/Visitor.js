@@ -198,14 +198,12 @@ export default class Visitor extends Mesh {
   }
 
   reset() {
-
-    console.log("reset");
-
-
+    this.deps.resetVisitor();
 
   }
 
   checkLocation() {
+
     this.raycaster.firstHitOnly = true;
     this.raycaster.set(this.position, this.downVector);
     const intersectedObjects = this.raycaster.intersectObjects(this.scene.children, true);
@@ -218,13 +216,13 @@ export default class Visitor extends Mesh {
 
   moveToScene(newScene) {
     if (this.scene) {
-      console.log("remove from scene", this.scene.name);
+
       this.scene.remove(this);
     }
 
     this.scene = newScene;
     this.scene.add(this);
 
-    console.log("move to scene", this.scene.name, this.scene.uuid);
+
   }
 }

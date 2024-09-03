@@ -237,6 +237,10 @@ function init() {
   controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 5, 0);
 
+  controls.maxPolarAngle = Math.PI;
+  controls.minDistance = 1e-4;
+  controls.maxDistance = 1e-4;
+
   // transform c
   control = new TransformControls(camera, renderer.domElement);
   control.addEventListener("dragging-changed", function (event) {
@@ -320,9 +324,12 @@ function init() {
     visitor.visitorVelocity.set(0, 0, 0)
     const targetV = visitor.target.clone()
 
+
     const circleMap = sceneMap.getObjectByName("circleMap");
     if (circleMap) {
-      circleMap.position.copy(targetV);
+      const targetVmap = visitor.target.clone()
+      targetVmap.y + 100
+      circleMap.position.copy(targetVmap);
     }
 
     targetV.y = 10;
@@ -642,6 +649,7 @@ function init() {
       case "t":
         // Additional functionality for 't' key
         console.log("visitior: ", deps.visitor.parent);
+        console.log("visitor is on the floor:", deps.visitor.checkLocation());
         break;
       case "Escape":
         control.reset();
@@ -710,8 +718,6 @@ async function updateVisitor(collider, delta) {
 
       // VIDEOS
       handleVideos(scene, belongsTo);
-
-
 
       if (exhibitModelPath) {
 
@@ -857,93 +863,51 @@ async function loadExhibitRoom(exhibitModelPath, deps) {
 
   cancelAnimationFrame(deps.animationId);
 
-  if (deps.exhibitScene) {
-    disposeScene(deps.exhibitScene);
-  }
-
   if (exhibitModelPath.includes('exterior.glb')) {
-    deps.visitor.scene = deps.mainScene;
+
+
+    const modelLoader = new ModelLoader(deps);
+    deps.params.exhibitCollider = await modelLoader.loadModel(exhibitModelPath);
+
+    deps.visitor.moveToScene(deps.mainScene)
     deps.isVisitorOnMainScene = true;
+
+    disposeSceneObjects(deps.exhibitScene);
+
     return;
   }
 
-  const exhibitScene = deps.exhibitScene;
-  exhibitScene.name = "exhibitScene";
+  disposeSceneObjects(deps.exhibitScene);
 
-  // Add ambient light to the exhibit scene
-  exhibitScene.add(new THREE.AmbientLight(0x404040, 55));
+  deps.exhibitScene.add(new THREE.AmbientLight(0x404040, 55));
 
-  // Move the visitor to the new scene
-  try {
-    deps.visitor.moveToScene(exhibitScene);
-  } catch (error) {
-    console.error('Error: loadExhibitRoom() - Unable to move visitor to new scene', error);
-    return;
-  }
-
+  deps.visitor.moveToScene(deps.exhibitScene);
   deps.isVisitorOnMainScene = false;
 
   const modelLoader = new ModelLoader(deps);
-
-  // Load the exhibit model into the new scene
-  try {
-    deps.params.exhibitCollider = await modelLoader.loadModel(exhibitModelPath);
-  } catch (error) {
-    console.error('Error: loadExhibitRoom() - Unable to load exhibit model', error);
-    return;
-  }
-
-  // Update the exhibitScene reference to the current scene
-  deps.exhibitScene = exhibitScene;
+  deps.params.exhibitCollider = await modelLoader.loadModel(exhibitModelPath);
 
 }
 
-function disposeScene(scene) {
-  if (!scene) {
-    console.warn('Warning: disposeScene() - Scene is undefined or null.');
-    return;
-  }
+function disposeSceneObjects(scene) {
+  scene.traverse((object) => {
+    if (object.isMesh) {
+      object.geometry.dispose();
+      object.material.dispose();
+    } else if (object.isLight) {
+      object.dispose();
+    } else if (object.isBone) {
+      object.dispose();
+    } else if (object.isSkinnedMesh) {
+      object.dispose();
+    }
+  });
 
-  try {
-    scene.children.forEach(child => {
-      if (child === null) {
-        console.warn('Warning: disposeScene() - Child is null.');
-        return;
-      }
-
-      scene.remove(child);
-
-      if (child.isMesh) {
-        if (child.geometry === null) {
-          console.warn('Warning: disposeScene() - Geometry is null.');
-        } else {
-          child.geometry.dispose();
-        }
-
-        if (child.material === null) {
-          console.warn('Warning: disposeScene() - Material is null.');
-        } else if (Array.isArray(child.material)) {
-          child.material.forEach(mat => {
-            if (mat === null) {
-              console.warn('Warning: disposeScene() - Material in array is null.');
-            } else {
-              mat.dispose();
-            }
-          });
-        } else {
-          child.material.dispose();
-        }
-      }
-    });
-
-    scene.children = [];
-  } catch (error) {
-    console.error('Error: disposeScene() - Unable to dispose scene', error);
+  // Remove all children from the scene
+  while (scene.children.length > 0) {
+    scene.remove(scene.children[0]);
   }
 }
-
-
-
 
 //
 
@@ -973,15 +937,6 @@ function animate() {
 
   const delta = Math.min(clock.getDelta(), 0.1);
 
-  if (params.firstPerson) {
-    controls.maxPolarAngle = Math.PI;
-    controls.minDistance = 1e-4;
-    controls.maxDistance = 1e-4;
-  } else {
-    controls.maxPolarAngle = Math.PI / 2;
-    controls.minDistance = 1;
-    controls.maxDistance = 20;
-  }
 
   if (collider && collider.geometry && collider.material) {
 
@@ -994,6 +949,9 @@ function animate() {
 
   }
 
+  controls.update();
+
+
   if (composer && params.enablePostProcessing === true) {
 
     composer.render();
@@ -1005,7 +963,6 @@ function animate() {
 
   }
 
-  controls.update();
 }
 
 

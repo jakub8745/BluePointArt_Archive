@@ -6,20 +6,15 @@ import { MeshBVH, StaticGeometryGenerator } from "https://unpkg.com/three-mesh-b
 import { modifyObjects } from 'three/addons/libs/modifyObjects.js';
 
 class ModelLoader {
-    /**
-     * @param {Object} deps - dependencies
-     * @throws {Error} when deps is null or undefined
-     */
+   
     constructor(deps) {
-        if (!deps) {
-            throw new Error("ModelLoader: deps is null or undefined");
-        }
+
+        this.addToSceneMapRun = false;
 
         this.deps = deps;
         this.collider = null;
 
         this.scene = deps.isVisitorOnMainScene ? deps.mainScene : deps.exhibitScene;
-
 
         this.environment = new THREE.Group();
         this.toMerge = {};
@@ -85,23 +80,19 @@ class ModelLoader {
             this.environment.name = "environment";
             this.scene.add(this.environment);
 
-            console.log("scene :",this.scene.name, this.scene, this.scene.uuid)
-
-
             this.environment.traverse((c) => {
                 if (c.isLight || c.isMesh) {
                     modifyObjects[c.userData.type]?.(c, this.deps);
                 }
 
-                if (
-
-                    /Wall|visitorLocation|Room/.test(c.userData.name) ||
-                    /visitorLocation|Room/.test(c.userData.type)
-
-                ) {
+                if (this.scene.name === "mainScene" &&
+                    (/Wall|visitorLocation|Room/.test(c.userData.name) ||
+                        /visitorLocation|Room/.test(c.userData.type))) {
                     this.addToSceneMap(c);
                 }
             });
+
+            this.addToSceneMapRun = true;
 
             return this.collider;
         } catch (error) {
@@ -113,49 +104,45 @@ class ModelLoader {
 
     addToSceneMap(mesh) {
 
-        const { sceneMap } = this.deps;
+        if (!this.addToSceneMapRun) {
 
-        const cClone = mesh.clone();
-        cClone.material = new THREE.MeshBasicMaterial();
+            const { sceneMap } = this.deps;
 
-        if (cClone.userData.type === 'visitorLocation' || cClone.userData.type === 'Room') {
-            if (cClone.name === 'FloorOut') cClone.visible = false;
+            const cClone = mesh.clone();
+            cClone.material = new THREE.MeshBasicMaterial({
+                color: mesh.userData.type === 'visitorLocation' || mesh.userData.type === 'Room' ? 0x1b689f : 0xffffff,
+                opacity: mesh.userData.type === 'visitorLocation' || mesh.userData.type === 'Room' ? 0.8 : 1,
+                transparent: true,
+            });
 
-            cClone.material.color.set(0x1b689f);
-            cClone.material.transparent = true;
-            cClone.material.opacity = 0.8;
-
-            if (cClone.userData.label) {
+            if (mesh.userData.label) {
                 const labelDiv = document.createElement('div');
                 labelDiv.className = 'label';
-                labelDiv.textContent = cClone.userData.label;
+                labelDiv.textContent = mesh.userData.label;
                 labelDiv.style.marginTop = '1em';
                 labelDiv.style.pointerEvents = 'auto';
 
                 // Add click event to label to move the visitor
                 labelDiv.addEventListener('click', () => {
 
-                    const targetPosition = cClone.position.clone();
+                    const targetPosition = mesh.position.clone();
 
-                    this.deps.visitorEnter.set(targetPosition.x, targetPosition.y, targetPosition.z);
+                    this.deps.visitorEnter.copy(targetPosition);
 
                     this.deps.resetVisitor();
                 });
-
 
                 const labelObject = new CSS2DObject(labelDiv);
                 labelObject.position.set(0, 0, 0);
                 cClone.add(labelObject);
             }
-        } else {
-            cClone.material.color = new THREE.Color(0xffffff);
+
+            sceneMap.add(cClone);
+
+            //
         }
 
-        cClone.material.needsUpdate = true;
-        cClone.position.copy(mesh.position);
-        cClone.scale.copy(mesh.scale);
 
-        if (sceneMap) sceneMap.add(cClone);
     }
 
 }
