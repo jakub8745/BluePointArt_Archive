@@ -6,7 +6,7 @@ import { MeshBVH, StaticGeometryGenerator } from "https://unpkg.com/three-mesh-b
 import { modifyObjects } from 'three/addons/libs/modifyObjects.js';
 
 class ModelLoader {
-   
+
     constructor(deps) {
 
         this.addToSceneMapRun = false;
@@ -24,6 +24,9 @@ class ModelLoader {
         this.gltfLoader.setDRACOLoader(new DRACOLoader('./jsm/libs/draco/'));
 
         this.exhibits = [];
+
+        this.ktx2Loader = this.deps.ktx2Loader;
+
     }
 
     async loadModel(modelPath) {
@@ -79,10 +82,29 @@ class ModelLoader {
 
             this.environment.name = "environment";
             this.scene.add(this.environment);
+            
 
             this.environment.traverse((c) => {
                 if (c.isLight || c.isMesh) {
-                    modifyObjects[c.userData.type]?.(c, this.deps);
+
+                    const options = {
+                        gizmoVisible: this.deps.params.gizmoVisible,
+                        ktx2Loader: this.ktx2Loader,
+                        environment: this.deps.environment,
+                        lightsToTurn: this.deps.lightsToTurn,
+                        exhibitScene: this.deps.exhibitScene,
+                        receiveShadow: this.deps.receiveShadow,
+                        castShadow: this.deps.castShadow,
+                        gui: this.deps.gui,
+                        control: this.deps.control,
+                        listener: this.deps.listener,
+                        audioObjects: this.deps.audioObjects,
+                        isLowEndDevice: this.deps.params.isLowEndDevice,
+                        gizmoVisible: this.deps.params.gizmoVisible,
+                        transControlsMode: this.deps.params.transControlsMode,
+                      };
+
+                    modifyObjects[c.userData.type]?.(c, options);
                 }
 
                 if (this.scene.name === "mainScene" &&

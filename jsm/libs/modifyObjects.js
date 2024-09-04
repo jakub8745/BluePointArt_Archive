@@ -3,45 +3,50 @@ import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { PositionalAudioHelper } from 'three/addons/helpers/PositionalAudioHelper.js';
 import FadeInMaterial from 'three/addons/libs/FadeInMaterial.js';
 
-import { UniformsUtils, TextureLoader, Object3D, ShaderMaterial, MeshLambertMaterial, MeshBasicMaterial, Mesh, Color, PositionalAudio, AudioLoader, VideoTexture, RepeatWrapping, DoubleSide, FrontSide, SRGBColorSpace } from 'three';
-import { BrightnessContrastShader } from 'three/addons/shaders/BrightnessContrastShader.js'
+import {  TextureLoader, Object3D,  MeshLambertMaterial, MeshBasicMaterial, Mesh, PositionalAudio, AudioLoader, VideoTexture, RepeatWrapping, DoubleSide, FrontSide, SRGBColorSpace } from 'three';
+
+//import { UniformsUtils, TextureLoader, Object3D, ShaderMaterial, MeshLambertMaterial, MeshBasicMaterial, Mesh, Color, PositionalAudio, AudioLoader, VideoTexture, RepeatWrapping, DoubleSide, FrontSide, SRGBColorSpace } from 'three';
+
+//import { BrightnessContrastShader } from 'three/addons/shaders/BrightnessContrastShader.js'
+
 
 const loader = new TextureLoader();
 
 
 export const modifyObjects = {
-    SpotLight: (SpotLight, deps) => {
+
+    SpotLight: (SpotLight, options) => {
 
         SpotLight.matrixWorldAutoUpdate = true;
         SpotLight.userData.intensity = SpotLight.intensity;
-       
+
         const targetObject = new Object3D();
         SpotLight.target = targetObject;
-        const target = deps.environment.getObjectByName(SpotLight.userData.whichTarget);
+        const target = options.environment.getObjectByName(SpotLight.userData.whichTarget);
 
         if (target) {
 
             target.getWorldPosition(SpotLight.target.position);
 
-            SpotLight.castShadow = true;
+            SpotLight.options.castShadow = true;
             SpotLight.shadow.mapSize.set(2048, 2048);
             SpotLight.shadow.camera.near = 0.5;
             SpotLight.shadow.camera.far = 500;
             SpotLight.shadow.bias = -0.005;
             //mesh.shadow.blurSamples = 15;
             //mesh.shadow.radius = 1;
-            deps.environment.attach(targetObject);
+            options.environment.attach(targetObject);
 
         }
 
-        deps.lightsToTurn.push(SpotLight);
+        options.lightsToTurn.push(SpotLight);
     },
-    PointLight: (PointLight, deps) => {
+    PointLight: (PointLight, options) => {
 
         PointLight.visible = true;
 
         PointLight.userData.intensity = PointLight.intensity;
-        PointLight.castShadow = true;
+        PointLight.options.castShadow = true;
         PointLight.shadow.mapSize.set(1024, 1024);
 
         PointLight.shadow.camera.near = 0.5;
@@ -50,12 +55,12 @@ export const modifyObjects = {
         //mesh.shadow.blurSamples = 15;
         //mesh.shadow.radius = 1;
 
-        deps.lightsToTurn.push(PointLight);
+        options.lightsToTurn.push(PointLight);
     },
     AmbientLight: () => {
         console.log("ambientLight");
     },
-    SpotLightTarget: (mesh, deps) => {
+    SpotLightTarget: (mesh) => {
         mesh.visible = false;
 
         //
@@ -64,14 +69,14 @@ export const modifyObjects = {
         //
 
     },
-    VisitorEnter: (mesh, deps) => {
+    VisitorEnter: (mesh) => {
 
         mesh.visible = false;
         mesh.removeFromParent();
         //
 
     },
-    Text: (mesh, deps) => {
+    Text: (mesh, options) => {
         new FontLoader().load("txt/Lato_Regular.json", function (font) {
             const geometry = new TextGeometry(mesh.userData.name, {
                 font: font,
@@ -93,56 +98,63 @@ export const modifyObjects = {
             object.position.copy(mesh.position);
             object.rotation.copy(mesh.rotation);
             object.name = mesh.name;
-            deps.exhibitScene.add(object);
+            options.exhibitScene.add(object);
             mesh.removeFromParent();
         });
         //
         //
     },
-    visitorLocation: (mesh, deps) => {
+    visitorLocation: (mesh) => {
 
         const { userData, material } = mesh;
         const { Map, normalMap, RoughMap, name, wS, wT } = userData;
 
         loader.load(Map, (texture) => {
+            /*
+                        mesh.material = new ShaderMaterial({
+                            uniforms: UniformsUtils.clone(BrightnessContrastShader.uniforms),
+                            vertexShader: BrightnessContrastShader.vertexShader,
+                            fragmentShader: BrightnessContrastShader.fragmentShader
+                        });
+            
+                        mesh.material.uniforms.tDiffuse.value = texture;
+                        //mesh.material.uniforms.exposure.value = 1.5;
+            
+                        */
 
-            mesh.material = new ShaderMaterial({
-                uniforms: UniformsUtils.clone(BrightnessContrastShader.uniforms),
-                vertexShader: BrightnessContrastShader.vertexShader,
-                fragmentShader: BrightnessContrastShader.fragmentShader
-            });
-
-            mesh.material.uniforms.tDiffuse.value = texture;
-            //mesh.material.uniforms.exposure.value = 1.5;
+            mesh.material = new MeshLambertMaterial({ map: texture });
 
             mesh.material.needsUpdate = true;
         });
 
     },
-    element: (mesh, deps) => {
+    element: (mesh, options) => {
 
         //const gui = deps.gui
 
         const { userData, material } = mesh;
         const { Map, normalMap, RoughMap, name, wS, wT } = userData;
 
+
+
         if (Map) {
             const extension = Map.split('.').pop();
 
             if (extension === 'ktx2') {
 
-                deps.ktx2Loader.load(Map, (texture) => {
+
+                options.ktx2Loader.load(Map, (texture) => {
 
                     mesh.material = new MeshLambertMaterial({ map: texture });
 
                 });
 
             } else {
-               
+
                 loader.load(Map, (texture) => {
                     mesh.material.map = texture;
                 });
-                
+
             }
         }
 
@@ -151,7 +163,7 @@ export const modifyObjects = {
 
             if (extension === 'ktx2') {
 
-                deps.ktx2Loader.load(normalMap, (texture) => {
+                options.ktx2Loader.load(normalMap, (texture) => {
 
                     texture.center.set(0.5, 0.5);
                     texture.repeat.y = -1;
@@ -184,53 +196,53 @@ export const modifyObjects = {
             material.normalMap.rotate = Math.PI / 2;
         }
 
-        if (name === "Wall") { deps.receiveShadow = true; deps.castShadow = true; }
-        // mesh.receiveShadow = deps.receiveShadow
-        // mesh.castShadow = deps.castShadow
+        if (name === "Wall") { options.receiveShadow = true; options.castShadow = true; }
+
         mesh.material.needsUpdate = true;
 
     },
-    photoScreen: (mesh, deps) => {
+    photoScreen: (mesh, options) => {
 
-        mesh.material = new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
+        mesh.material = options.isLowEndDevice ? new MeshBasicMaterial({ map: loader.load(mesh.userData.Map), transparent: false, side: DoubleSide, color: 0xffffff }) : new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
+        //mesh.material = new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
         mesh.material.map.wrapT = RepeatWrapping;
         mesh.material.map.wrapS = RepeatWrapping; // Ensure wrapping is enabled
         mesh.material.map.repeat.x = -1;
 
-        deps.receiveShadow = false
-        deps.castShadow = true
+        options.receiveShadow = false
+        options.castShadow = true
 
-        modifyObjects.element(mesh, deps);
+        modifyObjects.element(mesh, options);
 
     },
-    Image: (mesh, deps) => {
+    Image: (mesh, options) => {
 
-        mesh.material = new FadeInMaterial({ transparent: true, side: DoubleSide, color: 0xffffff });
+        mesh.material = options.isLowEndDevice ? new MeshBasicMaterial({ map: loader.load(mesh.userData.Map), transparent: false, side: DoubleSide, color: 0xffffff }) : new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
         //mesh.material.color.convertSRGBToLinear();
         mesh.material.needsUpdate = true;
 
-        //deps.receiveShadow = false
-        //deps.castShadow = false
+        //deps.options.receiveShadow = false
+        //deps.options.castShadow = false
 
-        modifyObjects.element(mesh, deps);
+        modifyObjects.element(mesh, options);
     },
-    Sculpture: (mesh, deps) => {
+    Sculpture: (mesh, options) => {
 
         if (mesh.userData.name === "dzbanDystopia") {
 
-            deps.control._gizmo.visible = deps.params.gizmoVisible;
-            deps.control.setMode(deps.params.transControlsMode);
-            deps.control.attach(mesh);
-            deps.exhibitScene.add(deps.control);
+            options.control._gizmo.visible = options.gizmoVisible;
+            // options.control.setMode(transControlsMode);
+            options.control.attach(mesh);
+            options.exhibitScene.add(options.control);
 
         }
 
-        deps.receiveShadow = true
-        deps.castShadow = true
+        options.receiveShadow = true
+        options.castShadow = true
 
-        modifyObjects.element(mesh, deps);
+        modifyObjects.element(mesh, options);
     },
-    Video: (mesh, deps) => {
+    Video: (mesh) => {
         //const gui = deps.gui;
 
         const video = document.getElementById(mesh.userData.elementID);
@@ -244,47 +256,48 @@ export const modifyObjects = {
             side: DoubleSide,
             color: 0xffffff,
         });
-
-        // Modify the shader to include brightness and contrast controls
-        material.onBeforeCompile = (shader) => {
-            // Inject uniforms for brightness and contrast
-            shader.uniforms.uBrightness = { value: 1.0 };
-            shader.uniforms.uContrast = { value: 1.0 };
-
-            // Inject the brightness and contrast functions and update the fragment shader
-            shader.fragmentShader = `
-                uniform float uBrightness;
-                uniform float uContrast;
-    
-                vec3 applyContrast(vec3 color, float contrast) {
-                    return (color - 0.5) * contrast + 0.5;
-                }
-    
-                vec3 applyBrightness(vec3 color, float brightness) {
-                    return color * brightness;
-                }
-            ` + shader.fragmentShader;
-
-            // Replace the gl_FragColor assignment to apply brightness and contrast
-            shader.fragmentShader = shader.fragmentShader.replace(
-                `#include <color_fragment>`,
-                `
-                // Apply brightness
-                diffuseColor.rgb = applyBrightness(diffuseColor.rgb, uBrightness);
-    
-                // Apply contrast
-                diffuseColor.rgb = applyContrast(diffuseColor.rgb, uContrast);
-                `
-            );
-
-            // Save the shader reference for later use if needed
-            material.userData.shader = shader;
-
-            // Now that the shader is available, add the GUI controls
-           // gui.add(shader.uniforms.uBrightness, 'value', 0.0, 3.0).name('Brightness');
-           // gui.add(shader.uniforms.uContrast, 'value', 0.0, 3.0).name('Contrast');
-            //gui.show(false);
-        };
+        /*
+                // Modify the shader to include brightness and contrast options.controls
+                material.onBeforeCompile = (shader) => {
+                    // Inject uniforms for brightness and contrast
+                    shader.uniforms.uBrightness = { value: 1.0 };
+                    shader.uniforms.uContrast = { value: 1.0 };
+        
+                    // Inject the brightness and contrast functions and update the fragment shader
+                    shader.fragmentShader = `
+                        uniform float uBrightness;
+                        uniform float uContrast;
+            
+                        vec3 applyContrast(vec3 color, float contrast) {
+                            return (color - 0.5) * contrast + 0.5;
+                        }
+            
+                        vec3 applyBrightness(vec3 color, float brightness) {
+                            return color * brightness;
+                        }
+                    ` + shader.fragmentShader;
+        
+                    // Replace the gl_FragColor assignment to apply brightness and contrast
+                    shader.fragmentShader = shader.fragmentShader.replace(
+                        `#include <color_fragment>`,
+                        `
+                        // Apply brightness
+                        diffuseColor.rgb = applyBrightness(diffuseColor.rgb, uBrightness);
+            
+                        // Apply contrast
+                        diffuseColor.rgb = applyContrast(diffuseColor.rgb, uContrast);
+                        `
+                    );
+        
+                    // Save the shader reference for later use if needed
+                    material.userData.shader = shader;
+        
+                    // Now that the shader is available, add the GUI options.controls
+                    // gui.add(shader.uniforms.uBrightness, 'value', 0.0, 3.0).name('Brightness');
+                    // gui.add(shader.uniforms.uContrast, 'value', 0.0, 3.0).name('Contrast');
+                    //gui.show(false);
+                };
+                */
 
         // Apply the material to the mesh
         mesh.material = material;
@@ -293,10 +306,10 @@ export const modifyObjects = {
         mesh.material.needsUpdate = true;
     },
 
-    Audio: (mesh, deps) => {
+    Audio: (mesh, { listener, audioObjects }) => {
         mesh.scale.setScalar(0.1)
 
-        const sound = new PositionalAudio(deps.listener);
+        const sound = new PositionalAudio(listener);
         const audioLoader = new AudioLoader();
         audioLoader.load(mesh.userData.audio, (buffer) => {
             sound.name = mesh.userData.name;
@@ -322,15 +335,9 @@ export const modifyObjects = {
             const helper = new PositionalAudioHelper(sound, 20);
             sound.add(helper);
             mesh.add(sound);
-            deps.audioObjects.push(mesh);
+            audioObjects.push(mesh);
 
         });
     },
 };
 
-/*
-                    gui.show(true);
-                    gui.add(texture.offset, "y", -1, 1, 0.01).name("offset y");
-                    gui.add(texture.offset, "x", -1, 1, 0.01).name("offset x");
-                    gui.add(texture, "rotation", -1, 1, 0.01).name("rotation");
-*/
