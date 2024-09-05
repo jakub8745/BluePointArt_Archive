@@ -10,14 +10,14 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
 import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
-/*
+
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
 import { DotScreenShader } from 'three/addons/shaders/DotScreenShader.js'
 
-*/
+
 import ModelLoader from 'three/addons/libs/ModelLoader.js'
 import Visitor from 'three/addons/libs/Visitor.js'
 
@@ -52,34 +52,11 @@ const params = {
   heightOffset: new Vector3(0, 0.33, 0),// offset the camera from the visitor
   archiveModelPath: "../models/exterior.glb",
   enablePostProcessing: true,
-  isLowEndDevice: navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2,
+  isLowEndDevice: navigator.hardwareConcurrency <= 2,
 
 };
 
-alert('isLowEndDevice: ' + params.isLowEndDevice);
-
-if (!params.isLowEndDevice) {
-  // Dynamically import high-end postprocessing only on high-grade devices
-  import('three/addons/postprocessing/EffectComposer.js').then(module => {
-    const EffectComposer = module.EffectComposer;
-    // Now you can use EffectComposer here
-  });
-  
-  import('three/addons/postprocessing/RenderPass.js').then(module => {
-    const RenderPass = module.RenderPass;
-  });
-  
-  import('three/addons/postprocessing/ShaderPass.js').then(module => {
-    const ShaderPass = module.ShaderPass;
-  });
-  
-  import('three/addons/shaders/DotScreenShader.js').then(module => {
-    const DotScreenShader = module.DotScreenShader;
-  });
-} else {
-  console.log('Low-grade device detected, skipping post-processing imports.');
-}
-
+alert('isLowEndDevice: ' + params.isLowEndDevice + navigator.hardwareConcurrency);
 
 
 
