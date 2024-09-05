@@ -52,11 +52,11 @@ const params = {
   heightOffset: new Vector3(0, 0.33, 0),// offset the camera from the visitor
   archiveModelPath: "../models/exterior.glb",
   enablePostProcessing: true,
-  isLowEndDevice: navigator.hardwareConcurrency <= 2,
+  isLowEndDevice: navigator.hardwareConcurrency <= 4,
 
 };
 
-alert('isLowEndDevice: ' + params.isLowEndDevice + navigator.hardwareConcurrency);
+if(params.isLowEndDevice) alert('You are using a device with low capabilities. Some features will be unavailable, the aesthetic experience of the 3D world will be limited. Despite this, we strongly encourage you to explore the Blue Point Art Archive, because the most IMPORTANT thing is the ARTWORK, and you will find a lot of it here.');
 
 
 
@@ -320,14 +320,14 @@ function init() {
   renderPass = new RenderPass(scene, camera);
   composer.addPass(renderPass);
 
+  const effectDotScreen = new ShaderPass(DotScreenShader);
+
+  composer.addPass(effectDotScreen);
+
   const isIphone = /iPhone/.test(navigator.userAgent);
 
   if (!isIphone) {
-
-    const effectDotScreen = new ShaderPass(DotScreenShader);
-
-    composer.addPass(effectDotScreen);
-
+    //
   }
 
   const resetVisitor = () => {
@@ -375,7 +375,7 @@ function init() {
     loader,
     listener,
     audioObjects,
-    sphereSize: params.sphereSize,
+    //sphereSize: params.sphereSize,
     visitor,
     visitorEnter,
     TWEEN,
