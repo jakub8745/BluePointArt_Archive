@@ -1,26 +1,22 @@
 
 //
-
 console.log('TODO: effekt przejścia pomiędzy scenami');
 
-import { WebGLRenderer, Scene, PerspectiveCamera, OrthographicCamera, Raycaster, Clock, Object3D, Mesh, Group, TextureLoader, AudioListener } from 'three'
-import { Fog, AmbientLight, BufferGeometry, RingGeometry, MeshBasicMaterial, Vector2, Vector3, DoubleSide, EquirectangularReflectionMapping, AgXToneMapping, PCFSoftShadowMap, SRGBColorSpace } from "three";
-
+import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
 import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
-/*
+
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
-import { DotScreenShader } from 'three/addons/shaders/DotScreenShader.js'
-
-*/
 import ModelLoader from 'three/addons/libs/ModelLoader.js'
 import Visitor from 'three/addons/libs/Visitor.js'
 
+
+import { DotScreenShader } from 'three/addons/shaders/DotScreenShader.js'
 
 import Stats from "three/addons/libs/stats.module.js";
 
@@ -31,11 +27,10 @@ import {
   disposeBoundsTree,
   computeBoundsTree,
 } from "https://unpkg.com/three-mesh-bvh@0.7.6/build/index.module.js";
-
 import { JoyStick } from "three/addons/controls/joy.js";
 import * as TWEEN from "three/addons/tween/tween.esm.js";
 
-const loader = new TextureLoader();
+const loader = new THREE.TextureLoader();
 
 const params = {
   exhibitCollider: null,
@@ -49,51 +44,24 @@ const params = {
   gizmoVisible: false,
   canSeeGizmo: false,
   transControlsMode: "rotate",
-  heightOffset: new Vector3(0, 0.33, 0),// offset the camera from the visitor
+  heightOffset: new THREE.Vector3(0, 0.33, 0),// offset the camera from the visitor
   archiveModelPath: "../models/exterior.glb",
   enablePostProcessing: true,
   isLowEndDevice: navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2,
 
 };
 
-alert('isLowEndDevice: ' + params.isLowEndDevice);
-
-if (!params.isLowEndDevice) {
-  // Dynamically import high-end postprocessing only on high-grade devices
-  import('three/addons/postprocessing/EffectComposer.js').then(module => {
-    const EffectComposer = module.EffectComposer;
-    // Now you can use EffectComposer here
-  });
-  
-  import('three/addons/postprocessing/RenderPass.js').then(module => {
-    const RenderPass = module.RenderPass;
-  });
-  
-  import('three/addons/postprocessing/ShaderPass.js').then(module => {
-    const ShaderPass = module.ShaderPass;
-  });
-  
-  import('three/addons/shaders/DotScreenShader.js').then(module => {
-    const DotScreenShader = module.DotScreenShader;
-  });
-} else {
-  console.log('Low-grade device detected, skipping post-processing imports.');
-}
-
-
-
-
 let ileE = 2,
   ileMesh = 0,
   ileRazy = 0;
 
 //
-const listener = new AudioListener();
+const listener = new THREE.AudioListener();
 
 const sceneRegistry = {
-  mainScene: new Scene(),
-  exhibitScene: new Scene(),
-  sceneMap: new Scene(),
+  mainScene: new THREE.Scene(),
+  exhibitScene: new THREE.Scene(),
+  sceneMap: new THREE.Scene(),
 };
 
 // Preload textures from the "textures" folder
@@ -103,13 +71,13 @@ const textureCache = new Map();
 let renderer, camera, scene, clock, tween, stats, anisotropy;
 let composer, renderPass;
 let rendererMap, cameraMap, circleMap, sceneMap, css2DRenderer, exhibitScene;
-const cameraDirection = new Vector3();
+const cameraDirection = new THREE.Vector3();
 
 const ktx2Loader = new KTX2Loader()
 
 let collider, visitor, controls, control;
 let circle, circleYellow, circleBlue
-let environment = new Group();
+let environment = new THREE.Group();
 
 let MapAnimationId = null; // defined in outer scope
 let animationId = null;
@@ -120,24 +88,24 @@ let fwdPressed = false,
   lftPressed = false,
   rgtPressed = false;
 
-//let visitorVelocity = new Vector3();
-//let upVector = new Vector3(0, 1, 0);
-//let tempVector = new Vector3();
+//let visitorVelocity = new THREE.Vector3();
+//let upVector = new THREE.Vector3(0, 1, 0);
+//let tempVector = new THREE.Vector3();
 
 
-//let newPosition = new Vector3();
-//let deltaVector = new Vector3();
-const raycaster = new Raycaster();
-let intersectedFloor0 = new Object3D();
+//let newPosition = new THREE.Vector3();
+//let deltaVector = new THREE.Vector3();
+const raycaster = new THREE.Raycaster();
+let intersectedFloor0 = new THREE.Object3D();
 intersectedFloor0.name = "FloorOut";
 let bgTexture0
 const lightsToTurn = [];
 const audioObjects = [];
-const visitorEnter = new Vector3();
+const visitorEnter = new THREE.Vector3();
 
-const pointer = new Vector2();
-const clickedPoint = new Vector3();
-const visitorPos = new Vector3();
+const pointer = new THREE.Vector2();
+const clickedPoint = new THREE.Vector3();
+const visitorPos = new THREE.Vector3();
 let Wall,
   result,
   intersects,
@@ -148,9 +116,9 @@ let audioHandler, exhibitModelPath, exhibitModelPath0;
 
 let deps = {};
 
-Mesh.prototype.raycast = acceleratedRaycast;
-BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
-BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
+THREE.Mesh.prototype.raycast = acceleratedRaycast;
+THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
+THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 
 let target = null;
 let timeout = null;
@@ -213,7 +181,7 @@ function init() {
   fadeOutEl(document.getElementById("overlay"));
 
   // renderer setup
-  renderer = new WebGLRenderer({
+  renderer = new THREE.WebGLRenderer({
     antialias: true,
     powerPreference: "high-performance",
     preserveDrawingBuffer: false,
@@ -225,15 +193,15 @@ function init() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 
   renderer.shadowMap.enabled = !params.isLowEndDevice;
-  renderer.shadowMap.type = params.isLowEndDevice ? BasicShadowMap : PCFSoftShadowMap;
+  renderer.shadowMap.type = params.isLowEndDevice ? THREE.BasicShadowMap : THREE.PCFSoftShadowMap;
 
-  renderer.outputColorSpace = SRGBColorSpace;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-  //renderer.outputEncoding = sRGBEncoding;
+  renderer.outputEncoding = THREE.sRGBEncoding;
 
   const isAppleDevice = /Mac|iPad|iPhone|iPod/.test(navigator.userAgent);
 
-  renderer.toneMapping = params.isLowEndDevice ? LinearToneMapping : (isAppleDevice ? AgXToneMapping : ACESFilmicToneMapping);
+  renderer.toneMapping = params.isLowEndDevice ? THREE.LinearToneMapping : (isAppleDevice ? THREE.AgXToneMapping : THREE.ACESFilmicToneMapping);
   renderer.toneMappingExposure = params.exposure;
 
   document.body.appendChild(renderer.domElement);
@@ -246,12 +214,12 @@ function init() {
   scene = sceneRegistry["mainScene"]
 
   scene.name = "mainScene";
-  scene.fog = new Fog(0x2b0a07, 3.1, 18);
+  scene.fog = new THREE.Fog(0x2b0a07, 3.1, 18);
 
 
   sceneRegistry['exhibitScene'].name = 'exhibitScene';
   // camera setup
-  camera = new PerspectiveCamera(
+  camera = new THREE.PerspectiveCamera(
     70,
     window.innerWidth / window.innerHeight,
     0.1,
@@ -265,7 +233,7 @@ function init() {
   //audio on camera
   camera.add(listener);
 
-  clock = new Clock();
+  clock = new THREE.Clock();
 
   // orbit c
   controls = new OrbitControls(camera, renderer.domElement);
@@ -298,7 +266,7 @@ function init() {
   // camera
 
 
-  cameraMap = new OrthographicCamera(
+  cameraMap = new THREE.OrthographicCamera(
     innerWidth / -2,
     innerWidth / 2,
     innerHeight / 2,
@@ -307,10 +275,10 @@ function init() {
     10000
   );
   cameraMap.position.set(0, -50, 0);
-  cameraMap.lookAt(new Vector3(0, 0, 0));
+  cameraMap.lookAt(new THREE.Vector3(0, 0, 0));
 
-  //rendererMap = new WebGLRenderer();
-  rendererMap = new WebGLRenderer();
+  //rendererMap = new THREE.WebGLRenderer();
+  rendererMap = new THREE.WebGLRenderer();
   rendererMap.setClearColor(0x142236);
   document
     .querySelector("div#map_in_sidebar.info_sidebar")
@@ -326,11 +294,11 @@ function init() {
   document.querySelector("div#map_in_sidebar.info_sidebar").appendChild(css2DRenderer.domElement);
 
   // AmbientLight MAP
-  const light = new AmbientLight(0xffffff, 20); // soft white light
+  const light = new THREE.AmbientLight(0xffffff, 20); // soft white light
   sceneMap.add(light);
 
   // ambientLight
-  let ambientLight = new AmbientLight(0x404040, 55);
+  let ambientLight = new THREE.AmbientLight(0x404040, 55);
   scene.add(ambientLight);
 
   // stats setup
@@ -527,8 +495,8 @@ function init() {
           });
         tween.start(); // Start the tween immediately
 
-        let innerRad = new Vector3(1, 1, 1);
-        const zero = new Vector3(0, 0, 0);
+        let innerRad = new THREE.Vector3(1, 1, 1);
+        const zero = new THREE.Vector3(0, 0, 0);
         circle.position.copy(point);
         circle.position.y += 0.01;
         const tweenCircle = new TWEEN.Tween(innerRad);
@@ -862,7 +830,7 @@ async function loadExhibitRoom(exhibitModelPath, deps) {
 
   disposeSceneObjects(deps.exhibitScene);
 
-  deps.exhibitScene.add(new AmbientLight(0x404040, 55));
+  deps.exhibitScene.add(new THREE.AmbientLight(0x404040, 55));
 
   deps.visitor.moveToScene(deps.exhibitScene);
   deps.isVisitorOnMainScene = false;
@@ -881,7 +849,7 @@ async function loadExhibitRoom(exhibitModelPath, deps) {
 
 function handleSceneBackground(deps) {
 
-  const { bgTexture } = deps;
+ const {bgTexture} = deps;
 
   const bgInt = 1;
 
@@ -892,8 +860,8 @@ function handleSceneBackground(deps) {
     // Handle loading KTX2 texture
     ktx2Loader.load(bgTexture, (texture) => {
 
-      texture.mapping = EquirectangularReflectionMapping;
-      texture.colorSpace = SRGBColorSpace;
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      texture.colorSpace = THREE.SRGBColorSpace;
 
       scene.background = texture;  // Set the background texture
       scene.backgroundIntensity = bgInt;  // Set the background intensity if applicable
@@ -904,8 +872,8 @@ function handleSceneBackground(deps) {
     // Handle loading standard texture formats like jpg or png
     loader.load(bgTexture, (texture) => {
 
-      texture.mapping = EquirectangularReflectionMapping;
-      texture.colorSpace = SRGBColorSpace;
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      texture.colorSpace = THREE.SRGBColorSpace;
 
       scene.background = texture;  // Set the background texture
       scene.backgroundIntensity = bgInt;  // Set the background intensity if applicable
@@ -1002,11 +970,11 @@ function addVisitorMapCircle() {
 
 
   // visitor Map
-  circleMap = new Mesh(
-    new RingGeometry(0.1, 1, 32),
-    new MeshBasicMaterial({
+  circleMap = new THREE.Mesh(
+    new THREE.RingGeometry(0.1, 1, 32),
+    new THREE.MeshBasicMaterial({
       color: 0xbf011f,
-      side: DoubleSide,
+      side: THREE.DoubleSide,
       transparent: true,
       opacity: 1,
     })
@@ -1021,26 +989,26 @@ function addVisitorMapCircle() {
   sceneMap.add(circleMap);
 
   /// circle (pointer)
-  circle = new Group();
+  circle = new THREE.Group();
   circle.position.copy(visitor.position);
   circle.position.y = -30;
 
-  circleYellow = new Mesh(
-    new RingGeometry(0.1, 0.12, 32),
-    new MeshBasicMaterial({
+  circleYellow = new THREE.Mesh(
+    new THREE.RingGeometry(0.1, 0.12, 32),
+    new THREE.MeshBasicMaterial({
       color: 0xffcc00,
-      side: DoubleSide,
+      side: THREE.DoubleSide,
       transparent: true,
       opacity: 0.5,
     })
   );
   circleYellow.rotation.x = (90 * Math.PI) / 180;
 
-  circleBlue = new Mesh(
-    new RingGeometry(0.12, 0.14, 32),
-    new MeshBasicMaterial({
+  circleBlue = new THREE.Mesh(
+    new THREE.RingGeometry(0.12, 0.14, 32),
+    new THREE.MeshBasicMaterial({
       color: 0x0066cc,
-      side: DoubleSide,
+      side: THREE.DoubleSide,
       transparent: true,
       opacity: 0.5,
     })
@@ -1084,8 +1052,8 @@ function preloadTextures() {
 
     ktx2Loader.load(textureUrl, (texture) => {
 
-      texture.mapping = EquirectangularReflectionMapping;
-      texture.colorSpace = SRGBColorSpace;
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      texture.colorSpace = THREE.SRGBColorSpace;
 
       textureCache.set(textureUrl, texture);
 
@@ -1121,9 +1089,9 @@ class AudioHandler {
 class VisitorLocationChecker {
   constructor(scene) {
     this.scene = scene;
-    this.raycaster = new Raycaster();
-    this.downVector = new Vector3(0, -1, 0);
-    this.vector = new Vector3();
+    this.raycaster = new THREE.Raycaster();
+    this.downVector = new THREE.Vector3(0, -1, 0);
+    this.vector = new THREE.Vector3();
     this.intersectedObjects = [];
   }
   checkVisitorLocation(visitor) {

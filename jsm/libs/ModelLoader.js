@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Group, Box3, Mesh, MeshBasicMaterial } from 'three';
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
@@ -16,7 +16,7 @@ class ModelLoader {
 
         this.scene = deps.isVisitorOnMainScene ? deps.mainScene : deps.exhibitScene;
 
-        this.environment = new THREE.Group();
+        this.environment = new Group();
         this.toMerge = {};
         this.typeOfmesh = "";
 
@@ -35,7 +35,7 @@ class ModelLoader {
             const { scene: gltfScene } = await this.gltfLoader.loadAsync(modelPath);
 
             gltfScene.scale.setScalar(1);
-            const box = new THREE.Box3().setFromObject(gltfScene);
+            const box = new Box3().setFromObject(gltfScene);
             box.getCenter(gltfScene.position).negate();
             gltfScene.updateMatrixWorld(true);
 
@@ -69,7 +69,7 @@ class ModelLoader {
                 lazyGeneration: false,
             });
 
-            this.collider = new THREE.Mesh(mergedGeometry);
+            this.collider = new Mesh(mergedGeometry);
             this.collider.material.wireframe = true;
             this.collider.material.opacity = 0;
             this.collider.material.transparent = true;
@@ -83,7 +83,7 @@ class ModelLoader {
 
             this.environment.name = "environment";
             this.scene.add(this.environment);
-            
+
 
             this.environment.traverse((c) => {
                 if (c.isLight || c.isMesh) {
@@ -103,7 +103,7 @@ class ModelLoader {
                         isLowEndDevice: this.deps.params.isLowEndDevice,
                         gizmoVisible: this.deps.params.gizmoVisible,
                         transControlsMode: this.deps.params.transControlsMode,
-                      };
+                    };
 
                     modifyObjects[c.userData.type]?.(c, options);
                 }
@@ -132,7 +132,7 @@ class ModelLoader {
             const { sceneMap } = this.deps;
 
             const cClone = mesh.clone();
-            cClone.material = new THREE.MeshBasicMaterial({
+            cClone.material = new MeshBasicMaterial({
                 color: mesh.userData.type === 'visitorLocation' || mesh.userData.type === 'Room' ? 0x1b689f : 0xffffff,
                 opacity: mesh.userData.type === 'visitorLocation' || mesh.userData.type === 'Room' ? 0.8 : 1,
                 transparent: true,
