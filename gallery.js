@@ -347,7 +347,6 @@ function init() {
 
   sceneRegistry["mainScene"] = scene;
 
-  console.log('ktx2Loader', ktx2Loader);
 
   //
   deps = {
@@ -384,13 +383,17 @@ function init() {
   // LOAD MODEL (environment, collider)
   const modelLoader = new ModelLoader(deps);
 
-  // Function to load the main scene
   async function loadMainScene() {
     const mainCollider = await modelLoader.loadModel(params.archiveModelPath);
     deps.params.exhibitCollider = mainCollider;
 
     const intersectedFloor = visitor.checkLocation();
-    //intersectedFloor0 = intersectedFloor;
+
+    intersectedFloor0 = intersectedFloor;
+    exhibitModelPath = intersectedFloor.userData.exhibitModelPath;
+    deps.bgTexture = intersectedFloor.userData.bgTexture || "textures/bg_color.ktx2";
+
+    handleSceneBackground(deps);
 
     animate();
   }
@@ -401,13 +404,7 @@ function init() {
   preloadTextures();
 
 
-  // reset visitor
-
-
-
-
-  bgTexture0 = "/textures/xxxbg_puent.jpg";
-
+  //
 
   // events
 
@@ -415,10 +412,9 @@ function init() {
     .querySelector("img#audio-on")
     .addEventListener("pointerdown", (evt) => {
       evt.preventDefault();
-      const floorChecker = new VisitorLocationChecker(scene);
+      const intersectedFloor = visitor.checkLocation();
       const audioHandler = new AudioHandler();
-      const el = floorChecker.checkVisitorLocation(visitor);
-      audioHandler.handleAudio(scene.getObjectByName(el.userData.audioToPlay));
+      audioHandler.handleAudio(scene.getObjectByName(intersectedFloor.userData.audioToPlay));
 
     });
 
@@ -720,7 +716,7 @@ async function updateVisitor(collider, delta) {
 
       intersectedFloor0 = intersectedFloor;
 
-      deps.bgTexture = intersectedFloor.userData.bgTexture || "textures/2d_etc1s.ktx2";
+      deps.bgTexture = intersectedFloor.userData.bgTexture || "textures/bg_color.ktx2";
 
       //AUDIO
       // audioHandler = new AudioHandler();
@@ -827,7 +823,7 @@ async function loadExhibitRoom(exhibitModelPath, deps) {
 
     disposeSceneObjects(deps.exhibitScene);
 
-    handleSceneBackground(bgTexture, deps);
+    handleSceneBackground(deps);
 
     return;
   }
@@ -848,10 +844,12 @@ async function loadExhibitRoom(exhibitModelPath, deps) {
   }
 
   // Now we handle setting the scene background using the background texture
-  handleSceneBackground(bgTexture, deps);
+  handleSceneBackground(deps);
 }
 
-function handleSceneBackground(bgTexture, deps) {
+function handleSceneBackground(deps) {
+
+ const {bgTexture} = deps;
 
   const bgInt = 1;
 

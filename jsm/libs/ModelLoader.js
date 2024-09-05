@@ -30,6 +30,7 @@ class ModelLoader {
     }
 
     async loadModel(modelPath) {
+
         try {
             const { scene: gltfScene } = await this.gltfLoader.loadAsync(modelPath);
 

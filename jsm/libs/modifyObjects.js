@@ -109,6 +109,8 @@ export const modifyObjects = {
         const { userData, material } = mesh;
         const { Map, normalMap, RoughMap, name, wS, wT } = userData;
 
+        if(!Map) return;
+
         loader.load(Map, (texture) => {
             /*
                         mesh.material = new ShaderMaterial({
