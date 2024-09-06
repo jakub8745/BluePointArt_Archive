@@ -12,11 +12,9 @@
       padding: 0;
       margin: 0;
       overflow: hidden;
-
     }
 
     #overlay {
-
       position: absolute;
       z-index: 2;
       top: 0;
@@ -83,10 +81,14 @@
   </div>
 
   <div id="info"></div>
-  <div id="joy3Div"></div>
+
+  <div id="joystickContainer">
+    <canvas id="joystickCanvas" width="100" height="100"></canvas>
+  </div>
+ 
 
   <img id="audio-on" alt="PLAY/STOP AUDIO" src="/icons/audioMuted.png" />
-  <div id="experimental">***EXPERIMENTAL PROJECT branch 2 *** 3d interface focused on showing an archived ARTWORKS not on realistic representation of the gallery rooms. last update 01/09: collision detection and movement of the 'visitor' injected to 'Visitor' class ***</div>
+  <div id="experimental">***EXPERIMENTAL PROJECT branch 2 *** 3d interface focused on showing an archived ARTWORKS not on realistic representation of the gallery rooms. last update 05/09: new better Joystick, turning of effects based on capability of the device ***</div>
 
   <!--SIDEBAR-->
   <div class="sidebar">

@@ -17,13 +17,12 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
 import { DotScreenShader } from 'three/addons/shaders/DotScreenShader.js'
 
-
 import ModelLoader from 'three/addons/libs/ModelLoader.js'
 import Visitor from 'three/addons/libs/Visitor.js'
 
+import JoyStick from 'three/addons/controls/Joystick.js';
 
 import Stats from "three/addons/libs/stats.module.js";
-
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 import {
@@ -32,7 +31,6 @@ import {
   computeBoundsTree,
 } from "https://unpkg.com/three-mesh-bvh@0.7.6/build/index.module.js";
 
-import { JoyStick } from "three/addons/controls/joy.js";
 import * as TWEEN from "three/addons/tween/tween.esm.js";
 
 const loader = new TextureLoader();
@@ -56,9 +54,7 @@ const params = {
 
 };
 
-if(params.isLowEndDevice) alert('You are using a device with low capabilities. Some features will be unavailable, the aesthetic experience of the 3D world will be limited. Despite this, we strongly encourage you to explore the Blue Point Art Archive, because the most IMPORTANT thing is the ARTWORK, and you will find a lot of it here.');
-
-
+if (params.isLowEndDevice) alert('You are using a device with low capabilities. Some features will be unavailable, the aesthetic experience of the 3D world will be limited. Despite this, we strongly encourage you to explore the Blue Point Art Archive, because the most IMPORTANT thing is the ARTWORK, and you will find a lot of it here.');
 
 let ileE = 2,
   ileMesh = 0,
@@ -73,7 +69,6 @@ const sceneRegistry = {
   sceneMap: new Scene(),
 };
 
-// Preload textures from the "textures" folder
 const textureFolder = "textures/";
 const textureCache = new Map();
 
@@ -91,19 +86,6 @@ let environment = new Group();
 let MapAnimationId = null; // defined in outer scope
 let animationId = null;
 
-//let visitorIsOnGround = false;
-let fwdPressed = false,
-  bkdPressed = false,
-  lftPressed = false,
-  rgtPressed = false;
-
-//let visitorVelocity = new Vector3();
-//let upVector = new Vector3(0, 1, 0);
-//let tempVector = new Vector3();
-
-
-//let newPosition = new Vector3();
-//let deltaVector = new Vector3();
 const raycaster = new Raycaster();
 let intersectedFloor0 = new Object3D();
 intersectedFloor0.name = "FloorOut";
@@ -135,28 +117,43 @@ let timeout = null;
 const gui = new GUI();
 gui.show(false);
 
-const joy3Param = { title: "joystick3" };
-const Joy3 = new JoyStick("joy3Div", joy3Param);
 
-//
-const joyIntervalCheck = () => {
-  intervalId = setInterval(() => {
-    const joyEvt = Joy3.GetDir();
-    lftPressed = false;
-    rgtPressed = false;
-    fwdPressed = false;
-    bkdPressed = false;
-    lftPressed = joyEvt.includes('W') || joyEvt.includes('NW') || joyEvt.includes('SW');
-    rgtPressed = joyEvt.includes('E') || joyEvt.includes('NE') || joyEvt.includes('SE');
-    fwdPressed = joyEvt.includes('N') || joyEvt.includes('NE') || joyEvt.includes('NW');
-    bkdPressed = joyEvt.includes('S') || joyEvt.includes('SE') || joyEvt.includes('SW');
-  }, 50);
-};
-//
+// Joystick 
+const joystick = new JoyStick({
+  canvas: document.getElementById("joystickCanvas")
+});
+
+joystick.onDirectionChange((data) => {
+  const { direction } = data;
+
+  switch (direction) {
+    case 'up':
+      visitor.fwdPressed = true;
+      visitor.bkdPressed = false;
+      break;
+    case 'down':
+      visitor.bkdPressed = true;
+      visitor.fwdPressed = false;
+      break;
+    case 'left':
+      visitor.lftPressed = true;
+      visitor.rgtPressed = false;
+      break;
+    case 'right':
+      visitor.rgtPressed = true;
+      visitor.lftPressed = false;
+      break;
+    default:  // Stop moving when joystick is centered
+      visitor.fwdPressed = false;
+      visitor.bkdPressed = false;
+      visitor.lftPressed = false;
+      visitor.rgtPressed = false;
+      break;
+  }
+});
 
 
 console.log("isLowEndDevice: ", params.isLowEndDevice);
-
 
 //
 const waitForMe = async (millisec) => {
@@ -170,10 +167,6 @@ const fadeOutEl = (el) => {
     el.remove();
   });
 };
-
-//
-joyIntervalCheck();
-
 
 init();
 
@@ -198,15 +191,10 @@ function init() {
 
 
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
   renderer.setSize(window.innerWidth, window.innerHeight);
-
   renderer.shadowMap.enabled = !params.isLowEndDevice;
   renderer.shadowMap.type = params.isLowEndDevice ? BasicShadowMap : PCFSoftShadowMap;
-
   renderer.outputColorSpace = SRGBColorSpace;
-
-  //renderer.outputEncoding = sRGBEncoding;
 
   const isAppleDevice = /Mac|iPad|iPhone|iPod/.test(navigator.userAgent);
 
@@ -225,7 +213,6 @@ function init() {
   scene.name = "mainScene";
   scene.fog = new Fog(0x2b0a07, 3.1, 18);
 
-
   sceneRegistry['exhibitScene'].name = 'exhibitScene';
   // camera setup
   camera = new PerspectiveCamera(
@@ -235,7 +222,6 @@ function init() {
     70
   );
   camera.position.set(10, 6, -10);
-  //camera.far = 100;
   camera.updateProjectionMatrix();
   window.camera = camera;
 
@@ -262,19 +248,18 @@ function init() {
   // CSS3DRenderer for DOM elements
   const innerWidth = 780,
     innerHeight = 800;
+
+
   // sceneMap
-
   sceneMap = sceneRegistry["sceneMap"];
-
   sceneMap.scale.setScalar(25);
   sceneMap.rotation.x = Math.PI;
   sceneMap.rotation.y = Math.PI / 180;
-
   sceneMap.position.set(0, 0, 0);
   sceneMap.updateMatrixWorld(true);
+
+
   // camera
-
-
   cameraMap = new OrthographicCamera(
     innerWidth / -2,
     innerWidth / 2,
@@ -286,6 +271,7 @@ function init() {
   cameraMap.position.set(0, -50, 0);
   cameraMap.lookAt(new Vector3(0, 0, 0));
 
+
   //rendererMap = new WebGLRenderer();
   rendererMap = new WebGLRenderer();
   rendererMap.setClearColor(0x142236);
@@ -293,6 +279,7 @@ function init() {
     .querySelector("div#map_in_sidebar.info_sidebar")
     .appendChild(rendererMap.domElement);
   rendererMap.setSize(500, 500);
+
 
   // CSS2DRenderer for DOM elements
   css2DRenderer = new CSS2DRenderer();
@@ -302,9 +289,11 @@ function init() {
   css2DRenderer.domElement.style.pointerEvents = 'none'; // Make sure it doesn't block interactions
   document.querySelector("div#map_in_sidebar.info_sidebar").appendChild(css2DRenderer.domElement);
 
+
   // AmbientLight MAP
   const light = new AmbientLight(0xffffff, 20); // soft white light
   sceneMap.add(light);
+
 
   // ambientLight
   let ambientLight = new AmbientLight(0x404040, 55);
@@ -315,26 +304,17 @@ function init() {
   document.body.appendChild(stats.dom);
 
   // composer
-
   composer = new EffectComposer(renderer);
   renderPass = new RenderPass(scene, camera);
   composer.addPass(renderPass);
 
   const effectDotScreen = new ShaderPass(DotScreenShader);
-
   composer.addPass(effectDotScreen);
-
-  const isIphone = /iPhone/.test(navigator.userAgent);
-
-  if (!isIphone) {
-    //
-  }
 
   const resetVisitor = () => {
 
     visitor.visitorVelocity.set(0, 0, 0)
     const targetV = visitor.target.clone()
-
 
     const circleMap = sceneMap.getObjectByName("circleMap");
     if (circleMap) {
@@ -409,14 +389,10 @@ function init() {
 
   loadMainScene();
 
-
   preloadTextures();
 
 
-  //
-
   // events
-
   document
     .querySelector("img#audio-on")
     .addEventListener("pointerdown", (evt) => {
@@ -647,6 +623,7 @@ function init() {
       case " ":
         if (visitor.visitorIsOnGround) {
           deps.visitor.visitorVelocity.y = 20.0;
+          visitor.visitorIsOnGround = false;
         }
         break;
       case "g":
