@@ -304,12 +304,16 @@ function init() {
   document.body.appendChild(stats.dom);
 
   // composer
-  composer = new EffectComposer(renderer);
-  renderPass = new RenderPass(scene, camera);
-  composer.addPass(renderPass);
 
-  const effectDotScreen = new ShaderPass(DotScreenShader);
-  composer.addPass(effectDotScreen);
+  if (!params.isLowEndDevice) {
+    composer = new EffectComposer(renderer);
+    renderPass = new RenderPass(scene, camera);
+    composer.addPass(renderPass);
+
+    const effectDotScreen = new ShaderPass(DotScreenShader);
+    composer.addPass(effectDotScreen);
+  }
+
 
   const resetVisitor = () => {
 
