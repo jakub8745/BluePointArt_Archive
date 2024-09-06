@@ -144,7 +144,7 @@ export const modifyObjects = {
 
                     //mesh.material = new MeshLambertMaterial({ map: texture });
 
-                    mesh.material = options.isLowEndDevice ? new MeshLambertMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: FrontSide, color: 0xffffff }) : new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
+                    mesh.material = options.isLowEndDevice ? new MeshLambertMaterial({ map: texture, transparent: true, side: FrontSide, color: 0xffffff }) : new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
 
                     
 
@@ -153,7 +153,7 @@ export const modifyObjects = {
             } else {
 
                 loader.load(Map, (texture) => {
-                    mesh.material.map = texture;
+                    mesh.material = options.isLowEndDevice ? new MeshLambertMaterial({ map: texture, transparent: true, side: FrontSide, color: 0xffffff }) : new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
                 });
 
             }
@@ -218,9 +218,9 @@ export const modifyObjects = {
     },
     Image: (mesh, options) => {
 
-        mesh.material = options.isLowEndDevice ? new MeshLambertMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff }) : new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
+        //mesh.material = options.isLowEndDevice ? new MeshLambertMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff }) : new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
         //mesh.material.color.convertSRGBToLinear();
-        mesh.material.needsUpdate = true;
+        //mesh.material.needsUpdate = true;
 
         //deps.options.receiveShadow = false
         //deps.options.castShadow = false
