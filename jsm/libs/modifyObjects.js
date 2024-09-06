@@ -142,7 +142,11 @@ export const modifyObjects = {
 
                 options.ktx2Loader.load(Map, (texture) => {
 
-                    mesh.material = new MeshLambertMaterial({ map: texture });
+                    //mesh.material = new MeshLambertMaterial({ map: texture });
+
+                    mesh.material = options.isLowEndDevice ? new MeshLambertMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: FrontSide, color: 0xffffff }) : new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
+
+                    
 
                 });
 
@@ -200,7 +204,7 @@ export const modifyObjects = {
     },
     photoScreen: (mesh, options) => {
 
-        mesh.material = options.isLowEndDevice ? new MeshBasicMaterial({ map: loader.load(mesh.userData.Map), transparent: false, side: DoubleSide, color: 0xffffff }) : new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
+        mesh.material = options.isLowEndDevice ? new MeshLambertMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff }) : new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
         //mesh.material = new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
         mesh.material.map.wrapT = RepeatWrapping;
         mesh.material.map.wrapS = RepeatWrapping; // Ensure wrapping is enabled
@@ -214,7 +218,7 @@ export const modifyObjects = {
     },
     Image: (mesh, options) => {
 
-        mesh.material = options.isLowEndDevice ? new MeshBasicMaterial({ map: loader.load(mesh.userData.Map), transparent: false, side: DoubleSide, color: 0xffffff }) : new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
+        mesh.material = options.isLowEndDevice ? new MeshLambertMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff }) : new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
         //mesh.material.color.convertSRGBToLinear();
         mesh.material.needsUpdate = true;
 
