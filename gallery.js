@@ -193,7 +193,7 @@ function init() {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = !params.isLowEndDevice;
-  renderer.shadowMap.type = params.isLowEndDevice ? BasicShadowMap : PCFSoftShadowMap;
+  renderer.shadowMap.type = PCFSoftShadowMap;//params.isLowEndDevice ? BasicShadowMap : PCFSoftShadowMap
   renderer.outputColorSpace = SRGBColorSpace;
 
   const isAppleDevice = /Mac|iPad|iPhone|iPod/.test(navigator.userAgent);
