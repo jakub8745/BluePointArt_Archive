@@ -5,11 +5,6 @@ import FadeInMaterial from 'three/addons/libs/FadeInMaterial.js';
 
 import {  TextureLoader, Object3D,  MeshLambertMaterial, MeshBasicMaterial, Mesh, PositionalAudio, AudioLoader, VideoTexture, RepeatWrapping, DoubleSide, FrontSide, SRGBColorSpace } from 'three';
 
-//import { UniformsUtils, TextureLoader, Object3D, ShaderMaterial, MeshLambertMaterial, MeshBasicMaterial, Mesh, Color, PositionalAudio, AudioLoader, VideoTexture, RepeatWrapping, DoubleSide, FrontSide, SRGBColorSpace } from 'three';
-
-//import { BrightnessContrastShader } from 'three/addons/shaders/BrightnessContrastShader.js'
-
-
 const loader = new TextureLoader();
 
 
