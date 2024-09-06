@@ -4,7 +4,7 @@
 console.log('TODO: effekt przejścia pomiędzy scenami');
 
 import { WebGLRenderer, Scene, PerspectiveCamera, OrthographicCamera, Raycaster, Clock, Object3D, Mesh, Group, TextureLoader, AudioListener } from 'three'
-import { Fog, AmbientLight, BufferGeometry, RingGeometry, MeshBasicMaterial, Vector2, Vector3, DoubleSide, EquirectangularReflectionMapping, AgXToneMapping, PCFSoftShadowMap, SRGBColorSpace } from "three";
+import { Fog, AmbientLight, BufferGeometry, RingGeometry, MeshBasicMaterial, Vector2, Vector3, DoubleSide, EquirectangularReflectionMapping, AgXToneMapping, PCFSoftShadowMap, BasicShadowMap,SRGBColorSpace } from "three";
 
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
@@ -193,7 +193,7 @@ function init() {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = !params.isLowEndDevice;
-  renderer.shadowMap.type = PCFSoftShadowMap;//params.isLowEndDevice ? BasicShadowMap : PCFSoftShadowMap
+  renderer.shadowMap.type = params.isLowEndDevice ? BasicShadowMap : PCFSoftShadowMap
   renderer.outputColorSpace = SRGBColorSpace;
 
   const isAppleDevice = /Mac|iPad|iPhone|iPod/.test(navigator.userAgent);
