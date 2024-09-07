@@ -15,6 +15,10 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
+import { RenderTransitionPass } from 'three/addons/postprocessing/RenderTransitionPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+
 import { DotScreenShader } from 'three/addons/shaders/DotScreenShader.js'
 
 import ModelLoader from 'three/addons/libs/ModelLoader.js'
@@ -31,7 +35,9 @@ import {
   computeBoundsTree,
 } from "https://unpkg.com/three-mesh-bvh@0.7.6/build/index.module.js";
 
-import * as TWEEN from "three/addons/tween/tween.esm.js";
+//import * as TWEEN from "three/addons/tween/tween.esm.js";
+
+import TWEEN from 'three/addons/libs/tween.module.js';
 
 const loader = new TextureLoader();
 
@@ -50,7 +56,9 @@ const params = {
   heightOffset: new Vector3(0, 0.33, 0),// offset the camera from the visitor
   archiveModelPath: "../models/exterior.glb",
   enablePostProcessing: true,
-  isLowEndDevice: true,//navigator.hardwareConcurrency <= 4,
+  isLowEndDevice: navigator.hardwareConcurrency <= 4,
+  transitionAnimate: true,
+  transition: 0,
 
 };
 
@@ -73,7 +81,7 @@ const textureFolder = "textures/";
 const textureCache = new Map();
 
 let renderer, camera, scene, clock, tween, stats, anisotropy;
-let composer, renderPass;
+let composer, renderPass, outputPass, dotScreenPass, renderTransitionPass;
 let rendererMap, cameraMap, circleMap, sceneMap, css2DRenderer, exhibitScene;
 const cameraDirection = new Vector3();
 
@@ -306,12 +314,49 @@ function init() {
   // composer
 
   if (!params.isLowEndDevice) {
+
+    // Initialize the composer
     composer = new EffectComposer(renderer);
-    renderPass = new RenderPass(scene, camera);
+
+    // First, add the render pass for your main scene
+    renderPass = new RenderPass(sceneRegistry.mainScene, camera);
     composer.addPass(renderPass);
 
-    const effectDotScreen = new ShaderPass(DotScreenShader);
-    composer.addPass(effectDotScreen);
+
+    renderTransitionPass = new RenderTransitionPass(sceneRegistry.mainScene, camera, sceneRegistry.exhibitScene, camera);
+    renderTransitionPass.setTextureThreshold(1); // Adjust this value based on how the transition works
+
+    
+    composer.addPass(renderTransitionPass);
+
+   
+        const textureLoader = new TextureLoader();
+        textureLoader.load('textures/transition3.png', (texture) => {
+    
+    
+            // Once the texture is loaded, pass it to the transition pass
+            renderTransitionPass.setTexture(texture);
+    
+    
+        });
+  
+
+    // Create ShaderPass for the DotScreen effect
+    dotScreenPass = new ShaderPass(DotScreenShader);
+    composer.addPass(dotScreenPass);
+
+    // Add an output pass to render final effects to the screen
+    outputPass = new OutputPass();
+    composer.addPass(outputPass);
+
+
+
+
+
+
+
+
+
   }
 
 
@@ -341,6 +386,19 @@ function init() {
   sceneRegistry["mainScene"] = scene;
 
 
+  const transitionTween = new TWEEN.Tween(params)
+    .to({ transition: 1 }, 5000)
+    .onUpdate(function () {
+      renderTransitionPass.setTransition(params.transition);
+    })
+    .repeat(Infinity)
+    .delay(2000)
+    .yoyo(true)
+    .start()
+
+
+
+
   //
   deps = {
     params,
@@ -367,6 +425,7 @@ function init() {
     composer,
     animationId,
     resetVisitor: resetVisitor,
+    transitionTween: transitionTween,
   };
 
   //
@@ -379,6 +438,7 @@ function init() {
   async function loadMainScene() {
     const mainCollider = await modelLoader.loadModel(params.archiveModelPath);
     deps.params.exhibitCollider = mainCollider;
+    deps.isVisitorOnMainScene = true;
 
     const intersectedFloor = visitor.checkLocation();
 
@@ -387,6 +447,9 @@ function init() {
     deps.bgTexture = intersectedFloor.userData.bgTexture || "textures/bg_color.ktx2";
 
     handleSceneBackground(deps);
+
+    renderTransitionPass.enabled = true;
+
 
     animate();
   }
@@ -685,13 +748,17 @@ function init() {
 // update visitor
 async function updateVisitor(collider, delta) {
 
+
+
   visitor.update(delta, collider);
 
   const intersectedFloor = visitor.checkLocation();
 
-  ///console.log("intersectedFloor: ", intersectedFloor.name, intersectedFloor0.name);
+  //console.log("intersectedFloor: ", intersectedFloor.name, intersectedFloor0.name);
 
   if (intersectedFloor) {
+
+
 
     params.enablePostProcessing = intersectedFloor.name === "FloorOut";
 
@@ -701,6 +768,8 @@ async function updateVisitor(collider, delta) {
     exhibitModelPath = intersectedFloor.userData.exhibitModelPath;
 
     if (lightsToTurn && intersectedFloor.userData.name && intersectedFloor0.userData.name !== intersectedFloor.userData.name) {
+
+
 
       params.canSeeGizmo = (lightsToTurnValue === "lightsDystopia") ? true : false;
 
@@ -719,6 +788,8 @@ async function updateVisitor(collider, delta) {
       //handleVideos(scene, belongsTo);
 
       if (exhibitModelPath) {
+
+        console.log("isvisitorOnMainScene: ", deps.isVisitorOnMainScene);
 
         // cancelAnimationFrame(deps.animationId);
         loadExhibitRoom(exhibitModelPath, deps);
@@ -789,29 +860,20 @@ function handleVideos(scene, belongsTo) {
 
 
 
+// Scene loading logic, adjusted for the transition and DotScreen
 async function loadExhibitRoom(exhibitModelPath, deps) {
   if (!deps || !deps.visitor || !deps.mainScene || !deps.exhibitScene) {
     throw new Error('loadExhibitRoom: missing dependencies');
   }
 
-  const bgTexture = deps.bgTexture || "textures/bg_color.ktx2";
+  //const bgTexture = deps.bgTexture || "textures/bg_color.ktx2";
 
   cancelAnimationFrame(deps.animationId);
 
   if (exhibitModelPath.includes('exterior.glb')) {
 
-    const modelLoader = new ModelLoader(deps);
-    try {
-      deps.params.exhibitCollider = await modelLoader.loadModel(exhibitModelPath);
-    } catch (error) {
-      console.error('Error loading model:', error);
-      return;
-    }
-
     deps.visitor.moveToScene(deps.mainScene);
     deps.isVisitorOnMainScene = true;
-
-    disposeSceneObjects(deps.exhibitScene);
 
     handleSceneBackground(deps);
 
@@ -836,6 +898,8 @@ async function loadExhibitRoom(exhibitModelPath, deps) {
   // Now we handle setting the scene background using the background texture
   handleSceneBackground(deps);
 }
+
+
 
 function handleSceneBackground(deps) {
 
@@ -911,44 +975,51 @@ function animateMap() {
 
 //
 function animate() {
-
   if (!deps.params.exhibitCollider) return;
 
   const collider = deps.params.exhibitCollider;
-
   stats.update();
+  TWEEN.update();  // Update all tweens globally
 
-  TWEEN.update();
+  //console.log("params.transition: ", params.transition);
 
   const delta = Math.min(clock.getDelta(), 0.1);
 
-
+  // Update visitor position and movement logic
   if (collider && collider.geometry && collider.material) {
+      const physicsSteps = params.physicsSteps;
+      for (let i = 0; i < physicsSteps; i++) {
+          updateVisitor(collider, delta / physicsSteps);
+      }
+  }
 
-    const physicsSteps = params.physicsSteps;
+  // Render transition between scenes if transition is active
+  if (params.transition > 0 && params.transition < 1) {
+      // Render using composer (handles transition between scenes)
+      composer.render();
+  } else if (params.transition === 0) {
+      // Render exhibit scene (make sure exhibitScene is not empty)
+      renderer.render(sceneRegistry.exhibitScene, camera);
+  } else if (params.transition === 1) {
+      // Render main scene
+      renderer.render(sceneRegistry.mainScene, camera);
+  }
 
-    for (let i = 0; i < physicsSteps; i++) {
-      updateVisitor(collider, delta / physicsSteps);
-    }
-    deps.animationId = requestAnimationFrame(animate);
-
+  // Optional: Handle post-processing logic for mainScene (e.g., DotScreen effect)
+  if (composer && deps.isVisitorOnMainScene) {
+      dotScreenPass.enabled = true;
+      composer.render();
+  } else {
+      dotScreenPass.enabled = false;
+      const scene = deps.isVisitorOnMainScene ? deps.mainScene : deps.exhibitScene;
+      renderer.render(scene, camera);
   }
 
   controls.update();
-
-
-  if (composer && params.enablePostProcessing === true) {
-
-    composer.render();
-
-  } else {
-
-    const scene = deps.isVisitorOnMainScene ? deps.mainScene : deps.exhibitScene;
-    renderer.render(scene, camera);
-
-  }
-
+  deps.animationId = requestAnimationFrame(animate);
 }
+
+
 
 
 ////
