@@ -4,7 +4,7 @@
 console.log('TODO: effekt przejścia pomiędzy scenami');
 
 import { WebGLRenderer, Scene, PerspectiveCamera, OrthographicCamera, Raycaster, Clock, Object3D, Mesh, Group, TextureLoader, AudioListener } from 'three'
-import { Fog, AmbientLight, BufferGeometry, RingGeometry, MeshBasicMaterial, Vector2, Vector3, DoubleSide, EquirectangularReflectionMapping, AgXToneMapping, PCFSoftShadowMap, BasicShadowMap, LinearToneMapping, SRGBColorSpace } from "three";
+import { Fog, AmbientLight, BufferGeometry, RingGeometry, MeshBasicMaterial, Vector2, Vector3, DoubleSide, EquirectangularReflectionMapping,ACESFilmicToneMapping, AgXToneMapping, PCFSoftShadowMap, BasicShadowMap, LinearToneMapping, SRGBColorSpace } from "three";
 
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
@@ -56,7 +56,7 @@ const params = {
   heightOffset: new Vector3(0, 0.33, 0),// offset the camera from the visitor
   archiveModelPath: "../models/exterior.glb",
   enablePostProcessing: true,
-  isLowEndDevice: navigator.hardwareConcurrency <= 4,
+  isLowEndDevice: false,//navigator.hardwareConcurrency <= 4,
   transitionAnimate: true,
   transition: 0,
 
@@ -109,9 +109,9 @@ let Wall,
   result,
   intersects,
   video, image
-let intervalId;
+//let intervalId;
 
-let audioHandler, exhibitModelPath, exhibitModelPath0;
+let audioHandler, exhibitModelPath//, exhibitModelPath0;
 
 let deps = {};
 
