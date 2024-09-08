@@ -204,8 +204,8 @@ function init() {
   renderer.shadowMap.type = params.isLowEndDevice ? BasicShadowMap : PCFSoftShadowMap
   renderer.outputColorSpace = SRGBColorSpace;
 
-  const isAppleDevice = /Mac|iPad|iPhone|iPod/.test(navigator.userAgent);
-  isAppleDevice = false
+  const isAppleDevice = false///Mac|iPad|iPhone|iPod/.test(navigator.userAgent);
+
 
   renderer.toneMapping = params.isLowEndDevice ? LinearToneMapping : (isAppleDevice ? AgXToneMapping : ACESFilmicToneMapping);
   renderer.toneMappingExposure = params.exposure;
