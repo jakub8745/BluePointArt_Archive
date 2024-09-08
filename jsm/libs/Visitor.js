@@ -8,7 +8,7 @@ export default class Visitor extends Mesh {
 
     const geometry = new RoundedBoxGeometry(0.2, 0.2, 0.2, 10, 0.5);
     const material = new MeshStandardMaterial();
-    const { params, camera, controls, sceneMap, visitorEnter, isVisitorOnMainScene } = deps;
+    const { params, camera, controls, sceneMap, visitorEnter} = deps;
 
     super(geometry, material);
 
@@ -32,7 +32,7 @@ export default class Visitor extends Mesh {
     this.exhibitScene = new Scene();
     this.exhibitScene.name = "exhibitScene";
 
-    this.mainScene.add(this);
+    //this.mainScene.add(this);
 
 
 
@@ -56,7 +56,7 @@ export default class Visitor extends Mesh {
     this.tempVector = new Vector3();
     this.visitorVelocity = new Vector3();
     this.visitorIsOnGround = true;
-    this.isVisitorOnMainScene = isVisitorOnMainScene;
+    //this.isVisitorOnMainScene = isVisitorOnMainScene;
 
     this.params = deps.params;
 

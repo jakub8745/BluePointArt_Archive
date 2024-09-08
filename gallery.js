@@ -81,7 +81,7 @@ const textureFolder = "textures/";
 const textureCache = new Map();
 
 let renderer, camera, scene, clock, tween, stats, anisotropy;
-let composer, renderPass, outputPass, dotScreenPass, renderTransitionPass;
+let composer, renderPass, outputPass, dotScreenPass, renderTransitionPass, transitionTween;
 let rendererMap, cameraMap, circleMap, sceneMap, css2DRenderer, exhibitScene;
 const cameraDirection = new Vector3();
 
@@ -336,16 +336,6 @@ function init() {
 
 
 
-  const transitionTween = new TWEEN.Tween(params)
-    .to({ transition: 1 }, 5000)
-    .onUpdate(function () {
-      renderTransitionPass.setTransition(params.transition);
-    })
-    .repeat(Infinity)
-    .delay(2000)
-    .yoyo(true)
-    .start()
-
 
 
   //
@@ -361,7 +351,7 @@ function init() {
     lightsToTurn,
     mainScene: scene,
     //exhibitScene: visitor.exhibitScene,
-    isVisitorOnMainScene: true,
+    //isVisitorOnMainScene: true,
     sceneMap,
     loader,
     listener,
@@ -374,7 +364,6 @@ function init() {
     composer,
     animationId,
     resetVisitor: resetVisitor,
-    transitionTween: transitionTween,
   };
 
   visitor = new Visitor(deps);
@@ -386,7 +375,9 @@ function init() {
   const ambientLight = new AmbientLight(0x404040, 55);
   scene.add(ambientLight);
 
-  visitor.mainScene.copy(scene); // Copy the main scene to the visitor scene;
+  scene.add(visitor)
+
+  visitor.mainScene = scene; // Copy the main scene to the visitor scene;
 
 
   //
@@ -394,72 +385,58 @@ function init() {
 
   // composer
 
-  if (!params.isLowEndDevice) {
+  // if (!params.isLowEndDevice) {
 
-    // Initialize the composer
-    composer = new EffectComposer(renderer);
+  composer = new EffectComposer(renderer);
+  renderPass = new RenderPass(visitor.mainScene, camera);
 
-    // First, add the render pass for your main scene
-    renderPass = new RenderPass(scene, camera);
-    composer.addPass(renderPass);
+  composer.addPass(renderPass);
 
-
-    renderTransitionPass = new RenderTransitionPass(visitor.mainScene, camera, visitor.exhibitScene, camera);
-    renderTransitionPass.setTextureThreshold(1); // Adjust this value based on how the transition works
+ 
 
 
-    composer.addPass(renderTransitionPass);
+  renderTransitionPass = new RenderTransitionPass(visitor.mainScene, camera, visitor.exhibitScene, camera);
+  renderTransitionPass.setTextureThreshold(0); // Adjust this value based on how the transition works
+
+  composer.addPass(renderTransitionPass);
+
+  const textureLoader = new TextureLoader();
+  textureLoader.load('textures/transition3.png', (texture) => {
+
+    renderTransitionPass.setTexture(texture);
+  });
+
+  outputPass = new OutputPass();
+  composer.addPass(outputPass);
+
+  dotScreenPass = new ShaderPass(DotScreenShader);
+  composer.addPass(dotScreenPass);
+
+  // }
 
 
-    const textureLoader = new TextureLoader();
-    textureLoader.load('textures/transition3.png', (texture) => {
-
-
-      // Once the texture is loaded, pass it to the transition pass
-      renderTransitionPass.setTexture(texture);
-
-
-    });
-
-
-    // Create ShaderPass for the DotScreen effect
-    dotScreenPass = new ShaderPass(DotScreenShader);
-    composer.addPass(dotScreenPass);
-
-    // Add an output pass to render final effects to the screen
-    outputPass = new OutputPass();
-    composer.addPass(outputPass);
-
-
-  }
 
   // LOAD MODEL (environment, collider)
   const modelLoader = new ModelLoader(deps, visitor.parent);
 
   async function loadMainScene() {
 
-
     const mainCollider = await modelLoader.loadModel(params.archiveModelPath);
+
     deps.params.exhibitCollider = mainCollider;
-    deps.isVisitorOnMainScene = true;
-
-    //const intersectedFloor = visitor.checkLocation();
-
-    //intersectedFloor0 = intersectedFloor;
-    //exhibitModelPath = intersectedFloor.userData.exhibitModelPath;
     deps.bgTexture = "textures/galaktyka.ktx2";
 
     handleSceneBackground(deps);
 
-    renderTransitionPass.enabled = false;
-
+    //renderTransitionPass.enabled = false;
+    dotScreenPass.enabled = true;
 
     animate();
   }
 
   loadMainScene();
 
-  preloadTextures();
+  //preloadTextures();
 
 
   // events
@@ -755,65 +732,80 @@ async function updateVisitor(collider, delta) {
 
 
   if (result.changed) {
-
     disposeSceneObjects(visitor.exhibitScene);
 
     const newFloor = result.newFloor;
-
     let exhibitModelPath = newFloor.userData.exhibitModelPath;
 
+    if (newFloor.name === "FloorOut") {
 
-    if (newFloor.name === "FloorOut" ) {
+      visitor.moveToScene(visitor.mainScene);
+      dotScreenPass.enabled = true; 
+      renderTransitionPass.enabled = true;
 
-      visitor.moveToScene(visitor.mainScene)
-      visitor.isVisitorOnMainScene = true;
+      startTransitionTween(visitor.mainScene);
+
 
     } else {
 
-
-      disposeSceneObjects(visitor.exhibitScene);
-
+      const modelLoader = new ModelLoader(deps, visitor.exhibitScene);
       visitor.exhibitScene.add(new AmbientLight(0x404040, 55));
 
-      const modelLoader = new ModelLoader(deps, visitor.exhibitScene);
+      async function loadScene() {
 
-      async function loadMainScene() {
-    
-    
         const mainCollider = await modelLoader.loadModel(exhibitModelPath);
 
         deps.params.exhibitCollider = mainCollider;
-        deps.isVisitorOnMainScene = true;
         deps.bgTexture = newFloor.userData.bgTexture || "textures/bg_color.ktx2";
-    
-    
-        renderTransitionPass.enabled = false;
-        dotScreenPass.enabled = false;
-    
+
+        dotScreenPass.enabled = true;  
+
+        renderTransitionPass.enabled = true;
+
         animate();
       }
-      await loadMainScene();
 
-      visitor.moveToScene(visitor.exhibitScene)
+      // Load scene and model asynchronously
+      await loadScene();
 
-      handleSceneBackground(deps);
+      startTransitionTween(visitor.exhibitScene,true);
 
-      visitor.isVisitorOnMainScene = false;
-     
+    }
+
+    function startTransitionTween(scene, reverse = false) {
+      // Parameters for transition
+      const transitionStart = reverse ? 1 : 0;  // Start from 1 if reversing, otherwise start from 0
+      const transitionEnd = reverse ? 0 : 1;    // End at 0 if reversing, otherwise end at 1
+    
+      params.transition = transitionStart;  // Set initial transition value
+    
+      // Create a tween for smooth transition
+      transitionTween = new TWEEN.Tween(params)
+        .to({ transition: transitionEnd }, 1000)  // Transition duration of 1 second
+        .onUpdate(() => {
+          // Update the renderTransitionPass with the transition value
+          renderTransitionPass.setTransition(params.transition);
+        })
+        .onComplete(() => {
+          renderTransitionPass.setTransition(1);  // Set final transition state
+          visitor.moveToScene(scene);  // Move the visitor to the target scene (mainScene or exhibitScene)
+          dotScreenPass.enabled = false;  // Disable dot screen effect after transition
+          handleSceneBackground(deps);  // Update scene background if necessary
+    
+          params.transition = transitionEnd;  // Set final transition value
+        })
+        .start();
     }
     
-    visitor.lastFloorName = newFloor.name
-
-    const { belongsTo, lightsToTurn: lightsToTurnValue, bgTexture = "textures/bg_color.ktx2" } = newFloor.userData;
-    deps.bgTexture = bgTexture;
-    //params.canSeeGizmo = (lightsToTurnValue === "lightsDystopia") ? true : false;
-
-    exhibitModelPath = newFloor.userData.exhibitModelPath;
 
     cancelAnimationFrame(deps.animationId);
 
+    visitor.lastFloorName = newFloor.name;
 
+    const { bgTexture = "textures/bg_color.ktx2" } = newFloor.userData;
+    deps.bgTexture = bgTexture;
   }
+
 
 
 
@@ -967,38 +959,18 @@ function animate() {
     }
   }
 
-  dotScreenPass.enabled = false;
 
-  const scene = visitor.parent;
+  // Render transition between scenes if transition is active
+  if (params.transition > 0 && params.transition < 1 || visitor.parent.name === 'mainScene') {
+    dotScreenPass.enabled = true;
+    composer.render();  // Handles transition using renderTransitionPass
+  } else {
+    // If no transition is happening, render the current scene
+    renderer.render(visitor.exhibitScene, camera);  // Default to exhibitScene
+  }
 
-  //console.log("scene: ", scene.name);
-
-  renderer.render(scene, camera);
 
 
-  /*
-    // Render transition between scenes if transition is active
-    if (params.transition > 0 && params.transition < 1) {
-      // Render using composer (handles transition between scenes)
-      composer.render();
-    } else if (params.transition === 0) {
-      // Render exhibit scene (make sure exhibitScene is not empty)
-      renderer.render(sceneRegistry.exhibitScene, camera);
-    } else if (params.transition === 1) {
-      // Render main scene
-      renderer.render(sceneRegistry.mainScene, camera);
-    }
-    /*
-      // Optional: Handle post-processing logic for mainScene (e.g., DotScreen effect)
-      if (composer && deps.isVisitorOnMainScene) {
-          dotScreenPass.enabled = true;
-          composer.render();
-      } else {
-          dotScreenPass.enabled = false;
-          const scene = deps.isVisitorOnMainScene ? deps.mainScene : deps.exhibitScene;
-          renderer.render(scene, camera);
-      }
-    */
   controls.update();
   deps.animationId = requestAnimationFrame(animate);
 }
