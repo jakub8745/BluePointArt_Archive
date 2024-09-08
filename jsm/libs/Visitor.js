@@ -1,4 +1,4 @@
-import { Mesh, Line3, Vector3, Raycaster, MeshStandardMaterial, Box3, Matrix4 } from 'three';
+import { Mesh, Line3, Vector3, Raycaster, MeshStandardMaterial, Box3, Matrix4, Scene } from 'three';
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 
 export default class Visitor extends Mesh {
@@ -25,9 +25,16 @@ export default class Visitor extends Mesh {
     this.material.wireframe = true;
     this.visible = false;
 
-    this.scene = isVisitorOnMainScene ? deps.mainScene : deps.exhibitScene;
 
-    this.scene.add(this);
+    this.mainScene = new Scene();
+    this.mainScene.name = "mainScene";
+    //this.scene = this.mainScene;
+    this.exhibitScene = new Scene();
+    this.exhibitScene.name = "exhibitScene";
+
+    this.mainScene.add(this);
+
+
 
     this.sceneMap = sceneMap;
 
@@ -49,8 +56,9 @@ export default class Visitor extends Mesh {
     this.tempVector = new Vector3();
     this.visitorVelocity = new Vector3();
     this.visitorIsOnGround = true;
+    this.isVisitorOnMainScene = isVisitorOnMainScene;
 
-    this.params = params;
+    this.params = deps.params;
 
     this.fwdPressed = false;
     this.bkdPressed = false;
@@ -62,7 +70,10 @@ export default class Visitor extends Mesh {
 
     deps.visitor = this;
 
+    this.lastFloorName = this.mainScene.name
+
   }
+
 
   update(delta, collider) {
 
@@ -102,6 +113,51 @@ export default class Visitor extends Mesh {
 
     // handle collisions
     this.handleCollisions(delta, collider);
+
+    //
+
+    const currentFloor = this.checkLocation();
+
+    if (currentFloor && currentFloor.name !== this.lastFloorName) {
+      this.lastFloorName = currentFloor.name;
+
+      return { changed: true, newFloor: currentFloor };
+    }
+
+    return { changed: false, newFloor: null };
+  }
+
+  checkLocation() {
+
+    //console.log("checkLocation: ", this.parent.name);
+
+    this.raycaster.firstHitOnly = true;
+    this.raycaster.set(this.position, this.downVector);
+    const intersectedObjects = this.raycaster.intersectObjects(this.parent.children, true);
+
+    //console.log("intersectedObjects", intersectedObjects)
+
+    const floor = intersectedObjects.find(({ object }) => {
+      const type = object.userData.type;
+      return type === "visitorLocation" || type === "Room";
+    })?.object;
+
+    return floor
+  }
+
+
+
+  moveToScene(newScene) {
+
+    this.scene = this.parent
+
+    if (this.scene) {
+
+      this.scene.remove(this);
+    }
+    this.scene = newScene;
+    this.scene.add(this);
+
   }
 
   handleCollisions(delta, collider) {
@@ -202,27 +258,8 @@ export default class Visitor extends Mesh {
 
   }
 
-  checkLocation() {
-
-    this.raycaster.firstHitOnly = true;
-    this.raycaster.set(this.position, this.downVector);
-    const intersectedObjects = this.raycaster.intersectObjects(this.scene.children, true);
-
-    return intersectedObjects.find(({ object }) => {
-      const type = object.userData.type;
-      return type === "visitorLocation" || type === "Room";
-    })?.object;
-  }
-
-  moveToScene(newScene) {
-    if (this.scene) {
-
-      this.scene.remove(this);
-    }
-
-    this.scene = newScene;
-    this.scene.add(this);
 
 
-  }
+
+
 }

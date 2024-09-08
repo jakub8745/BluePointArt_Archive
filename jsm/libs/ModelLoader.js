@@ -7,15 +7,14 @@ import { modifyObjects } from 'three/addons/libs/modifyObjects.js';
 
 class ModelLoader {
 
-    constructor(deps) {
+    constructor(deps, scene) {
 
         this.addToSceneMapRun = false;
 
         this.deps = deps;
         this.collider = null;
 
-        this.scene = deps.isVisitorOnMainScene ? deps.mainScene : deps.exhibitScene;
-
+        this.scene = scene;
         this.environment = new Group();
         this.toMerge = {};
         this.typeOfmesh = "";
@@ -93,7 +92,7 @@ class ModelLoader {
                         ktx2Loader: this.ktx2Loader,
                         environment: this.deps.environment,
                         lightsToTurn: this.deps.lightsToTurn,
-                        exhibitScene: this.deps.exhibitScene,
+                        scene: this.scene,
                         receiveShadow: this.deps.receiveShadow,
                         castShadow: this.deps.castShadow,
                         gui: this.deps.gui,

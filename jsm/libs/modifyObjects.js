@@ -93,7 +93,7 @@ export const modifyObjects = {
             object.position.copy(mesh.position);
             object.rotation.copy(mesh.rotation);
             object.name = mesh.name;
-            options.exhibitScene.add(object);
+            options.scene.add(object);
             mesh.removeFromParent();
         });
         //
@@ -234,7 +234,7 @@ export const modifyObjects = {
             options.control._gizmo.visible = options.gizmoVisible;
             // options.control.setMode(transControlsMode);
             options.control.attach(mesh);
-            options.exhibitScene.add(options.control);
+            options.scene.add(options.control);
 
         }
 
