@@ -205,6 +205,7 @@ function init() {
   renderer.outputColorSpace = SRGBColorSpace;
 
   const isAppleDevice = /Mac|iPad|iPhone|iPod/.test(navigator.userAgent);
+  isAppleDevice = false
 
   renderer.toneMapping = params.isLowEndDevice ? LinearToneMapping : (isAppleDevice ? AgXToneMapping : ACESFilmicToneMapping);
   renderer.toneMappingExposure = params.exposure;
@@ -392,7 +393,7 @@ function init() {
 
   composer.addPass(renderPass);
 
- 
+
 
 
   renderTransitionPass = new RenderTransitionPass(visitor.mainScene, camera, visitor.exhibitScene, camera);
@@ -740,7 +741,7 @@ async function updateVisitor(collider, delta) {
     if (newFloor.name === "FloorOut") {
 
       visitor.moveToScene(visitor.mainScene);
-      dotScreenPass.enabled = true; 
+      dotScreenPass.enabled = true;
       renderTransitionPass.enabled = true;
 
       startTransitionTween(visitor.mainScene);
@@ -758,7 +759,7 @@ async function updateVisitor(collider, delta) {
         deps.params.exhibitCollider = mainCollider;
         deps.bgTexture = newFloor.userData.bgTexture || "textures/bg_color.ktx2";
 
-        dotScreenPass.enabled = true;  
+        dotScreenPass.enabled = true;
 
         renderTransitionPass.enabled = true;
 
@@ -768,7 +769,7 @@ async function updateVisitor(collider, delta) {
       // Load scene and model asynchronously
       await loadScene();
 
-      startTransitionTween(visitor.exhibitScene,true);
+      startTransitionTween(visitor.exhibitScene, true);
 
     }
 
@@ -776,9 +777,9 @@ async function updateVisitor(collider, delta) {
       // Parameters for transition
       const transitionStart = reverse ? 1 : 0;  // Start from 1 if reversing, otherwise start from 0
       const transitionEnd = reverse ? 0 : 1;    // End at 0 if reversing, otherwise end at 1
-    
+
       params.transition = transitionStart;  // Set initial transition value
-    
+
       // Create a tween for smooth transition
       transitionTween = new TWEEN.Tween(params)
         .to({ transition: transitionEnd }, 1000)  // Transition duration of 1 second
@@ -791,12 +792,12 @@ async function updateVisitor(collider, delta) {
           visitor.moveToScene(scene);  // Move the visitor to the target scene (mainScene or exhibitScene)
           dotScreenPass.enabled = false;  // Disable dot screen effect after transition
           handleSceneBackground(deps);  // Update scene background if necessary
-    
+
           params.transition = transitionEnd;  // Set final transition value
         })
         .start();
     }
-    
+
 
     cancelAnimationFrame(deps.animationId);
 
