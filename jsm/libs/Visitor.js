@@ -8,7 +8,7 @@ export default class Visitor extends Mesh {
 
     const geometry = new RoundedBoxGeometry(0.2, 0.2, 0.2, 10, 0.5);
     const material = new MeshStandardMaterial();
-    const { params, camera, controls, sceneMap, visitorEnter} = deps;
+    const { params, camera, controls, sceneMap, visitorEnter } = deps;
 
     super(geometry, material);
 
@@ -33,7 +33,7 @@ export default class Visitor extends Mesh {
     this.exhibitScene.name = "exhibitScene";
 
     //this.mainScene.add(this);
-
+    this.deps = deps;
 
 
     this.sceneMap = sceneMap;

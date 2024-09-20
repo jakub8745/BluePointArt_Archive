@@ -1,4 +1,4 @@
-import { Group, Box3, Mesh, MeshBasicMaterial } from 'three';
+import { Group, Box3, Vector3, Mesh, MeshBasicMaterial } from 'three';
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
@@ -7,7 +7,7 @@ import { modifyObjects } from 'three/addons/libs/modifyObjects.js';
 
 class ModelLoader {
 
-    constructor(deps, scene) {
+    constructor(deps, scene, newFloor) {
 
         this.addToSceneMapRun = false;
 
@@ -26,6 +26,8 @@ class ModelLoader {
 
         this.ktx2Loader = this.deps.ktx2Loader;
 
+        this.newFloor = newFloor;
+
     }
 
     async loadModel(modelPath) {
@@ -34,10 +36,27 @@ class ModelLoader {
             const { scene: gltfScene } = await this.gltfLoader.loadAsync(modelPath);
 
             gltfScene.scale.setScalar(1);
+
             const box = new Box3().setFromObject(gltfScene);
-            box.getCenter(gltfScene.position).negate();
+            const center = new Vector3();
+            box.getCenter(center);
+
+            if (this.newFloor && this.deps.mainSceneY) {
+
+                const visitor = this.deps.visitor;
+                visitor.target.copy(visitor.position);
+           
+                gltfScene.position.copy(this.newFloor.position).sub(center);
+            }
+
+            this.deps.mainSceneY ??= box.min.y; 
+            const modelYfromBox = box.min.y;
+            const yOffset = this.deps.mainSceneY - modelYfromBox;
+            gltfScene.position.y += yOffset;  
+
             gltfScene.updateMatrixWorld(true);
 
+            
             gltfScene.traverse((c) => {
                 if (c.isMesh || c.isLight) {
                     if (c.isLight) {

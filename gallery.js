@@ -54,7 +54,7 @@ const params = {
   canSeeGizmo: false,
   transControlsMode: "rotate",
   heightOffset: new Vector3(0, 0.33, 0),// offset the camera from the visitor
-  archiveModelPath: "../models/exterior.glb",
+  archiveModelPath: "../models/nowy_exterior.glb",
   enablePostProcessing: true,
   isLowEndDevice: false,//navigator.hardwareConcurrency <= 4,
   transitionAnimate: true,
@@ -333,6 +333,11 @@ function init() {
 
     visitor.position.copy(targetV);
 
+    //visitor.moveToScene(visitor.mainScene);
+
+    console.log("visitor", visitor.position);
+    animate();
+
   }
 
 
@@ -365,6 +370,7 @@ function init() {
     composer,
     animationId,
     resetVisitor: resetVisitor,
+    mainSceneY: undefined,
   };
 
   visitor = new Visitor(deps);
@@ -733,6 +739,7 @@ async function updateVisitor(collider, delta) {
 
 
   if (result.changed) {
+
     disposeSceneObjects(visitor.exhibitScene);
 
     const newFloor = result.newFloor;
@@ -746,10 +753,17 @@ async function updateVisitor(collider, delta) {
 
       startTransitionTween(visitor.mainScene);
 
+      disposeSceneObjects(visitor.exhibitScene);
+
+
 
     } else {
 
-      const modelLoader = new ModelLoader(deps, visitor.exhibitScene);
+      console.log("visitor.newFloor:", result.newFloor.position);
+
+      
+
+      const modelLoader = new ModelLoader(deps, visitor.exhibitScene, newFloor);
       visitor.exhibitScene.add(new AmbientLight(0x404040, 55));
 
       async function loadScene() {
@@ -770,6 +784,8 @@ async function updateVisitor(collider, delta) {
       await loadScene();
 
       startTransitionTween(visitor.exhibitScene, true);
+
+      console.log("visitor.exhibitScene: ", visitor.exhibitScene.position);
 
     }
 

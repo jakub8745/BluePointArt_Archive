@@ -3,7 +3,7 @@ import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { PositionalAudioHelper } from 'three/addons/helpers/PositionalAudioHelper.js';
 import FadeInMaterial from 'three/addons/libs/FadeInMaterial.js';
 
-import {  TextureLoader, Object3D,  MeshLambertMaterial, MeshBasicMaterial, Mesh, PositionalAudio, AudioLoader, VideoTexture, RepeatWrapping, DoubleSide, FrontSide, SRGBColorSpace } from 'three';
+import { TextureLoader, Object3D, MeshLambertMaterial, MeshBasicMaterial, Mesh, PositionalAudio, AudioLoader, VideoTexture, RepeatWrapping, DoubleSide, FrontSide, SRGBColorSpace } from 'three';
 
 const loader = new TextureLoader();
 
@@ -104,20 +104,9 @@ export const modifyObjects = {
         const { userData, material } = mesh;
         const { Map, normalMap, RoughMap, name, wS, wT } = userData;
 
-        if(!Map) return;
+        if (!Map) return;
 
         loader.load(Map, (texture) => {
-            /*
-                        mesh.material = new ShaderMaterial({
-                            uniforms: UniformsUtils.clone(BrightnessContrastShader.uniforms),
-                            vertexShader: BrightnessContrastShader.vertexShader,
-                            fragmentShader: BrightnessContrastShader.fragmentShader
-                        });
-            
-                        mesh.material.uniforms.tDiffuse.value = texture;
-                        //mesh.material.uniforms.exposure.value = 1.5;
-            
-                        */
 
             mesh.material = new MeshLambertMaterial({ map: texture });
 
@@ -142,18 +131,21 @@ export const modifyObjects = {
 
                 options.ktx2Loader.load(Map, (texture) => {
 
-                    //mesh.material = new MeshLambertMaterial({ map: texture });
+                    mesh.material = new MeshLambertMaterial({ map: texture, transparent: true, side: FrontSide, color: 0xffffff });
 
-                    mesh.material = options.isLowEndDevice ? new MeshLambertMaterial({ map: texture, transparent: true, side: FrontSide, color: 0xffffff }) : new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
+                    //mesh.material = options.isLowEndDevice ? new MeshLambertMaterial({ map: texture, transparent: true, side: FrontSide, color: 0xffffff }) : new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
 
-                    
+
 
                 });
 
             } else {
 
                 loader.load(Map, (texture) => {
-                    mesh.material = options.isLowEndDevice ? new MeshLambertMaterial({ map: texture, transparent: true, side: FrontSide, color: 0xffffff }) : new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
+
+                    mesh.material = new MeshLambertMaterial({ map: texture, transparent: true, side: FrontSide, color: 0xffffff });
+
+                   // mesh.material = options.isLowEndDevice ? new MeshLambertMaterial({ map: texture, transparent: true, side: FrontSide, color: 0xffffff }) : new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
                 });
 
             }
@@ -204,8 +196,10 @@ export const modifyObjects = {
     },
     photoScreen: (mesh, options) => {
 
-        mesh.material = options.isLowEndDevice ? new MeshLambertMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff }) : new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
-        //mesh.material = new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
+        mesh.material = new MeshLambertMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: FrontSide, color: 0xffffff });
+
+
+       // mesh.material = options.isLowEndDevice ? new MeshLambertMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff }) : new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
         mesh.material.map.wrapT = RepeatWrapping;
         mesh.material.map.wrapS = RepeatWrapping; // Ensure wrapping is enabled
         mesh.material.map.repeat.x = -1;
@@ -257,48 +251,7 @@ export const modifyObjects = {
             side: DoubleSide,
             color: 0xffffff,
         });
-        /*
-                // Modify the shader to include brightness and contrast options.controls
-                material.onBeforeCompile = (shader) => {
-                    // Inject uniforms for brightness and contrast
-                    shader.uniforms.uBrightness = { value: 1.0 };
-                    shader.uniforms.uContrast = { value: 1.0 };
-        
-                    // Inject the brightness and contrast functions and update the fragment shader
-                    shader.fragmentShader = `
-                        uniform float uBrightness;
-                        uniform float uContrast;
-            
-                        vec3 applyContrast(vec3 color, float contrast) {
-                            return (color - 0.5) * contrast + 0.5;
-                        }
-            
-                        vec3 applyBrightness(vec3 color, float brightness) {
-                            return color * brightness;
-                        }
-                    ` + shader.fragmentShader;
-        
-                    // Replace the gl_FragColor assignment to apply brightness and contrast
-                    shader.fragmentShader = shader.fragmentShader.replace(
-                        `#include <color_fragment>`,
-                        `
-                        // Apply brightness
-                        diffuseColor.rgb = applyBrightness(diffuseColor.rgb, uBrightness);
-            
-                        // Apply contrast
-                        diffuseColor.rgb = applyContrast(diffuseColor.rgb, uContrast);
-                        `
-                    );
-        
-                    // Save the shader reference for later use if needed
-                    material.userData.shader = shader;
-        
-                    // Now that the shader is available, add the GUI options.controls
-                    // gui.add(shader.uniforms.uBrightness, 'value', 0.0, 3.0).name('Brightness');
-                    // gui.add(shader.uniforms.uContrast, 'value', 0.0, 3.0).name('Contrast');
-                    //gui.show(false);
-                };
-                */
+       
 
         // Apply the material to the mesh
         mesh.material = material;
