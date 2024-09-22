@@ -129,36 +129,37 @@ export default class Visitor extends Mesh {
 
   checkLocation() {
 
-    //console.log("checkLocation: ", this.parent.name);
-
     this.raycaster.firstHitOnly = true;
     this.raycaster.set(this.position, this.downVector);
     const intersectedObjects = this.raycaster.intersectObjects(this.parent.children, true);
-
-    //console.log("intersectedObjects", intersectedObjects)
 
     const floor = intersectedObjects.find(({ object }) => {
       const type = object.userData.type;
       return type === "visitorLocation" || type === "Room";
     })?.object;
 
+
     return floor
   }
 
 
 
-  moveToScene(newScene) {
-
-    this.scene = this.parent
+  moveToScene(newScene, callback) {
+    this.scene = this.parent;
 
     if (this.scene) {
-
       this.scene.remove(this);
     }
+
     this.scene = newScene;
     this.scene.add(this);
 
+    // Trigger the callback when the visitor is moved to the scene
+    if (callback && typeof callback === 'function') {
+      callback();
+    }
   }
+
 
   handleCollisions(delta, collider) {
     // adjust visitor position based on collisions

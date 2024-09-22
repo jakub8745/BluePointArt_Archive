@@ -1,9 +1,10 @@
-import { Group, Box3, Vector3, Mesh, MeshBasicMaterial } from 'three';
+import { Group, Box3, Vector3, Mesh, CircleGeometry, MeshBasicMaterial, DoubleSide } from 'three';
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { MeshBVH, StaticGeometryGenerator } from "https://unpkg.com/three-mesh-bvh@0.7.6/build/index.module.js";
 import { modifyObjects } from 'three/addons/libs/modifyObjects.js';
+import { PlaneGeometry } from 'three';
 
 class ModelLoader {
 
@@ -28,35 +29,29 @@ class ModelLoader {
 
         this.newFloor = newFloor;
 
+        this.box = new Box3();
+
+        this.mainScene = deps.visitor.mainScene;
+
     }
 
     async loadModel(modelPath) {
 
         try {
             const { scene: gltfScene } = await this.gltfLoader.loadAsync(modelPath);
+            
 
             gltfScene.scale.setScalar(1);
 
-            const box = new Box3().setFromObject(gltfScene);
+            this.box.setFromObject(gltfScene);
             const center = new Vector3();
-            box.getCenter(center);
+            this.box.getCenter(center);
 
-            if (this.newFloor && this.deps.mainSceneY) {
-
-                const visitor = this.deps.visitor;
-                visitor.target.copy(visitor.position);
-           
-                gltfScene.position.copy(this.newFloor.position).sub(center);
-            }
-
-            this.deps.mainSceneY ??= box.min.y; 
-            const modelYfromBox = box.min.y;
-            const yOffset = this.deps.mainSceneY - modelYfromBox;
-            gltfScene.position.y += yOffset;  
+            const floor = this.mainScene.getObjectByName("FloorOut")?.clone();
+            if (floor) gltfScene.add(floor);
 
             gltfScene.updateMatrixWorld(true);
 
-            
             gltfScene.traverse((c) => {
                 if (c.isMesh || c.isLight) {
                     if (c.isLight) {
@@ -101,7 +96,6 @@ class ModelLoader {
 
             this.environment.name = "environment";
             this.scene.add(this.environment);
-
 
             this.environment.traverse((c) => {
                 if (c.isLight || c.isMesh) {
@@ -180,12 +174,8 @@ class ModelLoader {
 
             sceneMap.add(cClone);
 
-            //
         }
-
-
     }
-
 }
 
 export default ModelLoader;

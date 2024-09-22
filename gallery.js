@@ -333,9 +333,6 @@ function init() {
 
     visitor.position.copy(targetV);
 
-    //visitor.moveToScene(visitor.mainScene);
-
-    console.log("visitor", visitor.position);
     animate();
 
   }
@@ -408,7 +405,7 @@ function init() {
   composer.addPass(renderTransitionPass);
 
   const textureLoader = new TextureLoader();
-  textureLoader.load('textures/transition3.png', (texture) => {
+  textureLoader.load('textures/transition2.png', (texture) => {
 
     renderTransitionPass.setTexture(texture);
   });
@@ -692,9 +689,13 @@ function init() {
         control.setMode("rotate");
         break;
       case "t":
-        // Additional functionality for 't' key
+
         console.log("visitior: ", deps.visitor.parent);
-        console.log("visitor is on the floor:", deps.visitor.checkLocation());
+        raycaster.set(deps.visitor.position, new Vector3(0, -1, 0));
+
+        const intersectedObjects = raycaster.intersectObjects(deps.visitor.parent.children, true);
+
+        console.log("visitor is on the floor:", intersectedObjects);
         break;
       case "Escape":
         control.reset();
@@ -737,34 +738,34 @@ async function updateVisitor(collider, delta) {
 
   const result = visitor.update(delta, collider);
 
-
   if (result.changed) {
 
-    disposeSceneObjects(visitor.exhibitScene);
+
 
     const newFloor = result.newFloor;
     let exhibitModelPath = newFloor.userData.exhibitModelPath;
 
+
     if (newFloor.name === "FloorOut") {
 
-      visitor.moveToScene(visitor.mainScene);
-      dotScreenPass.enabled = true;
-      renderTransitionPass.enabled = true;
+      visitor.moveToScene(visitor.mainScene, () => {
 
-      startTransitionTween(visitor.mainScene);
+        dotScreenPass.enabled = true;
+        renderTransitionPass.enabled = true;
 
-      disposeSceneObjects(visitor.exhibitScene);
+        startTransitionTween(visitor.mainScene);
 
-
+      });
 
     } else {
 
-      console.log("visitor.newFloor:", result.newFloor.position);
-
-      
+      disposeSceneObjects(visitor.exhibitScene);
 
       const modelLoader = new ModelLoader(deps, visitor.exhibitScene, newFloor);
       visitor.exhibitScene.add(new AmbientLight(0x404040, 55));
+
+      const mainScene = visitor.mainScene;
+      const floor = mainScene.getObjectByName("FloorOut");
 
       async function loadScene() {
 
@@ -774,42 +775,33 @@ async function updateVisitor(collider, delta) {
         deps.bgTexture = newFloor.userData.bgTexture || "textures/bg_color.ktx2";
 
         dotScreenPass.enabled = true;
-
         renderTransitionPass.enabled = true;
 
         animate();
       }
 
-      // Load scene and model asynchronously
       await loadScene();
 
       startTransitionTween(visitor.exhibitScene, true);
 
-      console.log("visitor.exhibitScene: ", visitor.exhibitScene.position);
-
     }
 
-    function startTransitionTween(scene, reverse = false) {
-      // Parameters for transition
-      const transitionStart = reverse ? 1 : 0;  // Start from 1 if reversing, otherwise start from 0
-      const transitionEnd = reverse ? 0 : 1;    // End at 0 if reversing, otherwise end at 1
+    function startTransitionTween(scene, reverse) {
+      const startValue = reverse ? 1 : 0;
+      const endValue = reverse ? 0 : 1;
 
-      params.transition = transitionStart;  // Set initial transition value
+      params.transition = startValue;
 
-      // Create a tween for smooth transition
-      transitionTween = new TWEEN.Tween(params)
-        .to({ transition: transitionEnd }, 1000)  // Transition duration of 1 second
-        .onUpdate(() => {
-          // Update the renderTransitionPass with the transition value
-          renderTransitionPass.setTransition(params.transition);
-        })
+      const transition = new TWEEN.Tween(params)
+        .to({ transition: endValue }, 1000)
+        .onUpdate(() => renderTransitionPass.setTransition(params.transition))
         .onComplete(() => {
-          renderTransitionPass.setTransition(1);  // Set final transition state
-          visitor.moveToScene(scene);  // Move the visitor to the target scene (mainScene or exhibitScene)
-          dotScreenPass.enabled = false;  // Disable dot screen effect after transition
-          handleSceneBackground(deps);  // Update scene background if necessary
+          renderTransitionPass.setTransition(endValue);
+          visitor.moveToScene(scene);
+          dotScreenPass.enabled = false;
+          handleSceneBackground(deps);
 
-          params.transition = transitionEnd;  // Set final transition value
+          params.transition = endValue;
         })
         .start();
     }
