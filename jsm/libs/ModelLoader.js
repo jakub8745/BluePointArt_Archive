@@ -1,10 +1,12 @@
-import { Group, Box3, Vector3, Mesh, CircleGeometry, MeshBasicMaterial, DoubleSide } from 'three';
+import { Group, Box3, Vector3, Mesh, Matrix4, CircleGeometry, MeshBasicMaterial, DoubleSide, LoadingManager } from 'three';
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { MeshBVH, StaticGeometryGenerator } from "https://unpkg.com/three-mesh-bvh@0.7.6/build/index.module.js";
 import { modifyObjects } from 'three/addons/libs/modifyObjects.js';
-import { PlaneGeometry } from 'three';
+//import { PlaneGeometry } from 'three';
+
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 class ModelLoader {
 
@@ -21,7 +23,6 @@ class ModelLoader {
         this.typeOfmesh = "";
 
         this.gltfLoader = new GLTFLoader();
-        this.gltfLoader.setDRACOLoader(new DRACOLoader('./jsm/libs/draco/'));
 
         this.exhibits = [];
 
@@ -37,9 +38,35 @@ class ModelLoader {
 
     async loadModel(modelPath) {
 
+        const manager = new LoadingManager();
+
+        const dracoLoader = new DRACOLoader(manager);
+        dracoLoader.setDecoderPath('./jsm/libs/draco/');
+
+        this.gltfLoader.setDRACOLoader(dracoLoader);
+        this.gltfLoader.setMeshoptDecoder(MeshoptDecoder);
+
+
         try {
             const { scene: gltfScene } = await this.gltfLoader.loadAsync(modelPath);
-            
+
+            if (this.newFloor) {
+
+                const { scene: exhibitObjects } = await this.gltfLoader.loadAsync(this.newFloor.userData.exhibitObjectsPath);
+
+                gltfScene.add(exhibitObjects);
+
+                const newFloorMatrixWorld = new Matrix4();
+                newFloorMatrixWorld.clone(this.newFloor.matrixWorld);
+
+                const newFloor = this.newFloor.clone();
+
+                newFloor.getWorldPosition(gltfScene.position);
+                newFloor.getWorldQuaternion(gltfScene.quaternion);
+
+                gltfScene.applyMatrix4(newFloorMatrixWorld);
+
+            }
 
             gltfScene.scale.setScalar(1);
 

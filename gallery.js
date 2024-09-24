@@ -376,7 +376,7 @@ function init() {
   scene.name = "mainScene";
   scene.fog = new Fog(0x2b0a07, 3.1, 18);
 
-  const ambientLight = new AmbientLight(0x404040, 55);
+  const ambientLight = new AmbientLight(0x404040, 25);
   scene.add(ambientLight);
 
   scene.add(visitor)
@@ -740,11 +740,8 @@ async function updateVisitor(collider, delta) {
 
   if (result.changed) {
 
-
-
     const newFloor = result.newFloor;
     let exhibitModelPath = newFloor.userData.exhibitModelPath;
-
 
     if (newFloor.name === "FloorOut") {
 
@@ -758,6 +755,7 @@ async function updateVisitor(collider, delta) {
       });
 
     } else {
+
 
       disposeSceneObjects(visitor.exhibitScene);
 
