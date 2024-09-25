@@ -4,7 +4,7 @@
 console.log('TODO: effekt przejścia pomiędzy scenami');
 
 import { WebGLRenderer, Scene, PerspectiveCamera, OrthographicCamera, Raycaster, Clock, Object3D, Mesh, Group, TextureLoader, AudioListener } from 'three'
-import { Fog, AmbientLight, BufferGeometry, RingGeometry, MeshBasicMaterial, Vector2, Vector3, DoubleSide, EquirectangularReflectionMapping, ACESFilmicToneMapping, AgXToneMapping, PCFSoftShadowMap, BasicShadowMap, LinearToneMapping, SRGBColorSpace } from "three";
+import { Fog, AmbientLight, BufferGeometry, RingGeometry, MeshStandardMaterial, MeshBasicMaterial, Vector2, Vector3, DoubleSide, EquirectangularReflectionMapping, ACESFilmicToneMapping, AgXToneMapping, PCFSoftShadowMap, BasicShadowMap, LinearToneMapping, SRGBColorSpace } from "three";
 
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
@@ -28,6 +28,9 @@ import JoyStick from 'three/addons/controls/Joystick.js';
 
 import Stats from "three/addons/libs/stats.module.js";
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+
 
 import {
   acceleratedRaycast,

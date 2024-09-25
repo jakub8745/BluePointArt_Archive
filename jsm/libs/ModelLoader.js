@@ -1,10 +1,11 @@
-import { Group, Box3, Vector3, Mesh, Matrix4, CircleGeometry, MeshBasicMaterial, DoubleSide, LoadingManager } from 'three';
+import { Group, Box3, Vector3, Mesh, Matrix4, Scene, CircleGeometry, MeshBasicMaterial, DoubleSide, LoadingManager } from 'three';
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { MeshBVH, StaticGeometryGenerator } from "https://unpkg.com/three-mesh-bvh@0.7.6/build/index.module.js";
 import { modifyObjects } from 'three/addons/libs/modifyObjects.js';
 //import { PlaneGeometry } from 'three';
+
 
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
@@ -155,6 +156,8 @@ class ModelLoader {
             });
 
             this.addToSceneMapRun = true;
+
+           
 
             return this.collider;
         } catch (error) {
