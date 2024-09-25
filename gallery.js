@@ -1,7 +1,7 @@
 
 //
 
-console.log('TODO: effekt przejścia pomiędzy scenami');
+console.log('TODO: kolejne wystawy');
 
 import { WebGLRenderer, Scene, PerspectiveCamera, OrthographicCamera, Raycaster, Clock, Object3D, Mesh, Group, TextureLoader, AudioListener } from 'three'
 import { Fog, AmbientLight, BufferGeometry, RingGeometry, MeshStandardMaterial, MeshBasicMaterial, Vector2, Vector3, DoubleSide, EquirectangularReflectionMapping, ACESFilmicToneMapping, AgXToneMapping, PCFSoftShadowMap, BasicShadowMap, LinearToneMapping, SRGBColorSpace } from "three";
