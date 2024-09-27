@@ -53,23 +53,29 @@ class ModelLoader {
 
             if (this.newFloor) {
 
+                //let exhibitObjects = new Scene();
+
                 const { scene: exhibitObjects } = await this.gltfLoader.loadAsync(this.newFloor.userData.exhibitObjectsPath);
+
+                const newFloor = this.newFloor.clone();
+                const newFloorMatrixWorld = newFloor.matrixWorld.clone();
+
+                console.log("gltfScene", exhibitObjects, gltfScene);
+
+                const exhibitFloor = gltfScene.getObjectByName(this.newFloor.name);
+                const exhibitFloorMatrix = exhibitFloor.matrixWorld.clone();
+
+                const alignMatrix = new Matrix4().copy(exhibitFloorMatrix).multiply(new Matrix4().copy(newFloorMatrixWorld).invert());
+
+                gltfScene.applyMatrix4(alignMatrix);
+
 
                 gltfScene.add(exhibitObjects);
 
-                const newFloorMatrixWorld = new Matrix4();
-                newFloorMatrixWorld.clone(this.newFloor.matrixWorld);
-
-                const newFloor = this.newFloor.clone();
-
-                newFloor.getWorldPosition(gltfScene.position);
-                newFloor.getWorldQuaternion(gltfScene.quaternion);
-
-                gltfScene.applyMatrix4(newFloorMatrixWorld);
 
             }
 
-            gltfScene.scale.setScalar(1);
+            //gltfScene.scale.setScalar(1);
 
             this.box.setFromObject(gltfScene);
             const center = new Vector3();
@@ -157,7 +163,7 @@ class ModelLoader {
 
             this.addToSceneMapRun = true;
 
-           
+
 
             return this.collider;
         } catch (error) {

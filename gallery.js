@@ -29,16 +29,11 @@ import JoyStick from 'three/addons/controls/Joystick.js';
 import Stats from "three/addons/libs/stats.module.js";
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
-import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
-
-
 import {
   acceleratedRaycast,
   disposeBoundsTree,
   computeBoundsTree,
 } from "https://unpkg.com/three-mesh-bvh@0.7.6/build/index.module.js";
-
-//import * as TWEEN from "three/addons/tween/tween.esm.js";
 
 import TWEEN from 'three/addons/libs/tween.module.js';
 
@@ -112,7 +107,6 @@ let Wall,
   result,
   intersects,
   video, image
-//let intervalId;
 
 let audioHandler, exhibitModelPath//, exhibitModelPath0;
 
