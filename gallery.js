@@ -687,12 +687,9 @@ function init() {
         break;
       case "t":
 
-        console.log("visitior: ", deps.visitor.parent);
-        raycaster.set(deps.visitor.position, new Vector3(0, -1, 0));
-
-        const intersectedObjects = raycaster.intersectObjects(deps.visitor.parent.children, true);
-
-        console.log("visitor is on the floor:", intersectedObjects);
+        console.log("exhibitScene: ", visitor.exhibitScene.position);
+        console.log("visitor.position: ", visitor.position);
+        // console.log("newFloor.position", newFloor.position)
         break;
       case "Escape":
         control.reset();
@@ -735,9 +732,15 @@ async function updateVisitor(collider, delta) {
 
   const result = visitor.update(delta, collider);
 
+  //console.log(visitor.position)
+
+
   if (result.changed) {
 
+
     const newFloor = result.newFloor;
+
+
     let exhibitModelPath = newFloor.userData.exhibitModelPath;
 
     if (newFloor.name === "FloorOut") {
@@ -759,6 +762,9 @@ async function updateVisitor(collider, delta) {
       const modelLoader = new ModelLoader(deps, visitor.exhibitScene, newFloor);
       visitor.exhibitScene.add(new AmbientLight(0x404040, 55));
 
+      const visitorPositionInMainScene = visitor.position.clone();
+
+
       const mainScene = visitor.mainScene;
       const floor = mainScene.getObjectByName("FloorOut");
 
@@ -777,9 +783,40 @@ async function updateVisitor(collider, delta) {
 
       await loadScene();
 
+      const exhibitFloor = visitor.exhibitScene.getObjectByName(newFloor.name);
+      console.log("exhibitFloor: ", exhibitFloor.position);
+
+      console.log("exhibitScene: ", visitor.exhibitScene.position);
+      console.log("visitor.position: ", visitor.position);
+      console.log("newFloor.position", newFloor.position)
+      console.log("visitorPositionInMainScene: ", visitorPositionInMainScene);
+
+
+      //visitor.position.copy(exhibitFloor.position);
+
+      //exhibitFloor.position.copy(visitorPositionInMainScene);
+
+      //visitor.reset();
+      //alignVisitorAndExhibitScene(visitor, visitorPositionInMainScene);
+
+
       startTransitionTween(visitor.exhibitScene, true);
 
+
+
     }
+
+    function alignVisitorAndExhibitScene(visitor, visitorPositionInMainScene) {
+      // Move visitor to exhibitScene
+      //visitor.moveToScene(visitor.exhibitScene);
+
+      // Set visitor's position in exhibitScene to the origin
+      visitor.position.set(0, 0, 0);
+
+      // Position exhibitScene so that visitorPositionInMainScene becomes the origin in exhibitScene
+      visitor.exhibitScene.position.copy(visitorPositionInMainScene)//.negate());
+    }
+
 
     function startTransitionTween(scene, reverse) {
       const startValue = reverse ? 1 : 0;
@@ -795,6 +832,8 @@ async function updateVisitor(collider, delta) {
           visitor.moveToScene(scene);
           dotScreenPass.enabled = false;
           handleSceneBackground(deps);
+          //visitor.exhibitScene.position.copy(visitor.position.clone())
+
 
           params.transition = endValue;
         })
