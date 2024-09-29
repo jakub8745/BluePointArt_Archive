@@ -47,57 +47,27 @@ class ModelLoader {
         this.gltfLoader.setDRACOLoader(dracoLoader);
         this.gltfLoader.setMeshoptDecoder(MeshoptDecoder);
 
-
-
-
         try {
-
-            // Add FloorOut from mainScene to gltfScene before alignment
-            const floor = this.mainScene.getObjectByName("FloorOut")?.clone();
-            if (floor) this.scene.add(floor);
-
 
             const { scene: gltfScene } = await this.gltfLoader.loadAsync(modelPath);
 
             if (this.newFloor) {
 
-                //let exhibitObjects = new Scene();
-                const { scene: exhibitObjects } = await this.gltfLoader.loadAsync(this.newFloor.userData.exhibitObjectsPath);
+                if (this.newFloor.userData.exhibitObjectsPath) {
 
-
-                /*
+                    const { scene: exhibitObjects } = await this.gltfLoader.loadAsync(this.newFloor.userData.exhibitObjectsPath);
+                    gltfScene.add(exhibitObjects);
                 
-                                const newFloor = this.newFloor.clone();
-                                const newFloorMatrixWorld = newFloor.matrixWorld.clone();
-                
-                                console.log("gltfScene", exhibitObjects, gltfScene);
-                
-                                const exhibitFloor = gltfScene.getObjectByName(this.newFloor.name);
-                                const exhibitFloorMatrix = exhibitFloor.matrixWorld.clone();
-                
-                                if (!exhibitFloor) {
-                                    console.error(`Object with name ${this.newFloor.name} not found in GLTF scene.`);
-                                    return;
-                                }
-                
-                                const alignMatrix = new Matrix4().copy(exhibitFloorMatrix).multiply(new Matrix4().copy(newFloorMatrixWorld).invert());
-                
-                                gltfScene.applyMatrix4(alignMatrix);
-                */
-
-                gltfScene.add(exhibitObjects);
-
+                }
+               
 
             }
 
-            //gltfScene.scale.setScalar(1);
-
-            this.box.setFromObject(gltfScene);
-            const center = new Vector3();
-            this.box.getCenter(center);
-
-            // const floor = this.mainScene.getObjectByName("FloorOut")?.clone();
-            //  if (floor) gltfScene.add(floor);
+            /*
+                        this.box.setFromObject(gltfScene);
+                        const center = new Vector3();
+                        this.box.getCenter(center);
+            */
 
             gltfScene.updateMatrixWorld(true);
 
@@ -123,35 +93,6 @@ class ModelLoader {
             }
 
             this.environment.name = "environment";
-            
-
-            if (this.newFloor) {
-
-                const newFloor = this.newFloor.clone();
-                const newFloorMatrixWorld = newFloor.matrixWorld.clone();
-
-                console.log("gltfScene", gltfScene);
-
-                const exhibitFloor = this.environment.getObjectByName(this.newFloor.name);
-
-//console.log("exhibitFloor.parent", exhibitFloor.parent);
-
-                const exhibitFloorMatrix = exhibitFloor.matrixWorld.clone();
-
-                if (!exhibitFloor) {
-                    console.error(`Object with name ${this.newFloor.name} not found in GLTF scene.`);
-                    return;
-                }
-
-                const alignMatrix = new Matrix4().copy(exhibitFloorMatrix).multiply(new Matrix4().copy(newFloorMatrixWorld).invert());
-
-                this.environment.applyMatrix4(alignMatrix);
-
-                this.environment.updateMatrixWorld(true);
-
-            }
-
-
 
 
             // Generate the collider using the populated environment

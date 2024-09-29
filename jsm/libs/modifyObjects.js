@@ -64,6 +64,7 @@ export const modifyObjects = {
         //
 
     },
+   
     VisitorEnter: (mesh) => {
 
         mesh.visible = false;

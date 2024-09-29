@@ -10,7 +10,7 @@ export default class Visitor extends Mesh {
     const material = new MeshStandardMaterial();
     const { params, camera, controls, sceneMap, visitorEnter } = deps;
 
-    super(geometry, material);
+    super(geometry, material);//
 
     this.name = "visitor";
     this.capsuleInfo = {
@@ -28,12 +28,13 @@ export default class Visitor extends Mesh {
 
     this.mainScene = new Scene();
     this.mainScene.name = "mainScene";
-    //this.scene = this.mainScene;
+
     this.exhibitScene = new Scene();
     this.exhibitScene.name = "exhibitScene";
 
-    //this.mainScene.add(this);
     this.deps = deps;
+
+    this.controls = deps.controls;
 
 
     this.sceneMap = sceneMap;
@@ -233,7 +234,7 @@ export default class Visitor extends Mesh {
       this.visitorVelocity.set(0, 0, 0);
     }
 
-    // offset the camera - this is a bit hacky
+    // offset the camera 
     this.tempVector.copy(this.position).add(this.params.heightOffset);
 
     this.camera.position.sub(this.controls.target);
@@ -248,19 +249,16 @@ export default class Visitor extends Mesh {
     // if the visitor has fallen too far below the level reset their position to the start
     if (this.position.y < -10) {
 
-      console.log("reset visitor");
       this.reset();
     }
 
   }
 
   reset() {
+
     this.deps.resetVisitor();
 
   }
-
-
-
 
 
 }
