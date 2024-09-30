@@ -11,7 +11,7 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 class ModelLoader {
 
-    constructor(deps, scene, newFloor) {
+    constructor(deps, scene, newFloor, layer) {
 
         this.addToSceneMapRun = false;
 
@@ -20,6 +20,7 @@ class ModelLoader {
 
         this.scene = scene;
         this.environment = new Group();
+    
         this.toMerge = {};
         this.typeOfmesh = "";
 
@@ -35,9 +36,13 @@ class ModelLoader {
 
         this.mainScene = deps.visitor.mainScene;
 
+        this.layer = layer;
+
     }
 
-    async loadModel(modelPath) {
+    async loadModel(modelPath, layer) {
+
+        //this.scene.layers.set(layer);
 
         const manager = new LoadingManager();
 
@@ -91,6 +96,8 @@ class ModelLoader {
                 }
             });
 
+            this.environment.layers.set(this.layer);
+
             for (const typeOfmesh in this.toMerge) {
                 const arr = this.toMerge[typeOfmesh];
 
@@ -111,6 +118,7 @@ class ModelLoader {
             });
 
             this.collider = new Mesh(mergedGeometry);
+            this.collider.layers.set(layer);
             this.collider.material.wireframe = true;
             this.collider.material.opacity = 0;
             this.collider.material.transparent = true;
@@ -118,10 +126,13 @@ class ModelLoader {
             this.collider.name = "collider";
             this.collider.visible = false;
 
+           // this.scene.layers.set(layer);
 
+            //this.collider.layers.set(layer);
             this.scene.add(this.collider);
             this.deps.collider = this.collider;
 
+           // this.collider.layers.set(layer);
             this.environment.name = "environment";
             this.scene.add(this.environment);
 
@@ -149,15 +160,15 @@ class ModelLoader {
                 }
 
                 if (this.scene.name === "mainScene" &&
-                    (/Wall|visitorLocation|Room/.test(c.userData.name) ||
-                        /visitorLocation|Room/.test(c.userData.type))) {
+                    (/Wall|FloorOut|Room/.test(c.userData.name) ||
+                        /FloorOut|Room/.test(c.userData.type))) {
                     this.addToSceneMap(c);
                 }
             });
 
             this.addToSceneMapRun = true;
 
-           
+
 
             return this.collider;
         } catch (error) {
@@ -175,8 +186,8 @@ class ModelLoader {
 
             const cClone = mesh.clone();
             cClone.material = new MeshBasicMaterial({
-                color: mesh.userData.type === 'visitorLocation' || mesh.userData.type === 'Room' ? 0x1b689f : 0xffffff,
-                opacity: mesh.userData.type === 'visitorLocation' || mesh.userData.type === 'Room' ? 0.8 : 1,
+                color: mesh.userData.type === 'FloorOut' || mesh.userData.type === 'Room' ? 0x1b689f : 0xffffff,
+                opacity: mesh.userData.type === 'FloorOut' || mesh.userData.type === 'Room' ? 0.8 : 1,
                 transparent: true,
             });
 

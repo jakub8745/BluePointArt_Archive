@@ -135,7 +135,7 @@ export default class Visitor extends Mesh {
 
     const floor = intersectedObjects.find(({ object }) => {
       const type = object.userData.type;
-      return type === "visitorLocation" || type === "Room";
+      return type === "FloorOut" || type === "Room";
     })?.object;
 
 

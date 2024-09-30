@@ -4,7 +4,7 @@
 console.log('TODO: kolejne wystawy');
 
 import { WebGLRenderer, Scene, PerspectiveCamera, OrthographicCamera, Raycaster, Clock, Object3D, Mesh, Group, TextureLoader, AudioListener } from 'three'
-import { Fog, AmbientLight, BufferGeometry, RingGeometry, MeshStandardMaterial, MeshBasicMaterial, Vector2, Vector3, DoubleSide, EquirectangularReflectionMapping, ACESFilmicToneMapping, AgXToneMapping, PCFSoftShadowMap, BasicShadowMap, LinearToneMapping, SRGBColorSpace } from "three";
+import { Fog, AmbientLight, BufferGeometry, Layers, RingGeometry, MeshStandardMaterial, MeshBasicMaterial, Vector2, Vector3, DoubleSide, EquirectangularReflectionMapping, ACESFilmicToneMapping, AgXToneMapping, PCFSoftShadowMap, BasicShadowMap, LinearToneMapping, SRGBColorSpace } from "three";
 
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
@@ -45,7 +45,7 @@ import TWEEN from 'three/addons/libs/tween.module.js';
 const loader = new TextureLoader();
 
 const params = {
-  exhibitCollider: null,
+  mainCollider: null,
   firstPerson: true,
   displayCollider: false, //true,
   visualizeDepth: 10,
@@ -424,16 +424,23 @@ function init() {
 
 
   // LOAD MODEL (environment, collider)
-  const modelLoader = new ModelLoader(deps, visitor.parent);
+  const modelLoader = new ModelLoader(deps, visitor.parent, 0);
 
   async function loadMainScene() {
 
-    const mainCollider = await modelLoader.loadModel(params.archiveModelPath);
+    deps.params.mainCollider = await modelLoader.loadModel(params.archiveModelPath, 0);
 
-    deps.params.exhibitCollider = mainCollider;
+    deps.params.mainCollider.layers.set(0);
+    visitor.mainScene.layers.set(0);
+    visitor.layers.set(0);
+    camera.layers.set(0);
+
+    console.log(" deps.params.mainCollider.layers", deps.params.mainCollider.layers);
+
+
     deps.bgTexture = "textures/galaktyka.ktx2";
 
-    handleSceneBackground(deps);
+    //handleSceneBackground(deps);
 
     //renderTransitionPass.enabled = false;
     dotScreenPass.enabled = true;
@@ -465,7 +472,7 @@ function init() {
 
     raycaster.setFromCamera(pointer, camera);
     raycaster.firstHitOnly = true;
-    intersects = raycaster.intersectObjects(visitor.scene.children);
+    intersects = raycaster.intersectObjects(visitor.mainScene.children);
 
     Wall = intersects.find(({ object }) => object.userData.name === "Wall");
 
@@ -509,7 +516,7 @@ function init() {
 
     // is floor clicked?
     result = intersects.find(
-      ({ object }) => object.userData.type === "visitorLocation"
+      ({ object }) => object.userData.type === "FloorOut"
     );
 
     if (result) {
@@ -699,7 +706,17 @@ function init() {
         const intersectedObjects = raycaster.intersectObjects(deps.visitor.parent.children, true);
 
         console.log("visitor is on the floor:", intersectedObjects);
+
+        deps.visitor.layers.set(0);
+        camera.layers.set(0);
         break;
+
+      case "y":
+        deps.visitor.layers.set(1);
+        camera.layers.set(1);
+
+        break;
+
       case "Escape":
         control.reset();
         break;
@@ -738,56 +755,113 @@ function init() {
 
 // update visitor
 async function updateVisitor(collider, delta) {
-
   const result = visitor.update(delta, collider);
 
   if (result.changed) {
+    const tempGroup = new Group();
+
+
+    function findObjectsByLayer(scene, layerNumber) {
+      const objectsInLayer = [];
+      const layer = new Layers();
+
+      layer.set(layerNumber);
+
+      scene.traverse((object) => {
+        // Ensure the object has a layers property before testing
+        if (object.layers && object.layers.test(layer)) {
+          objectsInLayer.push(object);
+          //if(layerNumber === 1) tempGroup.attach(object);
+        }
+      });
+
+      return objectsInLayer;
+    }
+
+
+
 
     const newFloor = result.newFloor;
     let exhibitModelPath = newFloor.userData.exhibitModelPath;
 
+    console.log("newFloor typa", newFloor.userData.type);
+
     if (newFloor.name === "FloorOut") {
+      // Moving to layer 0 (level 0)
+      visitor.layers.set(0);
+      camera.layers.set(0);
 
-      visitor.moveToScene(visitor.mainScene, () => {
+      // Ensure only mainCollider is active
+      if (deps.params.mainCollider) {
+        //deps.params.mainCollider.visible = true;
+        deps.params.mainCollider.layers.set(0); // Explicitly assign to layer 0
+      }
 
-        dotScreenPass.enabled = true;
-        renderTransitionPass.enabled = true;
 
-        startTransitionTween(visitor.mainScene);
 
-      });
 
+      if (tempGroup) {
+
+        console.log("exhibitObject", tempGroup);
+
+        disposeSceneObjects(tempGroup);
+        visitor.mainScene.remove(tempGroup);
+      }
+
+
+      // Start transition to layer 0
+      //startTransitionTween(0);
     } else {
 
 
-      disposeSceneObjects(visitor.exhibitScene);
+      const modelLoader = new ModelLoader(deps, visitor.mainScene, 1);
 
-      const modelLoader = new ModelLoader(deps, visitor.exhibitScene, newFloor);
-      visitor.exhibitScene.add(new AmbientLight(0x404040, 55));
+      modelLoader.environment.layers.set(1);
+      visitor.layers.set(1);
+      camera.layers.set(1);
 
-      const mainScene = visitor.mainScene;
-      const floor = mainScene.getObjectByName("FloorOut");
+      const ambient = new AmbientLight(0xffffff, 0.5);
+      ambient.layers.set(1);
+      visitor.mainScene.add(ambient);
 
-      async function loadScene() {
+      async function loadExhibitScene() {
 
-        const mainCollider = await modelLoader.loadModel(exhibitModelPath);
 
-        deps.params.exhibitCollider = mainCollider;
-        deps.bgTexture = newFloor.userData.bgTexture || "textures/bg_color.ktx2";
 
-        dotScreenPass.enabled = true;
-        renderTransitionPass.enabled = true;
+        // Load exhibit model and assign to layer 1
+        const exhibitCollider = await modelLoader.loadModel(exhibitModelPath, 1);
 
+        exhibitCollider.layers.set(1); // Set exhibitCollider to layer 1
+
+
+
+
+        // Deactivate mainCollider while on exhibit floor
+        if (deps.params.mainCollider) {
+          deps.params.mainCollider.visible = false; // Hide mainCollider when on exhibit floor
+        }
+
+        // Disable the effect for exhibit room
+        // dotScreenPass.enabled = false;
+
+        // renderTransitionPass.enabled = true;
         animate();
       }
 
-      await loadScene();
+      await loadExhibitScene();
 
-      startTransitionTween(visitor.exhibitScene, true);
+
+      // Example usage
+      const objectsInLayer1 = findObjectsByLayer(visitor.mainScene, 1);
+      const objectsInLayer0 = findObjectsByLayer(visitor.mainScene, 0);
+
+      console.log("start Objects in Layer 1:", objectsInLayer1);
+      console.log("start Objects in Layer 0:", objectsInLayer0);
+      console.log("tempGroup", tempGroup);
 
     }
 
-    function startTransitionTween(scene, reverse) {
+    function startTransitionTween(layer, reverse) {
       const startValue = reverse ? 1 : 0;
       const endValue = reverse ? 0 : 1;
 
@@ -798,7 +872,11 @@ async function updateVisitor(collider, delta) {
         .onUpdate(() => renderTransitionPass.setTransition(params.transition))
         .onComplete(() => {
           renderTransitionPass.setTransition(endValue);
-          visitor.moveToScene(scene);
+
+          // Set visitor and camera to the correct layer after transition
+          visitor.layers.set(layer);
+          camera.layers.set(layer);
+
           dotScreenPass.enabled = false;
           handleSceneBackground(deps);
 
@@ -807,19 +885,33 @@ async function updateVisitor(collider, delta) {
         .start();
     }
 
-
+    // Cancel previous animation and set new parameters
     cancelAnimationFrame(deps.animationId);
-
     visitor.lastFloorName = newFloor.name;
 
+    // Set background texture for the new floor
     const { bgTexture = "textures/bg_color.ktx2" } = newFloor.userData;
     deps.bgTexture = bgTexture;
   }
-
-
-
-
 }
+
+function disposeSceneObjects(sceneObject) {
+  console.log("disposeSceneObjects", sceneObject);
+  if (sceneObject) {
+    sceneObject.traverse((object) => {
+
+      if (object.isMesh) {
+        object.geometry.dispose();
+        object.material.dispose();
+      }
+    });
+
+    // Remove object from scene
+    visitor.mainScene.remove(sceneObject);
+  }
+}
+
+
 //
 function handleAudio(intersectedFloor, audioHandler) {
   if (intersectedFloor.userData.audioToPlay) {
@@ -914,26 +1006,7 @@ function handleSceneBackground(deps) {
   }
 }
 
-function disposeSceneObjects(scene) {
-  scene.traverse((object) => {
-    if (object.isMesh) {
-      object.geometry.dispose();
-      object.material.dispose();
-    } else if (object.isLight) {
-      object.dispose();
-    } else if (object.isBone) {
-      object.dispose();
-    } else if (object.isSkinnedMesh) {
-      object.dispose();
-    }
-  });
 
-  // Remove all children from the scene
-  while (scene.children.length > 0) {
-    scene.remove(scene.children[0]);
-  }
-
-}
 
 //
 
@@ -952,9 +1025,9 @@ function animateMap() {
 
 //
 function animate() {
-  if (!deps.params.exhibitCollider) return;
+  if (!deps.params.mainCollider) return;
 
-  const collider = deps.params.exhibitCollider;
+  const collider = deps.params.mainCollider;
   stats.update();
   TWEEN.update();  // Update all tweens globally
 
@@ -972,11 +1045,13 @@ function animate() {
 
   // Render transition between scenes if transition is active
   if (params.transition > 0 && params.transition < 1 || visitor.parent.name === 'mainScene') {
-    dotScreenPass.enabled = true;
-    composer.render();  // Handles transition using renderTransitionPass
+    //dotScreenPass.enabled = true;
+    //composer.render();  // Handles transition using renderTransitionPass
+    renderer.render(visitor.mainScene, camera);  // Default to exhibitScene
+
   } else {
     // If no transition is happening, render the current scene
-    renderer.render(visitor.exhibitScene, camera);  // Default to exhibitScene
+    renderer.render(visitor.mainScene, camera);  // Default to exhibitScene
   }
 
 
@@ -1113,22 +1188,3 @@ class AudioHandler {
 }
 
 //
-class VisitorLocationChecker {
-  constructor(scene) {
-    this.scene = scene;
-    this.raycaster = new Raycaster();
-    this.downVector = new Vector3(0, -1, 0);
-    this.vector = new Vector3();
-    this.intersectedObjects = [];
-  }
-  checkVisitorLocation(visitor) {
-    this.raycaster.firstHitOnly = true;
-    this.raycaster.set(visitor.position, this.downVector);
-
-    return this.intersectedObjects.find(({ object }) => {
-      const type = object.userData.type;
-      return type === "visitorLocation" || type === "Room";
-    })?.object;
-
-  }
-}
