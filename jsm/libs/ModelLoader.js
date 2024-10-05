@@ -51,23 +51,26 @@ class ModelLoader {
 
             const { scene: gltfScene } = await this.gltfLoader.loadAsync(modelPath);
 
+
+
             if (this.newFloor) {
+
+                gltfScene.traverse((c) => {
+                    if (c.isMesh && c.name === "FloorOut") {
+                        c.position.y -= .1;
+                    }
+                });
 
                 if (this.newFloor.userData.exhibitObjectsPath) {
 
                     const { scene: exhibitObjects } = await this.gltfLoader.loadAsync(this.newFloor.userData.exhibitObjectsPath);
+
                     gltfScene.add(exhibitObjects);
-                
+
                 }
-               
+
 
             }
-
-            /*
-                        this.box.setFromObject(gltfScene);
-                        const center = new Vector3();
-                        this.box.getCenter(center);
-            */
 
             gltfScene.updateMatrixWorld(true);
 

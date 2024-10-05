@@ -139,7 +139,6 @@ export default class Visitor extends Mesh {
       return type === "visitorLocation" || type === "Room";
     })?.object;
 
-
     return floor
   }
 

@@ -423,10 +423,12 @@ function init() {
 
     deps.params.exhibitCollider = mainCollider;
     deps.bgTexture = "textures/galaktyka.ktx2";
+    deps.bgInt = 1;
+    deps.bgBlur = 0;
 
     handleSceneBackground(deps);
 
-    //renderTransitionPass.enabled = false;
+    renderTransitionPass.enabled = false;
     dotScreenPass.enabled = true;
 
     animate();
@@ -749,7 +751,7 @@ async function updateVisitor(collider, delta) {
       disposeSceneObjects(visitor.exhibitScene);
 
       const modelLoader = new ModelLoader(deps, visitor.exhibitScene, newFloor);
-      visitor.exhibitScene.add(new AmbientLight(0x404040, 55));
+      visitor.exhibitScene.add(new AmbientLight(0x404040, 45));
 
       async function loadScene() {
 
@@ -757,6 +759,8 @@ async function updateVisitor(collider, delta) {
 
         deps.params.exhibitCollider = mainCollider;
         deps.bgTexture = newFloor.userData.bgTexture || "textures/bg_color.ktx2";
+        deps.bgInt = newFloor.userData.bgInt || 1;
+        deps.bgBlur = newFloor.userData.bgBlur || 0;
 
         dotScreenPass.enabled = true;
         renderTransitionPass.enabled = true;
@@ -864,9 +868,7 @@ function handleVideos(scene, belongsTo) {
 
 function handleSceneBackground(deps) {
 
-  const { bgTexture } = deps;
-
-  const bgInt = 1;
+  const { bgTexture, bgBlur, bgInt } = deps;
 
   let scene = visitor.parent;
   const extension = bgTexture.split('.').pop();
@@ -879,7 +881,9 @@ function handleSceneBackground(deps) {
       texture.colorSpace = SRGBColorSpace;
 
       scene.background = texture;  // Set the background texture
-      scene.backgroundIntensity = bgInt;  // Set the background intensity if applicable
+      scene.backgroundIntensity = bgInt;
+      scene.backgroundBlurriness = bgBlur;
+
     }, undefined, (error) => {
       console.error('Error loading KTX2 texture:', error);
     });
@@ -891,7 +895,9 @@ function handleSceneBackground(deps) {
       texture.colorSpace = SRGBColorSpace;
 
       scene.background = texture;  // Set the background texture
-      scene.backgroundIntensity = bgInt;  // Set the background intensity if applicable
+      scene.backgroundIntensity = bgInt;
+      scene.backgroundBlurriness = bgBlur;
+
     }, undefined, (error) => {
       console.error('Error loading texture:', error);
     });
@@ -953,14 +959,16 @@ function animate() {
     }
   }
 
+  // if (!visitor.parent) return;
 
-  // Render transition between scenes if transition is active
   if (params.transition > 0 && params.transition < 1 || visitor.parent.name === 'mainScene') {
+
     dotScreenPass.enabled = true;
     composer.render();  // Handles transition using renderTransitionPass
   } else {
-    // If no transition is happening, render the current scene
+
     renderer.render(visitor.exhibitScene, camera);  // Default to exhibitScene
+
   }
 
 
