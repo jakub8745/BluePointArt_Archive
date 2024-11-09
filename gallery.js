@@ -148,8 +148,8 @@ const waitForMe = async (millisec) => {
 //
 joyIntervalCheck();
 
-const referrerUrl = document.referrer;
-console.log(referrerUrl);
+const fragment = document.location.hash;
+console.log(fragment); // Output: #Hello from the previous site!
 
 
 init();
