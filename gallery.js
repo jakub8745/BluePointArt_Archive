@@ -148,6 +148,9 @@ const waitForMe = async (millisec) => {
 //
 joyIntervalCheck();
 
+const referrerUrl = document.referrer;
+console.log(referrerUrl);
+
 
 init();
 
