@@ -9,6 +9,7 @@ import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
 import { modifyObjects } from 'three/addons/libs/modifyObjects.js';
+import { rotateToFaceObject } from 'three/addons/libs/rotateToFaceObject.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 
@@ -206,17 +207,16 @@ loadArchiveModel(params.archiveModelPath).then(({ exhibits }) => {
     arr.forEach((mesh) => {
       if (mesh.userData.name === "VisitorEnter") {
         const visitorEnterPosition = mesh.getWorldPosition(new THREE.Vector3());
-        const visitorEnterQuaternion = mesh.getWorldQuaternion(new THREE.Quaternion());
         visitorEnters.push({
           visitorEnterName: mesh.name,
           visitorEnterPosition: visitorEnterPosition,
-          visitorEnterQuaternion: visitorEnterQuaternion,
+          visitorLookAt: mesh.userData.visitorLookAt,
         });
+
         visitorEnter.copy(visitorEnterPosition);
-        //visitor.copy(visitorEnterQuaternion);
+
         mesh.needsUpdate = true;
 
-        //environment.attach(mesh);
       } else {
         environment.attach(mesh);
       }
@@ -396,8 +396,8 @@ function init() {
     70
   );
   //camera.quaternion.set(0, 1, 0, 1); 
- // camera.rotation.x = Math.PI / 2; // Rotate the camera 90 degrees around the x-axis
-// Rotate the camera 90 degrees around the x-axis
+  // camera.rotation.x = Math.PI / 2; // Rotate the camera 90 degrees around the x-axis
+  // Rotate the camera 90 degrees around the x-axis
 
   //camera.far = 100;
   camera.updateProjectionMatrix();
@@ -778,11 +778,10 @@ async function loadArchiveModel(modelPath) {
 // reset visitor
 function reset(visitorEnters) {
 
-  camera.position.set(50, -4, -10);
-  camera.quaternion.set(0, 1, 0, 0); 
+  camera.position.set(0, 0, 0);
 
+  rotateToFaceObject(camera, controls, scene, 'opisWakeUp_1');
 
-  
   bgTexture0 = "/textures/xxxbg_puent.jpg";
   visitorVelocity.set(0, 0, 0);
 
@@ -795,7 +794,6 @@ function reset(visitorEnters) {
   switch (cameFromSite) {
     case "#wakeupcall":
       target = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === "wakeupcallEnter").visitorEnterPosition.clone();
-      quaternion = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === "wakeupcallEnter").visitorEnterQuaternion.clone();
       console.log("target wakeupcallEnter: ", target, quaternion);
       break;
     case "#lockdowns":
@@ -818,7 +816,6 @@ function reset(visitorEnters) {
       break;
     default:
       target = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === "VisitorEnter").visitorEnterPosition.clone();
-      quaternion = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === "VisitorEnter").visitorEnterQuaternion.clone();
       break;
   }
 
@@ -837,38 +834,11 @@ function reset(visitorEnters) {
   camera.position.sub(controls.target);
   controls.target.copy(target);
   camera.position.add(target);
-  //camera.rotation.x = Math.PI / 2; // Rotate the camera 90 degrees around the x-axis
 
-  //camera.quaternion.copy(quaternion); // Look in the positive z-direction
-
-  //camera.updateProjectionMatrix();
-
-  
   controls.update();
 
   visitor.position.copy(target);
-  //visitor.quaternion.copy(quaternion);
-  /*
-  target:  
-Object { x: -2.979898132915312, y: 3.3798201213492796, z: -3.6089246167964255 }
- 
-Object { isQuaternion: true, _x: 0.6851975947542336, _y: -0.17465467684263233, _z: 0.17465467684263536, _w: 0.6851975947542456 }
-​
-_w: 0.6851975947542456
-​
-_x: 0.6851975947542336
-​
-_y: -0.17465467684263233
-​
-_z: 0.17465467684263536
-​target:  
-Object { x: -2.979898132915312, y: 3.3798201213492804, z: -3.6089246167964255 }
- 
-Object { isQuaternion: true, _x: 0.49825162812127893, _y: -0.5017422795365026, _z: 0.5017422795365115, _w: 0.4982516281212875 }
-gallery.js:824:11
 
-
-  */
 }
 
 // update visitor
