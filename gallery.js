@@ -148,8 +148,10 @@ const waitForMe = async (millisec) => {
 //
 joyIntervalCheck();
 
-const fragment = document.location.hash;
-console.log(fragment); // Output: #Hello from the previous site!
+//const cameFromSite = document.location.hash;
+
+const cameFromSite = '#wakeupcall'
+console.log(cameFromSite);
 
 
 init();
@@ -196,27 +198,32 @@ loadArchiveModel(params.archiveModelPath).then(({ exhibits }) => {
     anisotropy,
   };
 
-  for (const typeOfmesh in exhibits) {
+  const visitorEnters = [];
 
+  for (const typeOfmesh in exhibits) {
     const arr = exhibits[typeOfmesh];
 
     arr.forEach((mesh) => {
-
-      if (mesh.userData.name !== "VisitorEnter") {
-        environment.attach(mesh);
-      } else {
-        const visitorQuaternion = new THREE.Quaternion();
-        mesh.getWorldPosition(visitor.position);
-        mesh.getWorldQuaternion(visitorQuaternion);
-        visitorEnter.copy(visitor.position)
-
+      if (mesh.userData.name === "VisitorEnter") {
+        const visitorEnterPosition = mesh.getWorldPosition(new THREE.Vector3());
+        const visitorEnterQuaternion = mesh.getWorldQuaternion(new THREE.Quaternion());
+        visitorEnters.push({
+          visitorEnterName: mesh.name,
+          visitorEnterPosition: visitorEnterPosition,
+          visitorEnterQuaternion: visitorEnterQuaternion,
+        });
+        visitorEnter.copy(visitorEnterPosition);
+        //visitor.copy(visitorEnterQuaternion);
         mesh.needsUpdate = true;
 
+        //environment.attach(mesh);
+      } else {
+        environment.attach(mesh);
       }
-
-
     });
   }
+
+  console.log("visitorEnters: ", visitorEnters);
 
   environment.traverse((c) => {
 
@@ -231,7 +238,9 @@ loadArchiveModel(params.archiveModelPath).then(({ exhibits }) => {
 
 
     //
-    if (c.userData.type === "Text") {
+    if (c.userData.type === "Text") {// || c.userData.type === "VisitorEnter") {
+
+      //console.log("cccc",c)
       modifyObjects[c.userData.type]?.(c, deps);
 
     } else if (
@@ -317,7 +326,7 @@ loadArchiveModel(params.archiveModelPath).then(({ exhibits }) => {
 
   preloadTextures();
 
-  reset();
+  reset(visitorEnters);
 
   animate();
 
@@ -359,13 +368,13 @@ function init() {
   renderer.gammaFactor = 2.2;
 
   const isAppleDevice = /Mac|iPad|iPhone|iPod/.test(navigator.userAgent);
-  
+
 
   //a//lert("Device: " + navigator.userAgent);
 
   //renderer.toneMapping = isAppleDevice ? THREE.AgXToneMapping : THREE.ACESFilmicToneMapping;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  
+
   renderer.toneMappingExposure = params.exposure;
   renderer.outputEncoding = THREE.sRGBEncoding;
 
@@ -386,7 +395,10 @@ function init() {
     0.1,
     70
   );
-  camera.position.set(10, 6, -10);
+  //camera.quaternion.set(0, 1, 0, 1); 
+ // camera.rotation.x = Math.PI / 2; // Rotate the camera 90 degrees around the x-axis
+// Rotate the camera 90 degrees around the x-axis
+
   //camera.far = 100;
   camera.updateProjectionMatrix();
   window.camera = camera;
@@ -764,25 +776,99 @@ async function loadArchiveModel(modelPath) {
 }
 
 // reset visitor
-function reset() {
+function reset(visitorEnters) {
+
+  camera.position.set(50, -4, -10);
+  camera.quaternion.set(0, 1, 0, 0); 
+
+
+  
   bgTexture0 = "/textures/xxxbg_puent.jpg";
   visitorVelocity.set(0, 0, 0);
 
-  const target = visitorEnter.clone();
+  let target, quaternion;
+
+  console.log("visitorEnters: ", visitorEnters);
+  console.log("cameFromSite: ", cameFromSite);
+
+
+  switch (cameFromSite) {
+    case "#wakeupcall":
+      target = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === "wakeupcallEnter").visitorEnterPosition.clone();
+      quaternion = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === "wakeupcallEnter").visitorEnterQuaternion.clone();
+      console.log("target wakeupcallEnter: ", target, quaternion);
+      break;
+    case "#lockdowns":
+      target = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === "FloorLockdowns").visitorEnterPosition.clone();
+      break;
+    case "#dystopia":
+      target = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === "FloorDystopia").visitorEnterPosition.clone();
+      break;
+    case "#norwidszkice":
+      target = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === "FloorNorwid").visitorEnterPosition.clone();
+      break;
+    case "#identity":
+      target = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === "FloorIdentity").visitorEnterPosition.clone();
+      break;
+    case "#vincenz":
+      target = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === "FloorVincenz").visitorEnterPosition.clone();
+      break;
+    case "#bednarczyk":
+      target = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === "Floor_ArTour").visitorEnterPosition.clone();
+      break;
+    default:
+      target = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === "VisitorEnter").visitorEnterPosition.clone();
+      quaternion = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === "VisitorEnter").visitorEnterQuaternion.clone();
+      break;
+  }
+
+
+
 
   const circleMap = sceneMap.getObjectByName("circleMap");
   if (circleMap) {
     circleMap.position.copy(target);
   }
 
+  console.log("target: ", target, quaternion);
+
+
   target.y = 10;
   camera.position.sub(controls.target);
   controls.target.copy(target);
   camera.position.add(target);
+  //camera.rotation.x = Math.PI / 2; // Rotate the camera 90 degrees around the x-axis
+
+  //camera.quaternion.copy(quaternion); // Look in the positive z-direction
+
+  //camera.updateProjectionMatrix();
+
+  
   controls.update();
 
   visitor.position.copy(target);
+  //visitor.quaternion.copy(quaternion);
+  /*
+  target:  
+Object { x: -2.979898132915312, y: 3.3798201213492796, z: -3.6089246167964255 }
+ 
+Object { isQuaternion: true, _x: 0.6851975947542336, _y: -0.17465467684263233, _z: 0.17465467684263536, _w: 0.6851975947542456 }
+​
+_w: 0.6851975947542456
+​
+_x: 0.6851975947542336
+​
+_y: -0.17465467684263233
+​
+_z: 0.17465467684263536
+​target:  
+Object { x: -2.979898132915312, y: 3.3798201213492804, z: -3.6089246167964255 }
+ 
+Object { isQuaternion: true, _x: 0.49825162812127893, _y: -0.5017422795365026, _z: 0.5017422795365115, _w: 0.4982516281212875 }
+gallery.js:824:11
 
+
+  */
 }
 
 // update visitor

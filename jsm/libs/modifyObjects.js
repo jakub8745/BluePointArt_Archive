@@ -73,6 +73,8 @@ export const modifyObjects = {
     },
     VisitorEnter: (mesh, deps) => {
 
+        console.log("visitorEnter from modify obj: ", mesh.name);
+
         mesh.visible = false;
         mesh.removeFromParent();
         //
