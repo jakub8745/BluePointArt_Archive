@@ -112,6 +112,7 @@ let Wall,
 let intensityTo, intervalId;
 
 let audioHandler, floorChecker;
+let visitorEnters = [];
 
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -151,7 +152,7 @@ joyIntervalCheck();
 
 //const cameFromSite = document.location.hash;
 
-const cameFromSite = '#wakeupcall'
+const cameFromSite = '#wakeupcall';
 console.log(cameFromSite);
 
 
@@ -199,7 +200,7 @@ loadArchiveModel(params.archiveModelPath).then(({ exhibits }) => {
     anisotropy,
   };
 
-  const visitorEnters = [];
+  
 
   for (const typeOfmesh in exhibits) {
     const arr = exhibits[typeOfmesh];
@@ -210,7 +211,7 @@ loadArchiveModel(params.archiveModelPath).then(({ exhibits }) => {
         visitorEnters.push({
           visitorEnterName: mesh.name,
           visitorEnterPosition: visitorEnterPosition,
-          visitorLookAt: mesh.userData.visitorLookAt,
+          visitorLookAt: mesh.userData.visitorLookAt ?? "TextMurzyn",
         });
 
         visitorEnter.copy(visitorEnterPosition);
@@ -280,7 +281,8 @@ loadArchiveModel(params.archiveModelPath).then(({ exhibits }) => {
 
             visitorEnter.set(targetPosition.x, targetPosition.y, targetPosition.z);
 
-            reset();
+            console.log("visitorEnters from click: ", visitorEnters)
+            resetFromMap();
           });
 
           const labelObject = new CSS2DObject(labelDiv);
@@ -326,7 +328,7 @@ loadArchiveModel(params.archiveModelPath).then(({ exhibits }) => {
 
   preloadTextures();
 
-  reset(visitorEnters);
+  reset();
 
   animate();
 
@@ -776,49 +778,30 @@ async function loadArchiveModel(modelPath) {
 }
 
 // reset visitor
-function reset(visitorEnters) {
+function reset() {
 
   camera.position.set(0, 0, 0);
 
-  rotateToFaceObject(camera, controls, scene, 'opisWakeUp_1');
 
   bgTexture0 = "/textures/xxxbg_puent.jpg";
   visitorVelocity.set(0, 0, 0);
 
-  let target, quaternion;
+  let target, quaternion, enter, visitorLookAt;
 
-  console.log("visitorEnters: ", visitorEnters);
-  console.log("cameFromSite: ", cameFromSite);
+  
 
 
-  switch (cameFromSite) {
-    case "#wakeupcall":
-      target = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === "wakeupcallEnter").visitorEnterPosition.clone();
-      console.log("target wakeupcallEnter: ", target, quaternion);
-      break;
-    case "#lockdowns":
-      target = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === "FloorLockdowns").visitorEnterPosition.clone();
-      break;
-    case "#dystopia":
-      target = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === "FloorDystopia").visitorEnterPosition.clone();
-      break;
-    case "#norwidszkice":
-      target = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === "FloorNorwid").visitorEnterPosition.clone();
-      break;
-    case "#identity":
-      target = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === "FloorIdentity").visitorEnterPosition.clone();
-      break;
-    case "#vincenz":
-      target = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === "FloorVincenz").visitorEnterPosition.clone();
-      break;
-    case "#bednarczyk":
-      target = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === "Floor_ArTour").visitorEnterPosition.clone();
-      break;
-    default:
-      target = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === "VisitorEnter").visitorEnterPosition.clone();
-      break;
+  const enterName = cameFromSite.replace('#', '') + 'Enter';
+  enter = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === enterName);
+  if (!enter) {
+    enter = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === "VisitorEnter");
   }
+  target = enter.visitorEnterPosition.clone();
+  visitorLookAt = enter.visitorLookAt;
 
+  console.log("visitorLookAt: ", visitorLookAt);
+
+  rotateToFaceObject(camera, controls, scene, visitorLookAt);
 
 
 
@@ -840,6 +823,49 @@ function reset(visitorEnters) {
   visitor.position.copy(target);
 
 }
+
+function resetFromMap() {
+
+// zmienic nazwy floors na np. #lockdowns
+
+
+  console.log("resetFromMap", "visitorEnter", visitorEnter);
+  
+
+  visitor.position.copy(visitorEnter);
+
+  bgTexture0 = "/textures/xxxbg_puent.jpg";
+  visitorVelocity.set(0, 0, 0);
+
+  const target = visitor.position.clone();
+
+  const circleMap = sceneMap.getObjectByName("circleMap");
+  if (circleMap) {
+    circleMap.position.copy(target);
+  }
+
+
+
+  target.y = 10;
+  camera.position.sub(controls.target);
+  controls.target.copy(target);
+  camera.position.add(target);
+
+  controls.update();
+
+  visitor.position.copy(target);
+
+  const floorCheckerU = new VisitorLocationChecker(scene);
+  const intersectedFloor = floorCheckerU.checkVisitorLocation(visitor);
+
+
+  //console.log("visitorEnters: ", visitorEnters);
+  console.log("floorChecker: ", intersectedFloor.name);
+
+}
+
+
+
 
 // update visitor
 async function updateVisitor(delta) {
