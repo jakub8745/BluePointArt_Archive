@@ -101,6 +101,7 @@ let bgTexture0 = "textures/xxxbg_puent.jpg";
 const lightsToTurn = [];
 const audioObjects = [];
 const visitorEnter = new THREE.Vector3();
+const visitorJumpTo = new THREE.Mesh();
 
 const pointer = new THREE.Vector2();
 const clickedPoint = new THREE.Vector3();
@@ -113,6 +114,7 @@ let intensityTo, intervalId;
 
 let audioHandler, floorChecker;
 let visitorEnters = [];
+let cameFromSite;
 
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -151,8 +153,7 @@ const waitForMe = async (millisec) => {
 joyIntervalCheck();
 
 //const cameFromSite = document.location.hash;
-
-const cameFromSite = '#wakeupcall';
+cameFromSite =  '#lockdowns';//'#dystopiaofimitation';//'#norwid';//'#artour';//'#wakeupcall';//'#identity';//'#vincenz';
 console.log(cameFromSite);
 
 
@@ -200,7 +201,7 @@ loadArchiveModel(params.archiveModelPath).then(({ exhibits }) => {
     anisotropy,
   };
 
-  
+
 
   for (const typeOfmesh in exhibits) {
     const arr = exhibits[typeOfmesh];
@@ -279,10 +280,21 @@ loadArchiveModel(params.archiveModelPath).then(({ exhibits }) => {
 
             const targetPosition = cClone.position.clone();
 
-            visitorEnter.set(targetPosition.x, targetPosition.y, targetPosition.z);
+            visitorEnter.set(targetPosition.x, targetPosition.y + 10, targetPosition.z);
+            visitorJumpTo.position.copy(visitorEnter)
 
-            console.log("visitorEnters from click: ", visitorEnters)
-            resetFromMap();
+            const floorChecker = new VisitorLocationChecker(scene);
+            const floor = floorChecker.checkVisitorLocation(visitorJumpTo);
+            console.log("floor jump: ", floor.name, floor.userData.name);
+
+            const floorName = floor.userData.name;
+            cameFromSite = '#' + floorName.replace(/^(#)?(Floor|Platform)/, '').toLowerCase();
+            console.log("newFloorName", cameFromSite); // Output: #somethings
+
+
+            reset();
+
+
           });
 
           const labelObject = new CSS2DObject(labelDiv);
@@ -780,16 +792,14 @@ async function loadArchiveModel(modelPath) {
 // reset visitor
 function reset() {
 
-  camera.position.set(0, 0, 0);
+  console.log("cameFromSite: ", cameFromSite);
 
+  camera.position.set(0, 0, 0);
 
   bgTexture0 = "/textures/xxxbg_puent.jpg";
   visitorVelocity.set(0, 0, 0);
 
   let target, quaternion, enter, visitorLookAt;
-
-  
-
 
   const enterName = cameFromSite.replace('#', '') + 'Enter';
   enter = visitorEnters.find(({ visitorEnterName }) => visitorEnterName === enterName);
@@ -802,8 +812,6 @@ function reset() {
   console.log("visitorLookAt: ", visitorLookAt);
 
   rotateToFaceObject(camera, controls, scene, visitorLookAt);
-
-
 
   const circleMap = sceneMap.getObjectByName("circleMap");
   if (circleMap) {
@@ -824,45 +832,7 @@ function reset() {
 
 }
 
-function resetFromMap() {
 
-// zmienic nazwy floors na np. #lockdowns
-
-
-  console.log("resetFromMap", "visitorEnter", visitorEnter);
-  
-
-  visitor.position.copy(visitorEnter);
-
-  bgTexture0 = "/textures/xxxbg_puent.jpg";
-  visitorVelocity.set(0, 0, 0);
-
-  const target = visitor.position.clone();
-
-  const circleMap = sceneMap.getObjectByName("circleMap");
-  if (circleMap) {
-    circleMap.position.copy(target);
-  }
-
-
-
-  target.y = 10;
-  camera.position.sub(controls.target);
-  controls.target.copy(target);
-  camera.position.add(target);
-
-  controls.update();
-
-  visitor.position.copy(target);
-
-  const floorCheckerU = new VisitorLocationChecker(scene);
-  const intersectedFloor = floorCheckerU.checkVisitorLocation(visitor);
-
-
-  //console.log("visitorEnters: ", visitorEnters);
-  console.log("floorChecker: ", intersectedFloor.name);
-
-}
 
 
 
