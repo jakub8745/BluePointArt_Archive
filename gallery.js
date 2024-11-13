@@ -149,9 +149,12 @@ const waitForMe = async (millisec) => {
 //
 joyIntervalCheck();
 
-//const cameFromSite = document.location.hash;
+const cameFromSite = document.location.hash;
 
-const cameFromSite = '#wakeupcall'
+if (!cameFromSite){
+const cameFromSite = '#out'
+}
+  
 console.log(cameFromSite);
 
 
