@@ -1,7 +1,3 @@
-
-//
-console.log('TODO: NORWID + strzalki (nowy obiekt: ROOM wczytywany razem z tekstur z modelu archivum), zmieni reszte textur do .KTX2, ustawi AUDIO i schowa helpery, poprawi przesówanie do kółeczka');
-
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
@@ -152,8 +148,12 @@ const waitForMe = async (millisec) => {
 //
 joyIntervalCheck();
 
-//const cameFromSite = document.location.hash;
-cameFromSite =  '#lockdowns';//'#dystopiaofimitation';//'#norwid';//'#artour';//'#wakeupcall';//'#identity';//'#vincenz';
+cameFromSite = document.location.hash;
+
+if (!cameFromSite){
+cameFromSite = '#out'
+}
+  
 console.log(cameFromSite);
 
 
