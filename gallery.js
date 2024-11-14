@@ -415,6 +415,9 @@ function init() {
 
 
   // LOAD MODEL (environment, collider)
+
+console.log("visitor.parent: ", visitor.parent);
+
   const modelLoader = new ModelLoader(deps, visitor.parent);
 
   async function loadMainScene() {

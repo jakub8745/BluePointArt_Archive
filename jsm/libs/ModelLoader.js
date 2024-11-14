@@ -121,6 +121,9 @@ class ModelLoader {
 
             this.scene.add(this.environment);
 
+
+            console.log("this.scene", this.scene);
+
             this.environment.traverse((c) => {
                 if (c.isLight || c.isMesh) {
 
