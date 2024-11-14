@@ -33,7 +33,7 @@ import {
   acceleratedRaycast,
   disposeBoundsTree,
   computeBoundsTree,
-} from ';
+} from  'three-mesh-bvh';
 
 import TWEEN from 'three/addons/libs/tween.module.js';
 
