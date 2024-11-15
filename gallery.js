@@ -21,10 +21,10 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 import { DotScreenShader } from 'three/addons/shaders/DotScreenShader.js'
 
-import ModelLoader from 'three/addons/libs/ModelLoader.js'
-import Visitor from 'three/addons/libs/Visitor.js'
+import ModelLoader from './src/ModelLoader.js'
+import Visitor from './src/Visitor.js'
 
-import JoyStick from 'three/addons/controls/Joystick.js';
+import JoyStick from './src/Joystick.js';
 
 import Stats from "three/addons/libs/stats.module.js";
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
