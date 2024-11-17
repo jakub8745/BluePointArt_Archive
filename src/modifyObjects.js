@@ -117,7 +117,7 @@ export const modifyObjects = {
     },
     element: (mesh, options) => {
 
-        //const gui = deps.gui
+        //const gui = deps.gui//
 
         const { userData, material } = mesh;
         const { Map, normalMap, RoughMap, name, wS, wT } = userData;
@@ -127,7 +127,7 @@ export const modifyObjects = {
         if (Map) {
             
             const extension = Map.split('.').pop();
-            
+
             if (extension === 'ktx2') {
 
                 options.ktx2Loader.load(Map, (texture) => {
