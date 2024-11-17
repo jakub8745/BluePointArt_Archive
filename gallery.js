@@ -438,6 +438,11 @@ function init() {
     renderTransitionPass.enabled = false;
     dotScreenPass.enabled = true;
 
+    const loadingElement = document.getElementById('loading'); // Spinner container
+    //const progressText = document.getElementById('progress-text'); // Progress percentage text
+
+    loadingElement.style.display = 'none';
+
     animate();
   }
 

@@ -28,11 +28,7 @@ class ModelLoader {
 
         this.exhibits = [];
 
-        //this.ktx2Loader = deps.ktx2Loader;
         this.ktx2Loader = deps.ktx2Loader.setTranscoderPath('./libs/basis/');
-        //this.ktx2Loader.detectSupport(this.renderer);
-
-
 
         this.newFloor = newFloor;
         this.box = new Box3();
@@ -41,39 +37,50 @@ class ModelLoader {
     }
 
     async loadModel(modelPath) {
-        const loadingElement = document.getElementById('loading'); // Get the spinner element
-
-
-        this.gltfLoader.setDRACOLoader(this.dracoLoader);
-        
-        this.gltfLoader.setKTX2Loader(this.ktx2Loader);
-
-        this.gltfLoader.setMeshoptDecoder(this.meshoptDecoder);
-
-
+        const loadingElement = document.getElementById('loading'); // Spinner container
+        const progressText = document.getElementById('progress-text'); // Progress percentage text
+    
         try {
+            // Show the spinner
+            loadingElement.style.display = 'flex';
+    
+            // Set up loaders
+            this.gltfLoader.setDRACOLoader(this.dracoLoader);
+            this.gltfLoader.setKTX2Loader(this.ktx2Loader);
+            this.gltfLoader.setMeshoptDecoder(this.meshoptDecoder);
+    
+            // Add progress listener
+            const onProgress = (xhr) => {
+                if (xhr.total) {
+                    const percentComplete = Math.round((xhr.loaded / xhr.total) * 100);
+                    progressText.textContent = `Loading: ${percentComplete}%`;
+                    console.log(`Loading: ${percentComplete}%`, loadingElement);
+                }
+                console.log('end',loadingElement);
+               // loadingElement.style.display = 'none';
 
-            const { scene: gltfScene } = await this.gltfLoader.loadAsync(modelPath);
-
+            };
+    
+            // Load the GLTF model
+            const { scene: gltfScene } = await this.gltfLoader.loadAsync(modelPath, onProgress);
+    
+            // Floor adjustment logic
             if (this.newFloor) {
-
                 gltfScene.traverse((c) => {
                     if (c.isMesh && c.name === "FloorOut") {
-                        c.position.y -= .1;
+                        c.position.y -= 0.1;
                     }
                 });
-
+    
                 if (this.newFloor.userData.exhibitObjectsPath) {
-
-                    const { scene: exhibitObjects } = await this.gltfLoader.loadAsync(this.newFloor.userData.exhibitObjectsPath);
-
+                    const { scene: exhibitObjects } = await this.gltfLoader.loadAsync(this.newFloor.userData.exhibitObjectsPath, onProgress);
                     gltfScene.add(exhibitObjects);
-
                 }
             }
-
+    
             gltfScene.updateMatrixWorld(true);
-
+    
+            // Process scene objects
             gltfScene.traverse((c) => {
                 if (c.isMesh || c.isLight) {
                     if (c.isLight) {
@@ -84,44 +91,44 @@ class ModelLoader {
                     this.toMerge[this.typeOfmesh].push(c);
                 }
             });
-
+    
+            // Merge objects
             for (const typeOfmesh in this.toMerge) {
                 const arr = this.toMerge[typeOfmesh];
-
                 arr.forEach((mesh) => {
                     if (mesh.userData.name !== "VisitorEnter") {
                         this.environment.attach(mesh);
                     }
                 });
             }
-
+    
             this.environment.name = "environment";
-
-            // Generate the collider using the populated environment
+    
+            // Generate the collider
             const staticGenerator = new StaticGeometryGenerator(this.environment);
             staticGenerator.attributes = ["position"];
-
+    
             const mergedGeometry = staticGenerator.generate();
             mergedGeometry.boundsTree = new MeshBVH(mergedGeometry, {
                 lazyGeneration: false,
             });
-
+    
             this.collider = new Mesh(mergedGeometry);
             this.collider.material.wireframe = true;
             this.collider.material.opacity = 0;
             this.collider.material.transparent = true;
-
+    
             this.collider.name = "collider";
             this.collider.visible = false;
-
+    
             this.scene.add(this.collider);
             this.deps.collider = this.collider;
-
+    
             this.scene.add(this.environment);
-
+    
+            // Additional object customization
             this.environment.traverse((c) => {
                 if (c.isLight || c.isMesh) {
-
                     const options = {
                         gizmoVisible: this.deps.params.gizmoVisible,
                         ktx2Loader: this.ktx2Loader,
@@ -138,25 +145,33 @@ class ModelLoader {
                         gizmoVisible: this.deps.params.gizmoVisible,
                         transControlsMode: this.deps.params.transControlsMode,
                     };
-
                     modifyObjects[c.userData.type]?.(c, options);
                 }
-
+    
                 if (this.scene.name === "mainScene" &&
                     (/Wall|visitorLocation|Room/.test(c.userData.name) ||
                         /visitorLocation|Room/.test(c.userData.type))) {
                     this.addToSceneMap(c);
                 }
             });
-
+    
             this.addToSceneMapRun = true;
-
+    
+            // Hide the spinner
+            loadingElement.style.display = 'none';
+    
             return this.collider;
         } catch (error) {
             console.error('Error loading model:', error);
+    
+            // Hide the spinner on error
+            loadingElement.style.display = 'none';
+    
             throw error;
         }
     }
+    
+    
 
     addToSceneMap(mesh) {
 
