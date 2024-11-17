@@ -77,7 +77,7 @@ const sceneRegistry = {
   sceneMap: new Scene(),
 };
 
-const textureFolder = "textures/";
+const textureFolder = "/textures/";
 const textureCache = new Map();
 
 let renderer, camera, scene, clock, tween, stats, anisotropy;
@@ -213,7 +213,7 @@ function init() {
 
   anisotropy = renderer.capabilities.getMaxAnisotropy();
 
-  ktx2Loader.setTranscoderPath('three/addons/libs/basis/').detectSupport(renderer);
+  ktx2Loader.setTranscoderPath('jsm/libs/basis/').detectSupport(renderer);
 
 
 
@@ -440,7 +440,7 @@ function init() {
 
   loadMainScene();
 
-  //preloadTextures();
+  preloadTextures();
 
 
   // events
@@ -887,9 +887,15 @@ function handleSceneBackground(deps) {
   let scene = visitor.parent;
   const extension = bgTexture.split('.').pop();
 
+
   if (extension === 'ktx2') {
+    console.log("bgTexture 1 ", bgTexture);
+
     // Handle loading KTX2 texture
     ktx2Loader.load(bgTexture, (texture) => {
+
+      console.log("bgTexture:2 ", bgTexture, texture);
+
 
       texture.mapping = EquirectangularReflectionMapping;
       texture.colorSpace = SRGBColorSpace;
@@ -1073,7 +1079,7 @@ function ileElementow() {
 //
 function preloadTextures() {
 
-  ktx2Loader.setTranscoderPath('jsm/libs/basis/')
+  ktx2Loader.setTranscoderPath('/src/libs/basis/')
   ktx2Loader.detectSupport(renderer)
 
   const textureFiles = ['bg_color.ktx2', 'galaktyka.ktx2', 'equMap_podMostem.ktx2', 'bg_white.ktx2', 'bg_lockdowns.ktx2', 'dystopia/bgVermeerViewofDelft.ktx2']; // Add all texture filenames here
