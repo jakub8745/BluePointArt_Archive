@@ -216,7 +216,7 @@ function init() {
 
   anisotropy = renderer.capabilities.getMaxAnisotropy();
 
-  ktx2Loader.setTranscoderPath('jsm/libs/basis/').detectSupport(renderer);
+  ktx2Loader.setTranscoderPath('./libs/basis/').detectSupport(renderer);
 
 
 
@@ -1077,7 +1077,7 @@ function ileElementow() {
 //
 function preloadTextures() {
 
-  ktx2Loader.setTranscoderPath('/src/libs/basis/')
+  ktx2Loader.setTranscoderPath('./libs/basis/')
   ktx2Loader.detectSupport(renderer)
 
   const textureFiles = ['bg_color.ktx2', 'galaktyka.ktx2', 'equMap_podMostem.ktx2', 'bg_white.ktx2', 'bg_lockdowns.ktx2', 'dystopia/bgVermeerViewofDelft.ktx2']; // Add all texture filenames here

@@ -22,14 +22,14 @@ class ModelLoader {
         this.manager = new LoadingManager();
 
         this.gltfLoader = new GLTFLoader();
-        this.dracoLoader = new DRACOLoader(this.manager).setDecoderPath('/src/libs/draco/');
+        this.dracoLoader = new DRACOLoader(this.manager).setDecoderPath('./libs/draco/');
 
         this.meshoptDecoder = MeshoptDecoder;
 
         this.exhibits = [];
 
         //this.ktx2Loader = deps.ktx2Loader;
-        this.ktx2Loader = deps.ktx2Loader.setTranscoderPath('/src/libs/basis/');
+        this.ktx2Loader = deps.ktx2Loader.setTranscoderPath('./libs/basis/');
         //this.ktx2Loader.detectSupport(this.renderer);
 
 

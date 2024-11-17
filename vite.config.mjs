@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
-import path from 'path';
+import { viteStaticCopy } from 'vite-plugin-static-copy';
+
 
 export default defineConfig({
   optimizeDeps: {
@@ -16,4 +17,22 @@ export default defineConfig({
     chunkSizeWarningLimit: 1100, // Set chunk size warning to 1 MB
     sourcemap: process.env.NODE_ENV === 'development', // Enable source maps in development
   },
+  plugins: [
+    viteStaticCopy({
+      targets: [
+        {
+          src: 'node_modules/three/examples/jsm/libs/basis/*',
+          dest: 'libs/basis', // Copies Basis files to 'dist/libs/basis/'
+        },
+        {
+          src: 'node_modules/three/examples/jsm/libs/draco/*',
+          dest: 'libs/draco', // Copies Draco files to 'dist/libs/draco/'
+        },
+      ],
+    }),
+  ],
 });
+
+
+
+

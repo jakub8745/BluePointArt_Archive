@@ -1,6 +1,7 @@
 {
   "name": "2scenes_vite",
   "version": "1.0.0",
+  "type": "module",
   "main": "gallery.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -13,7 +14,8 @@
   "license": "ISC",
   "devDependencies": {
     "three-mesh-bvh": "^0.8.3",
-    "vite": "^5.4.11"
+    "vite": "^5.4.11",
+    "vite-plugin-static-copy": "^2.1.0"
   },
   "dependencies": {
     "esbuild": "^0.21.5",
