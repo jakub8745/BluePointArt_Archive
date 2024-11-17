@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "three-mesh-bvh": "^0.8.3",
     "vite": "^5.4.11"
   },
   "dependencies": {
