@@ -41,6 +41,7 @@ class ModelLoader {
     }
 
     async loadModel(modelPath) {
+        const loadingElement = document.getElementById('loading'); // Get the spinner element
 
 
         this.gltfLoader.setDRACOLoader(this.dracoLoader);
