@@ -64,7 +64,7 @@ export const modifyObjects = {
         //
 
     },
-   
+
     VisitorEnter: (mesh) => {
 
         mesh.visible = false;
@@ -125,12 +125,19 @@ export const modifyObjects = {
 
 
         if (Map) {
-            const extension = Map.split('.').pop();
+            
+
+
+            const newPath = Map//.replace(/(.*\/)?textures/, "~/textures");          
+
+          //  console.log("newPath", newPath);
+
+            const extension = newPath.split('.').pop();
 
             if (extension === 'ktx2') {
 
 
-                options.ktx2Loader.load(Map, (texture) => {
+                options.ktx2Loader.load(newPath, (texture) => {
 
                     mesh.material = new MeshLambertMaterial({ map: texture, transparent: true, side: FrontSide, color: 0xffffff });
 
@@ -142,11 +149,11 @@ export const modifyObjects = {
 
             } else {
 
-                loader.load(Map, (texture) => {
+                loader.load(newPath, (texture) => {
 
                     mesh.material = new MeshLambertMaterial({ map: texture, transparent: true, side: FrontSide, color: 0xffffff });
 
-                   // mesh.material = options.isLowEndDevice ? new MeshLambertMaterial({ map: texture, transparent: true, side: FrontSide, color: 0xffffff }) : new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
+                    // mesh.material = options.isLowEndDevice ? new MeshLambertMaterial({ map: texture, transparent: true, side: FrontSide, color: 0xffffff }) : new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
                 });
 
             }
@@ -200,7 +207,7 @@ export const modifyObjects = {
         mesh.material = new MeshLambertMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: FrontSide, color: 0xffffff });
 
 
-       // mesh.material = options.isLowEndDevice ? new MeshLambertMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff }) : new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
+        // mesh.material = options.isLowEndDevice ? new MeshLambertMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff }) : new FadeInMaterial({ map: loader.load(mesh.userData.Map), transparent: true, side: DoubleSide, color: 0xffffff });
         mesh.material.map.wrapT = RepeatWrapping;
         mesh.material.map.wrapS = RepeatWrapping; // Ensure wrapping is enabled
         mesh.material.map.repeat.x = -1;
@@ -252,7 +259,7 @@ export const modifyObjects = {
             side: DoubleSide,
             color: 0xffffff,
         });
-       
+
 
         // Apply the material to the mesh
         mesh.material = material;

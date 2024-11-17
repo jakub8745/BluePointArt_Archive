@@ -139,6 +139,9 @@ export default class Visitor extends Mesh {
       return type === "visitorLocation" || type === "Room";
     })?.object;
 
+    //console.log("floor: ", floor);
+
+
     return floor
   }
 
@@ -150,6 +153,7 @@ export default class Visitor extends Mesh {
     if (this.scene) {
       this.scene.remove(this);
     }
+
 
     this.scene = newScene;
     this.scene.add(this);

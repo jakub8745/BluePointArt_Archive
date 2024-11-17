@@ -22,6 +22,8 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { DotScreenShader } from 'three/addons/shaders/DotScreenShader.js'
 
 import ModelLoader from './src/ModelLoader.js'
+
+
 import Visitor from './src/Visitor.js'
 
 import JoyStick from './src/Joystick.js';
@@ -33,7 +35,7 @@ import {
   acceleratedRaycast,
   disposeBoundsTree,
   computeBoundsTree,
-} from  'three-mesh-bvh';
+} from 'three-mesh-bvh';
 
 import TWEEN from 'three/addons/libs/tween.module.js';
 
@@ -52,7 +54,7 @@ const params = {
   canSeeGizmo: false,
   transControlsMode: "rotate",
   heightOffset: new Vector3(0, 0.33, 0),// offset the camera from the visitor
-  archiveModelPath: "../models/nowy_exterior.glb",
+  archiveModelPath: "/models/nowy_exterior.glb",
   enablePostProcessing: true,
   isLowEndDevice: false,//navigator.hardwareConcurrency <= 4,
   transitionAnimate: true,
@@ -211,7 +213,7 @@ function init() {
 
   anisotropy = renderer.capabilities.getMaxAnisotropy();
 
-  ktx2Loader.setTranscoderPath('jsm/libs/basis/').detectSupport(renderer);
+  ktx2Loader.setTranscoderPath('three/addons/libs/basis/').detectSupport(renderer);
 
 
 
@@ -416,7 +418,6 @@ function init() {
 
   // LOAD MODEL (environment, collider)
 
-console.log("visitor.parent: ", visitor.parent);
 
   const modelLoader = new ModelLoader(deps, visitor.parent);
 
@@ -724,9 +725,9 @@ console.log("visitor.parent: ", visitor.parent);
 
 }
 //
-
-
 // update visitor
+
+
 async function updateVisitor(collider, delta) {
 
   const result = visitor.update(delta, collider);
@@ -734,8 +735,10 @@ async function updateVisitor(collider, delta) {
 
   if (result.changed) {
 
+
     const newFloor = result.newFloor;
     let exhibitModelPath = newFloor.userData.exhibitModelPath;
+
 
     if (newFloor.name === "FloorOut") {
 
@@ -753,15 +756,23 @@ async function updateVisitor(collider, delta) {
 
       disposeSceneObjects(visitor.exhibitScene);
 
+
+
       const modelLoader = new ModelLoader(deps, visitor.exhibitScene, newFloor);
+
+
+
       visitor.exhibitScene.add(new AmbientLight(0x404040, 45));
 
       async function loadScene() {
 
+
+
         const mainCollider = await modelLoader.loadModel(exhibitModelPath);
 
+
         deps.params.exhibitCollider = mainCollider;
-        deps.bgTexture = newFloor.userData.bgTexture || "textures/bg_color.ktx2";
+        deps.bgTexture = `/textures/${newFloor.userData.bgTexture || "public/textures/bg_color.ktx2"}`;
         deps.bgInt = newFloor.userData.bgInt || 1;
         deps.bgBlur = newFloor.userData.bgBlur || 0;
 

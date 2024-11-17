@@ -216,7 +216,16 @@
   <video id="heritage" loop crossorigin="anonymous" playsinline style="display: none">
     <source src="/textures/identity/video/MurzynHeritage.mp4" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"' />
   </video>
-
+  <script type="importmap">
+      {
+        "imports": {
+          "three": "../jsm/build/three.module.min.js",
+          "three/addons/": "../jsm/",
+          "three/loaders/": "../jsm/loaders/",
+          "three/draco": "../jsm/libs/draco"
+        }
+      }
+    </script>
   <script type="module" src="./gallery.js"></script>
 </body>
 
