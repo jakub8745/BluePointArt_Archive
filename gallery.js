@@ -37,6 +37,9 @@ import {
   computeBoundsTree,
 } from 'three-mesh-bvh';
 
+//import { acceleratedRaycast, disposeBoundsTree, computeBoundsTree } from 'https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.8.3/build/index.module.js';
+
+
 import TWEEN from 'three/addons/libs/tween.module.js';
 
 const loader = new TextureLoader();

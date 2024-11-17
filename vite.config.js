@@ -4,7 +4,7 @@ import path from 'path';
 export default defineConfig({
   resolve: {
     alias: {
-      'three-mesh-bvh': path.resolve(__dirname, 'node_modules/three-mesh-bvh')
+      'three-mesh-bvh': path.resolve(__dirname, 'node_modules/three-mesh-bvh/build/index.module.js')
     }
   },
   assetsInclude: ['**/*.wasm'], // Ensures .wasm files are included in the build
