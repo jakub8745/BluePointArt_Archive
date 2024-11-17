@@ -889,13 +889,8 @@ function handleSceneBackground(deps) {
 
 
   if (extension === 'ktx2') {
-    console.log("bgTexture 1 ", bgTexture);
 
-    // Handle loading KTX2 texture
     ktx2Loader.load(bgTexture, (texture) => {
-
-      console.log("bgTexture:2 ", bgTexture, texture);
-
 
       texture.mapping = EquirectangularReflectionMapping;
       texture.colorSpace = SRGBColorSpace;

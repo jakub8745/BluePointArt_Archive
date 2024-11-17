@@ -44,25 +44,7 @@ class ModelLoader {
 
 
         this.gltfLoader.setDRACOLoader(this.dracoLoader);
-
-        const textureLoader = this.ktx2Loader;
-
-        // Ensure detectSupport is called before loading textures
-        textureLoader.detectSupport(this.renderer);
         
-        textureLoader.load(
-            '/textures/bg_color.ktx2',
-            (texture) => {
-                console.log('Texture loaded successfully:', texture);
-            },
-            undefined,
-            (err) => {
-                console.error('Failed to load texture:', err);
-            }
-        );
-        
-        
-
         this.gltfLoader.setKTX2Loader(this.ktx2Loader);
 
         this.gltfLoader.setMeshoptDecoder(this.meshoptDecoder);
@@ -70,9 +52,7 @@ class ModelLoader {
 
         try {
 
-            console.log("Attempting to load model:", modelPath);
             const { scene: gltfScene } = await this.gltfLoader.loadAsync(modelPath);
-            console.log("Model loaded successfully:", gltfScene);
 
             if (this.newFloor) {
 
@@ -137,8 +117,6 @@ class ModelLoader {
             this.deps.collider = this.collider;
 
             this.scene.add(this.environment);
-
-            console.log("this.scene", this.scene);
 
             this.environment.traverse((c) => {
                 if (c.isLight || c.isMesh) {

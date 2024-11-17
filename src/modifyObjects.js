@@ -126,18 +126,11 @@ export const modifyObjects = {
 
         if (Map) {
             
-
-
-            const newPath = Map//.replace(/(.*\/)?textures/, "~/textures");          
-
-          //  console.log("newPath", newPath);
-
-            const extension = newPath.split('.').pop();
-
+            const extension = Map.split('.').pop();
+            
             if (extension === 'ktx2') {
 
-
-                options.ktx2Loader.load(newPath, (texture) => {
+                options.ktx2Loader.load(Map, (texture) => {
 
                     mesh.material = new MeshLambertMaterial({ map: texture, transparent: true, side: FrontSide, color: 0xffffff });
 
@@ -149,7 +142,7 @@ export const modifyObjects = {
 
             } else {
 
-                loader.load(newPath, (texture) => {
+                loader.load(Map, (texture) => {
 
                     mesh.material = new MeshLambertMaterial({ map: texture, transparent: true, side: FrontSide, color: 0xffffff });
 
