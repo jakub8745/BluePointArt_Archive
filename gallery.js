@@ -404,7 +404,7 @@ function init() {
   composer.addPass(renderTransitionPass);
 
   const textureLoader = new TextureLoader();
-  textureLoader.load('textures/transition2.png', (texture) => {
+  textureLoader.load('textures/transition5.png', (texture) => {
 
     renderTransitionPass.setTexture(texture);
   });

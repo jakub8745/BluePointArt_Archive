@@ -39,41 +39,43 @@ class ModelLoader {
     async loadModel(modelPath) {
         const loadingElement = document.getElementById('loading'); // Spinner container
         const progressText = document.getElementById('progress-text'); // Progress percentage text
-    
+
         try {
             // Show the spinner
             loadingElement.style.display = 'flex';
-    
+
             this.gltfLoader.setDRACOLoader(this.dracoLoader);
             this.gltfLoader.setKTX2Loader(this.ktx2Loader);
             this.gltfLoader.setMeshoptDecoder(this.meshoptDecoder);
-    
+
+            let currentModel = 1; // Track the current model being loaded
+            const totalModels = this.newFloor && this.newFloor.userData.exhibitObjectsPath ? 2 : 1;
+
             // Add progress listener
             const onProgress = (xhr) => {
                 if (xhr.total) {
                     const percentComplete = Math.round((xhr.loaded / xhr.total) * 100);
-                    progressText.textContent = `Loading: ${percentComplete}%`;
+                    progressText.textContent = `Loading model ${currentModel}/${totalModels}: ${percentComplete}%`;
                 }
-              
             };
-    
+
             const { scene: gltfScene } = await this.gltfLoader.loadAsync(modelPath, onProgress);
-    
+
             if (this.newFloor) {
                 gltfScene.traverse((c) => {
                     if (c.isMesh && c.name === "FloorOut") {
                         c.position.y -= 0.1;
                     }
                 });
-    
+
                 if (this.newFloor.userData.exhibitObjectsPath) {
                     const { scene: exhibitObjects } = await this.gltfLoader.loadAsync(this.newFloor.userData.exhibitObjectsPath, onProgress);
                     gltfScene.add(exhibitObjects);
                 }
             }
-    
+
             gltfScene.updateMatrixWorld(true);
-    
+
             // Process scene objects
             gltfScene.traverse((c) => {
                 if (c.isMesh || c.isLight) {
@@ -85,7 +87,7 @@ class ModelLoader {
                     this.toMerge[this.typeOfmesh].push(c);
                 }
             });
-    
+
             // Merge objects
             for (const typeOfmesh in this.toMerge) {
                 const arr = this.toMerge[typeOfmesh];
@@ -95,31 +97,31 @@ class ModelLoader {
                     }
                 });
             }
-    
+
             this.environment.name = "environment";
-    
+
             // Generate the collider
             const staticGenerator = new StaticGeometryGenerator(this.environment);
             staticGenerator.attributes = ["position"];
-    
+
             const mergedGeometry = staticGenerator.generate();
             mergedGeometry.boundsTree = new MeshBVH(mergedGeometry, {
                 lazyGeneration: false,
             });
-    
+
             this.collider = new Mesh(mergedGeometry);
             this.collider.material.wireframe = true;
             this.collider.material.opacity = 0;
             this.collider.material.transparent = true;
-    
+
             this.collider.name = "collider";
             this.collider.visible = false;
-    
+
             this.scene.add(this.collider);
             this.deps.collider = this.collider;
-    
+
             this.scene.add(this.environment);
-    
+
             // Additional object customization
             this.environment.traverse((c) => {
                 if (c.isLight || c.isMesh) {
@@ -141,31 +143,31 @@ class ModelLoader {
                     };
                     modifyObjects[c.userData.type]?.(c, options);
                 }
-    
+
                 if (this.scene.name === "mainScene" &&
                     (/Wall|visitorLocation|Room/.test(c.userData.name) ||
                         /visitorLocation|Room/.test(c.userData.type))) {
                     this.addToSceneMap(c);
                 }
             });
-    
+
             this.addToSceneMapRun = true;
-    
+
             // Hide the spinner
             loadingElement.style.display = 'none';
-    
+
             return this.collider;
         } catch (error) {
             console.error('Error loading model:', error);
-    
+
             // Hide the spinner on error
             loadingElement.style.display = 'none';
-    
+
             throw error;
         }
     }
-    
-    
+
+
 
     addToSceneMap(mesh) {
 
