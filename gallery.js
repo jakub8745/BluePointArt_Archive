@@ -21,10 +21,12 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 import { DotScreenShader } from 'three/addons/shaders/DotScreenShader.js'
 
-import ModelLoader from 'three/addons/libs/ModelLoader.js'
-import Visitor from 'three/addons/libs/Visitor.js'
+import ModelLoader from './src/ModelLoader.js'
 
-import JoyStick from 'three/addons/controls/Joystick.js';
+
+import Visitor from './src/Visitor.js'
+
+import JoyStick from './src/Joystick.js';
 
 import Stats from "three/addons/libs/stats.module.js";
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
@@ -33,7 +35,10 @@ import {
   acceleratedRaycast,
   disposeBoundsTree,
   computeBoundsTree,
-} from "https://unpkg.com/three-mesh-bvh@0.7.6/build/index.module.js";
+} from 'three-mesh-bvh';
+
+//import { acceleratedRaycast, disposeBoundsTree, computeBoundsTree } from 'https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.8.3/build/index.module.js';
+
 
 import TWEEN from 'three/addons/libs/tween.module.js';
 
@@ -52,7 +57,7 @@ const params = {
   canSeeGizmo: false,
   transControlsMode: "rotate",
   heightOffset: new Vector3(0, 0.33, 0),// offset the camera from the visitor
-  archiveModelPath: "../models/nowy_exterior.glb",
+  archiveModelPath: "/models/nowy_exterior.glb",
   enablePostProcessing: true,
   isLowEndDevice: false,//navigator.hardwareConcurrency <= 4,
   transitionAnimate: true,
@@ -75,7 +80,7 @@ const sceneRegistry = {
   sceneMap: new Scene(),
 };
 
-const textureFolder = "textures/";
+const textureFolder = "/textures/";
 const textureCache = new Map();
 
 let renderer, camera, scene, clock, tween, stats, anisotropy;
@@ -211,7 +216,7 @@ function init() {
 
   anisotropy = renderer.capabilities.getMaxAnisotropy();
 
-  ktx2Loader.setTranscoderPath('jsm/libs/basis/').detectSupport(renderer);
+  ktx2Loader.setTranscoderPath('./libs/basis/').detectSupport(renderer);
 
 
 
@@ -399,7 +404,7 @@ function init() {
   composer.addPass(renderTransitionPass);
 
   const textureLoader = new TextureLoader();
-  textureLoader.load('textures/transition2.png', (texture) => {
+  textureLoader.load('textures/transition5.png', (texture) => {
 
     renderTransitionPass.setTexture(texture);
   });
@@ -408,6 +413,8 @@ function init() {
   composer.addPass(outputPass);
 
   dotScreenPass = new ShaderPass(DotScreenShader);
+  dotScreenPass.uniforms['scale'].value = 4.0; // Adjust the scale (smaller value = larger dots)
+
   composer.addPass(dotScreenPass);
 
   // }
@@ -415,6 +422,8 @@ function init() {
 
 
   // LOAD MODEL (environment, collider)
+
+
   const modelLoader = new ModelLoader(deps, visitor.parent);
 
   async function loadMainScene() {
@@ -431,12 +440,17 @@ function init() {
     renderTransitionPass.enabled = false;
     dotScreenPass.enabled = true;
 
+    const loadingElement = document.getElementById('loading'); // Spinner container
+    //const progressText = document.getElementById('progress-text'); // Progress percentage text
+
+    loadingElement.style.display = 'none';
+
     animate();
   }
 
   loadMainScene();
 
-  //preloadTextures();
+  preloadTextures();
 
 
   // events
@@ -721,9 +735,9 @@ function init() {
 
 }
 //
-
-
 // update visitor
+
+
 async function updateVisitor(collider, delta) {
 
   const result = visitor.update(delta, collider);
@@ -731,8 +745,10 @@ async function updateVisitor(collider, delta) {
 
   if (result.changed) {
 
+
     const newFloor = result.newFloor;
     let exhibitModelPath = newFloor.userData.exhibitModelPath;
+
 
     if (newFloor.name === "FloorOut") {
 
@@ -750,15 +766,23 @@ async function updateVisitor(collider, delta) {
 
       disposeSceneObjects(visitor.exhibitScene);
 
+
+
       const modelLoader = new ModelLoader(deps, visitor.exhibitScene, newFloor);
+
+
+
       visitor.exhibitScene.add(new AmbientLight(0x404040, 45));
 
       async function loadScene() {
 
+
+
         const mainCollider = await modelLoader.loadModel(exhibitModelPath);
 
+
         deps.params.exhibitCollider = mainCollider;
-        deps.bgTexture = newFloor.userData.bgTexture || "textures/bg_color.ktx2";
+        deps.bgTexture = `/textures/${newFloor.userData.bgTexture || "public/textures/bg_color.ktx2"}`;
         deps.bgInt = newFloor.userData.bgInt || 1;
         deps.bgBlur = newFloor.userData.bgBlur || 0;
 
@@ -873,8 +897,9 @@ function handleSceneBackground(deps) {
   let scene = visitor.parent;
   const extension = bgTexture.split('.').pop();
 
+
   if (extension === 'ktx2') {
-    // Handle loading KTX2 texture
+
     ktx2Loader.load(bgTexture, (texture) => {
 
       texture.mapping = EquirectangularReflectionMapping;
@@ -1059,7 +1084,7 @@ function ileElementow() {
 //
 function preloadTextures() {
 
-  ktx2Loader.setTranscoderPath('jsm/libs/basis/')
+  ktx2Loader.setTranscoderPath('./libs/basis/')
   ktx2Loader.detectSupport(renderer)
 
   const textureFiles = ['bg_color.ktx2', 'galaktyka.ktx2', 'equMap_podMostem.ktx2', 'bg_white.ktx2', 'bg_lockdowns.ktx2', 'dystopia/bgVermeerViewofDelft.ktx2']; // Add all texture filenames here
