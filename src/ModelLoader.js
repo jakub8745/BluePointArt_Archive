@@ -57,7 +57,7 @@ class ModelLoader {
               
             };
     
-            const { scene: gltfScene } = await this.gltfLoader.loadAsync(modelPath);
+            const { scene: gltfScene } = await this.gltfLoader.loadAsync(modelPath, onProgress);
     
             if (this.newFloor) {
                 gltfScene.traverse((c) => {
