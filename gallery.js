@@ -413,6 +413,8 @@ function init() {
   composer.addPass(outputPass);
 
   dotScreenPass = new ShaderPass(DotScreenShader);
+  dotScreenPass.uniforms['scale'].value = 4.0; // Adjust the scale (smaller value = larger dots)
+
   composer.addPass(dotScreenPass);
 
   // }

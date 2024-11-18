@@ -44,7 +44,6 @@ class ModelLoader {
             // Show the spinner
             loadingElement.style.display = 'flex';
     
-            // Set up loaders
             this.gltfLoader.setDRACOLoader(this.dracoLoader);
             this.gltfLoader.setKTX2Loader(this.ktx2Loader);
             this.gltfLoader.setMeshoptDecoder(this.meshoptDecoder);
@@ -54,17 +53,12 @@ class ModelLoader {
                 if (xhr.total) {
                     const percentComplete = Math.round((xhr.loaded / xhr.total) * 100);
                     progressText.textContent = `Loading: ${percentComplete}%`;
-                    console.log(`Loading: ${percentComplete}%`, loadingElement);
                 }
-                console.log('end',loadingElement);
-               // loadingElement.style.display = 'none';
-
+              
             };
     
-            // Load the GLTF model
-            const { scene: gltfScene } = await this.gltfLoader.loadAsync(modelPath, onProgress);
+            const { scene: gltfScene } = await this.gltfLoader.loadAsync(modelPath);
     
-            // Floor adjustment logic
             if (this.newFloor) {
                 gltfScene.traverse((c) => {
                     if (c.isMesh && c.name === "FloorOut") {
