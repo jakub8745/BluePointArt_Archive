@@ -2,8 +2,8 @@ import * as THREE from 'three';
 //import { GUI } from 'https://cdn.skypack.dev/dat.gui';
 
 export default class FadeInMaterial extends THREE.MeshLambertMaterial {
-  static globalContrast = 2.7;
-  static globalBrightness = 0.8; // Default brightness
+  static globalContrast = 1;
+  static globalBrightness = 1; // Default brightness
   static guiInitialized = false;
   static instances = []; // Array to hold all instances
 

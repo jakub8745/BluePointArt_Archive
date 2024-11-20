@@ -40,7 +40,7 @@ const params = {
   visitorSpeed: 3,
   physicsSteps: 5,
   reset: reset,
-  exposure: 1,
+  exposure: 0.8,
   gizmoVisible: false,
   canSeeGizmo: false,
   transControlsMode: "rotate",
@@ -117,7 +117,7 @@ THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 
 let target = null;
-let timeout = null;
+let timeout = null;//
 
 const gui = new GUI();
 gui.show(false);
@@ -151,7 +151,7 @@ joyIntervalCheck();
 cameFromSite = document.location.hash;
 
 if (!cameFromSite){
-cameFromSite = '#out'
+cameFromSite = '#wakeupcall'
 }
   
 console.log(cameFromSite);
